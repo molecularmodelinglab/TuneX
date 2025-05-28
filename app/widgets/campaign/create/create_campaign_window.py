@@ -7,13 +7,12 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
-# Import step classes (will be created separately)
-from .campaign_info_step import CampaignInfoStep
-from .parameters_step import ParametersStep
-from .data_import_step import DataImportStep
+from app.widgets.campaign.create.steps.campaign_info_step import CampaignInfoStep
+from app.widgets.campaign.create.steps.parameters_step import ParametersStep
+from app.widgets.campaign.create.steps.data_import_step import DataImportStep
 
 
-class LaunchCampaignWindow(QMainWindow):
+class CreateCampaignWindow(QMainWindow):
     """
     Main coordinator for campaign creation wizard.
     
