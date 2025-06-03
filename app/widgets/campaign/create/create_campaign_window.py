@@ -56,11 +56,9 @@ class CreateCampaignWindow(QMainWindow):
         """Creates main UI structure"""
         self.setWindowTitle("TuneX - Create New Campaign")
 
-        # Central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
-        # Main layout
         main_layout = QVBoxLayout(central_widget)
 
         # Create content area with steps
@@ -148,9 +146,9 @@ class CreateCampaignWindow(QMainWindow):
         current_widget.load_data()
 
     def create_campaign(self):
-        """Create campaign with collected data - TODO: add campaign creation logic details"""
+        """Create campaign with collected data"""
         print("Creating campaign with data:")
         print(f"Campaign Data: {self.campaign_data}")
 
-        # Here will be the actual campaign creation logic
+        # TODO: Implement database save and campaign initialization"
         self.close()

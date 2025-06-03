@@ -10,11 +10,7 @@ from PySide6.QtWidgets import (
     QComboBox,
 )
 
-from app.widgets.campaign.enums import TargetMode
-
-WINDOW_TITLE = "Create New Campaign"
-
-
+from app.models.enums import TargetMode
 class CampaignInfoStep(QWidget):
     """
     First step of campaign creation wizard.
@@ -22,7 +18,7 @@ class CampaignInfoStep(QWidget):
     Collects basic campaign information: name, description, and target configuration.
     Users must fill required fields (name and target name) before proceeding to next step.
     """
-
+    WINDOW_TITLE = "Create New Campaign"
     LABELS = {
         "name": "Campaign name:",
         "description": "Description:",
@@ -35,9 +31,9 @@ class CampaignInfoStep(QWidget):
     def __init__(self, campaign_data: Dict[str, Any]) -> None:
         super().__init__()
         self.campaign_data = campaign_data
-        self.setup_ui()
+        self._setup_ui()
 
-    def setup_ui(self) -> None:
+    def _setup_ui(self) -> None:
         """Creates the UI layout"""
         main_layout = QVBoxLayout(self)
         self._create_title(main_layout)
@@ -45,7 +41,7 @@ class CampaignInfoStep(QWidget):
 
     def _create_title(self, parent_layout: QVBoxLayout) -> None:
         """Creates title section"""
-        title = QLabel(WINDOW_TITLE)
+        title = QLabel(self.WINDOW_TITLE)
         parent_layout.addWidget(title)
 
     def _create_form(self, parent_layout: QVBoxLayout) -> None:
@@ -97,13 +93,13 @@ class CampaignInfoStep(QWidget):
         """
         # Campaign name is required
         if not self.name_input.text().strip():
-            # TODO: Show error message to user or disable "Next" button?
+            # TODO: Implement user-friendly error display (dialog/status bar instead of print)
             print("Campaign name is required")
             return False
 
         # Target name is required
         if not self.target_name_input.text().strip():
-            # TODO: Show error message to user or disable "Next" button?
+            # TODO: Implement user-friendly error display (dialog/status bar instead of print)
             print("Target name is required")
             return False
 
