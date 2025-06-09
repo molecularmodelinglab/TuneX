@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, Type
+from typing import Dict, Any, Optional, Type, Union
 
 from app.models.enums import ParameterType
 
@@ -129,6 +129,77 @@ class BaseParameter(ABC):
         Returns:
             Tuple of (is_valid, error_message)
             error_message is None if valid
+        """
+        pass
+
+    @abstractmethod
+    def get_random_valid_value(self) -> Union[str, float, int]:
+        """
+        Generate a random valid value for this parameter.
+        
+        This method is used for template generation and testing.
+        Each parameter type should return a random value that respects
+        its constraints, providing variety in examples.
+        
+        Returns:
+            A random valid value for this parameter type
+            
+        Example:
+            >>> param = DiscreteNumericalRegular("temp", 20, 100, 10)
+            >>> param.get_random_valid_value()  # Could be 30.0, 50.0, 80.0, etc.
+            >>> param.get_random_valid_value()  # Different each time!
+        """
+        pass
+
+    @abstractmethod
+    def convert_value(self, raw_value: str) -> Any:
+        """
+        Convert a string value to the appropriate type for this parameter.
+        
+        This method handles type conversion from CSV string data to the
+        expected data type for this parameter. Each parameter type knows
+        best how to convert its values.
+        
+        Args:
+            raw_value: String value from CSV file
+            
+        Returns:
+            Converted value in appropriate type for this parameter
+            
+        Raises:
+            ValueError: If conversion is not possible
+            
+        Example:
+            >>> param = DiscreteNumericalRegular("temp", 20, 100, 10)
+            >>> param.convert_value("25.5")  # 25.5 (float)
+            >>> 
+            >>> param = Categorical("catalyst", ["A", "B", "C"])
+            >>> param.convert_value("  B  ")  # "B" (stripped string)
+        """
+        pass
+
+    @abstractmethod
+    def validate_value(self, value: Any) -> tuple[bool, str]:
+        """
+        Validate that a specific value meets this parameter's constraints.
+        
+        This method checks if a given value is valid for this parameter type.
+        Unlike validate() which checks parameter configuration, this validates
+        actual data values against the constraints.
+        
+        Args:
+            value: The value to validate (should be converted to appropriate type)
+        
+        Returns:
+            Tuple of (is_valid, error_message)
+            - is_valid: True if value meets constraints, False otherwise
+            - error_message: Description of why validation failed (empty if valid)
+            
+        Example:
+            >>> param = DiscreteNumericalRegular("temp", 20, 100, 10)
+            >>> param.validate_value(25.0)  # (True, "")
+            >>> param.validate_value(150.0)  # (False, "Value 150.0 is outside range [20.0, 100.0]")
+            >>> param.validate_value(23.0)  # (False, "Value 23.0 does not align with step size 10")
         """
         pass
 
