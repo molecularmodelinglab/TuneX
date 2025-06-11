@@ -316,9 +316,9 @@ def get_widget_styles() -> str:
         get_header_styles() + 
         get_card_styles() + 
         get_form_styles() +
-        get_table_styles()
+        get_table_styles() +
+        get_data_import_styles()
     )
-
 
 def get_table_styles() -> str:
     """Get table component styles."""
@@ -508,6 +508,117 @@ def get_table_styles() -> str:
         
         QPushButton[objectName="ParameterRemoveButton"]:pressed {{
             background-color: #bd2130;
+        }}
+    """
+
+
+def get_data_import_styles() -> str:
+    """Get data import screen styles."""
+    return f"""
+        /* Data Import Title */
+        QLabel[objectName="DataImportTitle"] {{
+            font-size: {FONTS['size_2xl']};
+            font-weight: {FONTS['weight_bold']};
+            color: {COLORS['text_primary']};
+           /* margin-bottom: {SPACING['lg']}; */
+        }}
+        
+        /* Data Import Description */
+        QLabel[objectName="DataImportDescription"] {{
+            font-size: {FONTS['size_base']};
+            color: {COLORS['text_secondary']};
+           /* margin-bottom: {SPACING['2xl']}; */
+            line-height: 1.4;
+        }}
+        
+        /* Section Titles */
+        QLabel[objectName="DataImportSectionTitle"] {{
+            font-size: {FONTS['size_lg']};
+            font-weight: {FONTS['weight_bold']};
+            color: {COLORS['text_primary']};
+         /*   margin-bottom: {SPACING['base']}; */
+         /*   margin-top: {SPACING['xl']}; */
+        }}
+        
+        /* Drop Area */
+        QWidget[objectName*="DragDrop"] {{
+            background-color: {COLORS['gray_100']};
+            border: 2px dashed {COLORS['gray_300']};
+            border-radius: {RADIUS['lg']};
+            min-height: 120px;
+          /*  margin: {SPACING['base']}; */
+        }}
+        
+        QWidget[objectName*="DragDrop"]:hover {{
+            border-color: {COLORS['primary']};
+            background-color: {COLORS['gray_100']};
+        }}
+        
+        /* Drop Area Text */
+        QLabel[objectName="DropAreaText"] {{
+            font-size: {FONTS['size_base']};
+            color: {COLORS['text_secondary']};
+            margin-bottom: {SPACING['base']};
+        }}
+        
+        /* Data Import Buttons */
+        QPushButton[objectName="DataImportBrowseButton"] {{
+            background-color: {COLORS['primary']};
+            color: {COLORS['white']};
+            font-size: {FONTS['size_sm']};
+            font-weight: {FONTS['weight_bold']};
+            padding: {SPACING['base']} {SPACING['2xl']};
+            border: none;
+            border-radius: {RADIUS['base']};
+            min-width: 120px;
+        }}
+        
+        QPushButton[objectName="DataImportBrowseButton"]:hover {{
+            background-color: {COLORS['primary_dark']};
+        }}
+        
+        QPushButton[objectName="DataImportTemplateButton"] {{
+            background-color: {COLORS['secondary']};
+            color: {COLORS['white']};
+            font-size: {FONTS['size_sm']};
+            font-weight: {FONTS['weight_bold']};
+            padding: {SPACING['base']} {SPACING['xl']};
+            border: none;
+            border-radius: {RADIUS['base']};
+            min-width: 120px;
+        }}
+        
+        QPushButton[objectName="DataImportTemplateButton"]:hover {{
+            background-color: #5a6268;
+        }}
+        
+        /* Data Preview Table */
+        QTableWidget[objectName="DataPreviewTable"] {{
+            background-color: {COLORS['white']};
+            border: 1px solid {COLORS['gray_200']};
+            border-radius: {RADIUS['base']};
+            gridline-color: {COLORS['gray_200']};
+            font-size: {FONTS['size_sm']};
+            min-height: 200px;
+        }}
+        
+        QTableWidget[objectName="DataPreviewTable"]::item {{
+            padding: {SPACING['sm']};
+            border: none;
+        }}
+        
+        QTableWidget[objectName="DataPreviewTable"]::item:selected {{
+            background-color: {COLORS['primary']};
+            color: {COLORS['white']};
+        }}
+        
+        /* Data Preview Headers */
+        QTableWidget[objectName="DataPreviewTable"] QHeaderView::section {{
+            background-color: {COLORS['gray_100']};
+            color: {COLORS['text_primary']};
+            font-weight: {FONTS['weight_bold']};
+            padding: {SPACING['base']};
+            border: 1px solid {COLORS['gray_200']};
         }}
     """
 
