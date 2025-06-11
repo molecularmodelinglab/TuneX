@@ -31,14 +31,16 @@ class CSVTemplateGenerator:
     TARGET_COLUMN_NAME = "target_value"
     TARGET_EXAMPLE_VALUES = [0.85, 0.92, 0.78]
 
-    def __init__(self, parameters: List[BaseParameter]) -> None:
+    def __init__(self, parameters: List[BaseParameter], campaign_data: Dict[str, Any] = None) -> None:
         """
         Initialize the template generator.
 
         Args:
             parameters: List of configured parameters from Step 2
+            campaign_data: Campaign configuration data containing target information
         """
         self.parameters = parameters
+        self.campaign_data = campaign_data or {}
 
     def generate_template(self, file_path: str) -> bool:
         """
@@ -81,7 +83,12 @@ class CSVTemplateGenerator:
         for parameter in self.parameters:
             headers.append(parameter.name)
 
-        headers.append(self.TARGET_COLUMN_NAME)
+        # Use target name from campaign data if available, otherwise use default
+        target_name = self.TARGET_COLUMN_NAME
+        if self.campaign_data and 'target' in self.campaign_data:
+            target_name = self.campaign_data['target'].get('name', self.TARGET_COLUMN_NAME)
+        
+        headers.append(target_name)
 
         return headers
 
