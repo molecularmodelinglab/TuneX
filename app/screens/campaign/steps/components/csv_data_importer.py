@@ -63,7 +63,7 @@ class CSVDataImporter:
 
     TARGET_COLUMN_NAME = "target_value"
 
-    def __init__(self, parameters: List[BaseParameter]) -> None:
+    def __init__(self, parameters: List[BaseParameter], campaign_data: Dict[str, Any] = None) -> None:
         """
         Initialize the CSV importer.
 
@@ -71,6 +71,7 @@ class CSVDataImporter:
             parameters: List of configured parameters from Step 2
         """
         self.parameters = parameters
+        self.campaign_data = campaign_data or {}
 
     def import_csv(
         self, file_path: str
@@ -164,7 +165,7 @@ class CSVDataImporter:
             result: Validation result object to update
         """
         expected_columns = set(param.name for param in self.parameters)
-        expected_columns.add(self.TARGET_COLUMN_NAME)
+        expected_columns.add(self.campaign_data['target'].get('name', self.TARGET_COLUMN_NAME))
         actual_columns = set(headers)
 
         missing = expected_columns - actual_columns
@@ -172,6 +173,7 @@ class CSVDataImporter:
             result.missing_columns = list(missing)
             for col in missing:
                 result.add_error(f"Missing required column: '{col}'")
+                print(f"Error: Required column '{col}' is missing from CSV")
 
         # Check for extra columns (not an error, just a warning)
         extra = actual_columns - expected_columns
@@ -179,12 +181,16 @@ class CSVDataImporter:
             result.extra_columns = list(extra)
             for col in extra:
                 result.add_warning(f"Extra column found: '{col}' (will be ignored)")
+                print(
+                    f"Warning: Extra column '{col}' found in CSV (will be ignored)"
+                )
 
         # Check for duplicate headers
         if len(headers) != len(set(headers)):
             duplicates = [h for h in headers if headers.count(h) > 1]
             for dup in set(duplicates):
                 result.add_error(f"Duplicate column header: '{dup}'")
+                print(f"CSV headers validated: {len(headers)} columns found")
 
     def _validate_data_rows(
         self,

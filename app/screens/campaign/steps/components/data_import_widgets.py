@@ -436,3 +436,27 @@ class DataPreviewWidget(QWidget):
             return f"Displaying {valid_rows} valid rows ({error_rows} rows with errors hidden)"
         else:
             return f"Displaying all {valid_rows} rows (no errors)"
+        
+    def display_validation_errors(self) -> None:
+        """
+        Display validation errors in the table.
+
+        If there are validation errors, they will be shown in a separate column.
+        """
+        if not self.validation_result or not self.validation_result.errors:
+            print("No validation errors to display")
+            return
+
+        # Add error column if it doesn't exist
+        if "Error" not in self.table.horizontalHeaderLabels():
+            self.table.insertColumn(self.table.columnCount())
+            self.table.setHorizontalHeaderItem(
+                self.table.columnCount() - 1, QTableWidgetItem("Error")
+            )
+
+        # Populate error messages
+        for row_index, row_data in enumerate(self.imported_data):
+            error_message = self.validation_result.get_error_for_row(row_index)
+            error_item = QTableWidgetItem(error_message or "")
+            error_item.setFlags(error_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row_index, self.table.columnCount() - 1, error_item)

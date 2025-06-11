@@ -117,7 +117,7 @@ class DataImportStep(BaseStep):
 
         try:
             # Create CSV data importer
-            csv_importer = CSVDataImporter(self.parameters)
+            csv_importer = CSVDataImporter(self.parameters, self.shared_data)
 
             # Import and validate the CSV data
             self.imported_data, self.validation_result = csv_importer.import_csv(file_path)
@@ -131,8 +131,9 @@ class DataImportStep(BaseStep):
                     self.validation_result
                 )
             else:
-                print(f"CSV validation failed: {self.validation_result.error_message}")
+                print(f"CSV validation failed: {self.validation_result.get_summary()}")
                 # Note: DataPreviewWidget doesn't have display_validation_errors method
+                self.preview_widget.display_validation_errors()
 
         except Exception as e:
             print(f"Error importing CSV file: {e}")
@@ -154,7 +155,7 @@ class DataImportStep(BaseStep):
 
         if file_path:
             try:
-                generator = CSVTemplateGenerator(self.parameters)
+                generator = CSVTemplateGenerator(self.parameters, self.shared_data)
                 generator.generate_template(file_path)
                 print(f"Template saved to: {file_path}")
 
@@ -179,7 +180,7 @@ class DataImportStep(BaseStep):
             return True
 
         if self.validation_result and not self.validation_result.is_valid:
-            print(f"Imported data is invalid: {self.validation_result.error_message}")
+            print(f"Imported data is invalid: {self.validation_result.get_summary()}")
             return False
 
         print(f"Data import validation passed - {len(self.imported_data)} rows imported")
@@ -197,7 +198,7 @@ class DataImportStep(BaseStep):
                 self.shared_data['import_validation'] = {
                     'is_valid': self.validation_result.is_valid,
                     'row_count': len(self.imported_data),
-                    'error_message': self.validation_result.error_message
+                    'error_message': self.validation_result.get_summary()
                 }
 
             print(f"Successfully saved import data - {len(self.imported_data)} rows")
