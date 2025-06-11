@@ -139,10 +139,10 @@ class ParameterRowManager:
 
     def remove_parameter_row(self, row: int) -> None:
         """Remove the specified parameter row from the table."""
-        if row < 0 or row >= self.table.rowCount():
+        if row < 0 or row >= self.parametersTable.rowCount():
             return
 
-        self.table.removeRow(row)
+        self.parametersTable.removeRow(row)
 
         if row < len(self.parameters):
             removed_param = self.parameters.pop(row)
