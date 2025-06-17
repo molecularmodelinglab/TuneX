@@ -1,8 +1,9 @@
-from typing import Dict, Any
+"""
+Campaign information step for campaign creation wizard.
+"""
+
 from PySide6.QtWidgets import (
-    QWidget,
     QVBoxLayout,
-    QLabel,
     QFormLayout,
     QLineEdit,
     QTextEdit,
@@ -10,122 +11,125 @@ from PySide6.QtWidgets import (
     QComboBox,
 )
 
+from app.core.base import BaseStep
+from app.shared.components.headers import MainHeader
 from app.models.enums import TargetMode
-class CampaignInfoStep(QWidget):
+from app.shared.components.headers import SectionHeader
+
+
+class CampaignInfoStep(BaseStep):
     """
     First step of campaign creation wizard.
-
+    
     Collects basic campaign information: name, description, and target configuration.
-    Users must fill required fields (name and target name) before proceeding to next step.
     """
-    WINDOW_TITLE = "Create New Campaign"
-    LABELS = {
-        "name": "Campaign name:",
-        "description": "Description:",
-        "target_name": "Name:",
-        "target_mode": "Mode:",
-        "target_section": "Target:",
-    }
-    DEFAULT_TARGET_MODE = TargetMode.MAX
-
-    def __init__(self, campaign_data: Dict[str, Any]) -> None:
-        super().__init__()
-        self.campaign_data = campaign_data
-        self._setup_ui()
-
-    def _setup_ui(self) -> None:
-        """Creates the UI layout"""
+    
+    def __init__(self, shared_data: dict, parent=None):
+        super().__init__(shared_data, parent)
+    
+    def _setup_widget(self):
+        """Setup the campaign info step UI."""
         main_layout = QVBoxLayout(self)
-        self._create_title(main_layout)
+        main_layout.setContentsMargins(30, 30, 30, 30)
+        main_layout.setSpacing(25)
+        
+        # Title
+        title = MainHeader("Campaign Information")
+        main_layout.addWidget(title)
+        
+        # Form
         self._create_form(main_layout)
-
-    def _create_title(self, parent_layout: QVBoxLayout) -> None:
-        """Creates title section"""
-        title = QLabel(self.WINDOW_TITLE)
-        parent_layout.addWidget(title)
-
-    def _create_form(self, parent_layout: QVBoxLayout) -> None:
-        """Creates form with all input fields"""
+        
+        # Add stretch
+        main_layout.addStretch()
+    
+    def _create_form(self, parent_layout):
+        """Create form with all input fields."""
         form_layout = QFormLayout()
+        form_layout.setSpacing(15)
         parent_layout.addLayout(form_layout)
-
-        self._create_basic_fields(form_layout)
-        self._create_target_section(form_layout)
-
-    def _create_basic_fields(self, form_layout: QFormLayout) -> None:
-        """Creates campaign name and description input fields"""
+        
+        # Campaign name
         self.name_input = QLineEdit()
-        form_layout.addRow(self.LABELS["name"], self.name_input)
-
+        self.name_input.setPlaceholderText("Enter campaign name")
+        self.name_input.setObjectName("FormInput")
+        form_label = SectionHeader("Campaign Name:")
+        form_label.setObjectName("FormLabel")
+        form_layout.addRow(form_label, self.name_input)
+        
+        # Description
         self.description_input = QTextEdit()
-        form_layout.addRow(self.LABELS["description"], self.description_input)
-
-    def _create_target_section(self, form_layout: QFormLayout) -> None:
-        """Creates target name and mode selection section"""
-        # Horizontal layout for side-by-side fields
+        self.description_input.setPlaceholderText("Enter campaign description")
+        self.description_input.setFixedHeight(100)
+        self.description_input.setObjectName("FormInput")
+        desc_label = SectionHeader("Description:")
+        desc_label.setObjectName("FormLabel")
+        form_layout.addRow(desc_label, self.description_input)
+        
+        # Target section
+        self._create_target_section(form_layout)
+    
+    def _create_target_section(self, form_layout):
+        """Create target configuration section."""
         target_layout = QHBoxLayout()
-
-        # Target name field
+        target_layout.setSpacing(15)
+        
+        # Target name
         self.target_name_input = QLineEdit()
-        target_layout.addWidget(QLabel(self.LABELS["target_name"]))
+        self.target_name_input.setPlaceholderText("Enter target name")
+        self.target_name_input.setObjectName("FormInput")
         target_layout.addWidget(self.target_name_input)
-
-        # Target mode dropdown
+        
+        # Target mode
         self.target_mode_combo = QComboBox()
+        self.target_mode_combo.setObjectName("FormInput")
         self._populate_target_mode_combo()
-        target_layout.addWidget(QLabel(self.LABELS["target_mode"]))
         target_layout.addWidget(self.target_mode_combo)
-
-        # Add target section to main form
-        form_layout.addRow(self.LABELS["target_section"], target_layout)
-
-    def _populate_target_mode_combo(self) -> None:
-        """Populates target mode dropdown with available enum values"""
+        
+        target_label = SectionHeader("Target/Objective:")
+        target_label.setObjectName("FormLabel")
+        form_layout.addRow(target_label, target_layout)
+    
+    def _populate_target_mode_combo(self):
+        """Populate target mode dropdown."""
         for mode in TargetMode:
             self.target_mode_combo.addItem(mode.value)
-
+    
     def validate(self) -> bool:
-        """
-        Validates form data before proceeding to next step.
-
-        Returns:
-            bool: True if all required fields are filled, False otherwise
-        """
-        # Campaign name is required
+        """Validate form data."""
         if not self.name_input.text().strip():
-            # TODO: Implement user-friendly error display (dialog/status bar instead of print)
-            print("Campaign name is required")
+            print("Campaign name is required")  # TODO: Better error handling
             return False
-
-        # Target name is required
+        
         if not self.target_name_input.text().strip():
-            # TODO: Implement user-friendly error display (dialog/status bar instead of print)
-            print("Target name is required")
+            print("Target name is required")  # TODO: Better error handling
             return False
-
+        
         return True
-
-    def save_data(self) -> None:
-        """Saves form data to campaign_data for use in campaign creation"""
-        self.campaign_data["name"] = self.name_input.text()
-        self.campaign_data["description"] = self.description_input.toPlainText()
-
-        # Save target configuration
-        self.campaign_data["target"]["name"] = self.target_name_input.text()
-        self.campaign_data["target"]["mode"] = self.target_mode_combo.currentText()
-
-    def load_data(self) -> None:
-        """Loads data from campaign_data into form fields when returning to this step"""
-        self.name_input.setText(self.campaign_data.get("name", ""))
-        self.description_input.setPlainText(self.campaign_data.get("description", ""))
-
-        # Load target configuration
-        target_data = self.campaign_data.get("target", {})
-        target_name = target_data.get("name", "")
-        self.target_name_input.setText(target_name)
-
-        target_mode = target_data.get("mode", self.DEFAULT_TARGET_MODE.value)
-        # Find and set the combo box index
+    
+    def save_data(self):
+        """Save form data to shared data."""
+        self.shared_data["name"] = self.name_input.text().strip()
+        self.shared_data["description"] = self.description_input.toPlainText().strip()
+        self.shared_data["target"]["name"] = self.target_name_input.text().strip()
+        self.shared_data["target"]["mode"] = self.target_mode_combo.currentText()
+    
+    def load_data(self):
+        """Load data from shared data into form."""
+        self.name_input.setText(self.shared_data.get("name", ""))
+        self.description_input.setPlainText(self.shared_data.get("description", ""))
+        
+        target_data = self.shared_data.get("target", {})
+        self.target_name_input.setText(target_data.get("name", ""))
+        
+        target_mode = target_data.get("mode", TargetMode.MAX.value)
         index = self.target_mode_combo.findText(target_mode)
         if index >= 0:
             self.target_mode_combo.setCurrentIndex(index)
+    
+    def reset(self):
+        """Reset form to initial state."""
+        self.name_input.clear()
+        self.description_input.clear()
+        self.target_name_input.clear()
+        self.target_mode_combo.setCurrentIndex(0)
