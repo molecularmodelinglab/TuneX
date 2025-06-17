@@ -1,19 +1,26 @@
+"""
+Parameters configuration step for campaign creation wizard.
+"""
+
 from typing import List, Dict, Any
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, 
+    QVBoxLayout,
+    QHBoxLayout,
     QPushButton
 )
 
+from app.core.base import BaseStep
+from app.shared.components.headers import MainHeader, SectionHeader
 from app.models.parameters.base import BaseParameter
 from .components.parameter_managers import ParameterRowManager, ParameterSerializer
 
 
-class ParametersStep(QWidget):
+class ParametersStep(BaseStep):
     """
-    Step 2: Configure experimental parameters.
+    Second step of campaign creation wizard.
     
-    This class coordinates the parameter configuration UI by delegating
+    This step coordinates the parameter configuration UI by delegating
     specific responsibilities to specialized managers:
     
     - ParameterRowManager: Handles table rows and UI widgets
@@ -26,40 +33,55 @@ class ParametersStep(QWidget):
     # UI constants
     ADD_BUTTON_TEXT = "+ Add Parameter"
     
-    def __init__(self, campaign_data: Dict[str, Any]) -> None:
+    def __init__(self, shared_data: dict, parent=None):
         """
         Initialize the parameters configuration step.
         
         Args:
-            campaign_data: Dictionary containing campaign configuration data
+            shared_data: Dictionary containing campaign configuration data
         """
-        super().__init__()
-        self.campaign_data = campaign_data
+        # Initialize parameters list before calling super()
         self.parameters: List[BaseParameter] = []
         
-        # Setup UI components
-        self._setup_ui()
+        super().__init__(shared_data, parent)
         
         # Connect UI signals
         self._connect_signals()
 
-    def _setup_ui(self) -> None:
-        """Create and arrange the main UI components."""
-        layout = QVBoxLayout(self)
-
+    def _setup_widget(self):
+        """Setup the parameters step UI."""
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(30, 30, 30, 30)
+        main_layout.setSpacing(25)
+        
+        # Title
+        title = MainHeader("Parameter Configuration")
+        main_layout.addWidget(title)
+        
+        # Description
+        description = SectionHeader("Configure the parameters you want to optimize in your campaign.")
+        main_layout.addWidget(description)
+        
+        # Setup managers
         self._setup_managers()
-
+        
+        # Parameters table
         self._table = self.row_manager.get_table_widget()
-        layout.addWidget(self._table)
-
+        main_layout.addWidget(self._table)
+        
+        # Control buttons
         buttons_layout = self._create_buttons_layout()
-        layout.addLayout(buttons_layout)
-
+        main_layout.addLayout(buttons_layout)
+        
+        # Add stretch to push content to top
+        main_layout.addStretch()
+    
     def _create_buttons_layout(self) -> QHBoxLayout:
         """Create the layout containing control buttons."""
         layout = QHBoxLayout()
 
         self._add_button = QPushButton(self.ADD_BUTTON_TEXT)
+        self._add_button.setObjectName("PrimaryButton")
         self._add_button.setToolTip("Add a new parameter to the campaign")
         layout.addWidget(self._add_button)
 
@@ -77,7 +99,8 @@ class ParametersStep(QWidget):
     
     def _connect_signals(self) -> None:
         """Connect UI signals to their handlers."""
-        self._add_button.clicked.connect(self._on_add_parameter)
+        if hasattr(self, '_add_button'):
+            self._add_button.clicked.connect(self._on_add_parameter)
     
     def _on_add_parameter(self) -> None:
         """
@@ -114,7 +137,7 @@ class ParametersStep(QWidget):
 
     def save_data(self) -> None:
         """
-        Save the current parameter configuration to campaign data.
+        Save the current parameter configuration to shared data.
         
         This method ensures UI data is synchronized to parameter objects,
         then serializes the parameters for storage in the campaign data.
@@ -126,8 +149,8 @@ class ParametersStep(QWidget):
             # Serialize parameters using the dedicated serializer
             parameters_data = self.serializer.serialize_parameters(self.parameters)
             
-            # Store in campaign data
-            self.campaign_data['parameters'] = parameters_data
+            # Store in shared data
+            self.shared_data['parameters'] = parameters_data
             
             print(f"Successfully saved {len(parameters_data)} parameters to campaign data")
             
@@ -141,7 +164,7 @@ class ParametersStep(QWidget):
 
     def load_data(self) -> None:
         """
-        Load parameter configuration from campaign data.
+        Load parameter configuration from shared data.
         
         This method is called when returning to this step or loading an
         existing campaign. It deserializes the parameter data and populates
@@ -149,7 +172,7 @@ class ParametersStep(QWidget):
         """
         try:
             # Get parameters data from campaign
-            parameters_data = self.campaign_data.get('parameters', [])
+            parameters_data = self.shared_data.get('parameters', [])
             
             if not parameters_data:
                 print("No saved parameters found - starting with empty table")
@@ -175,3 +198,9 @@ class ParametersStep(QWidget):
                 
         except Exception as e:
             print(f"Error loading parameters: {e}")
+    
+    def reset(self):
+        """Reset parameters to initial state."""
+        self.parameters.clear()
+        if hasattr(self, 'row_manager'):
+            self.row_manager.clear_table()
