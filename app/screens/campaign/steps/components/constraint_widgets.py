@@ -16,8 +16,12 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QLabel, 
-    QDoubleSpinBox, QLineEdit, QTextEdit
+    QWidget, 
+    QHBoxLayout, 
+    QLabel, 
+    QDoubleSpinBox, 
+    QLineEdit, 
+    QTextEdit
 )
 
 from app.models.parameters.base import BaseParameter
@@ -58,7 +62,7 @@ class BaseConstraintWidget(ABC):
             parameter: The parameter object this widget will manage
         """
         self.parameter: BaseParameter = parameter
-        self.widget: QWidget = self._create_widget()
+        self.widgetContainer: QWidget = self._create_widget()
         self._load_from_parameter()
     
     @abstractmethod
@@ -104,7 +108,7 @@ class BaseConstraintWidget(ABC):
         Returns:
             QWidget: The widget that can be added to layouts or tables
         """
-        return self.widget
+        return self.widgetContainer
     
     def validate(self) -> tuple[bool, Optional[str]]:
         """
@@ -134,41 +138,53 @@ class MinMaxStepWidget(BaseConstraintWidget):
     
     def _create_widget(self) -> QWidget:
         """Create spinboxes for min, max, and step values."""
-        widget = QWidget()
-        layout = QHBoxLayout(widget)
-        layout.setContentsMargins(5, 2, 5, 2)
+        containerWidget = QWidget()
+        mainLayout = QHBoxLayout(containerWidget)
+        mainLayout.setContentsMargins(12, 8, 12, 8)
+        mainLayout.setSpacing(12)
 
-        layout.addWidget(QLabel(self.MIN_LABEL))
-        self.min_spin = QDoubleSpinBox()
-        self.min_spin.setRange(-999999, 999999)
-        self.min_spin.setDecimals(3)  # Allow decimal precision
-        layout.addWidget(self.min_spin)
-
-        layout.addWidget(QLabel(self.MAX_LABEL))
-        self.max_spin = QDoubleSpinBox()
-        self.max_spin.setRange(-999999, 999999)
-        self.max_spin.setDecimals(3)
-        layout.addWidget(self.max_spin)
-
-        layout.addWidget(QLabel(self.STEP_LABEL))
-        self.step_spin = QDoubleSpinBox()
-        self.step_spin.setRange(0.001, 999999)  # Step must be positive
-        self.step_spin.setDecimals(3)
-        layout.addWidget(self.step_spin)
+        # Create min value controls
+        minLabel = QLabel(self.MIN_LABEL)
+        self.minSpinBox = QDoubleSpinBox()
+        self.minSpinBox.setObjectName("ConstraintSpinBox")
+        self.minSpinBox.setRange(-999999, 999999)
+        self.minSpinBox.setDecimals(3)  # Allow decimal precision
         
-        return widget
+        # Create max value controls
+        maxLabel = QLabel(self.MAX_LABEL)
+        self.maxSpinBox = QDoubleSpinBox()
+        self.maxSpinBox.setObjectName("ConstraintSpinBox")
+        self.maxSpinBox.setRange(-999999, 999999)
+        self.maxSpinBox.setDecimals(3)
+        
+        # Create step value controls
+        stepLabel = QLabel(self.STEP_LABEL)
+        self.stepSpinBox = QDoubleSpinBox()
+        self.stepSpinBox.setObjectName("ConstraintSpinBox")
+        self.stepSpinBox.setRange(0.001, 999999)  # Step must be positive
+        self.stepSpinBox.setDecimals(3)
+        
+        # Add widgets to layout
+        mainLayout.addWidget(minLabel)
+        mainLayout.addWidget(self.minSpinBox)
+        mainLayout.addWidget(maxLabel)
+        mainLayout.addWidget(self.maxSpinBox)
+        mainLayout.addWidget(stepLabel)
+        mainLayout.addWidget(self.stepSpinBox)
+        
+        return containerWidget
     
     def _load_from_parameter(self) -> None:
         """Load current parameter values into the spinboxes."""
-        self.min_spin.setValue(self.parameter.min_val)
-        self.max_spin.setValue(self.parameter.max_val) 
-        self.step_spin.setValue(self.parameter.step)
+        self.minSpinBox.setValue(self.parameter.min_val)
+        self.maxSpinBox.setValue(self.parameter.max_val) 
+        self.stepSpinBox.setValue(self.parameter.step)
     
     def _save_to_parameter(self) -> None:
         """Save spinbox values back to the parameter object."""
-        self.parameter.min_val = self.min_spin.value()
-        self.parameter.max_val = self.max_spin.value()
-        self.parameter.step = self.step_spin.value()
+        self.parameter.min_val = self.minSpinBox.value()
+        self.parameter.max_val = self.maxSpinBox.value()
+        self.parameter.step = self.stepSpinBox.value()
 
 
 class MinMaxWidget(BaseConstraintWidget):
@@ -184,35 +200,42 @@ class MinMaxWidget(BaseConstraintWidget):
     
     def _create_widget(self) -> QWidget:
         """Create spinboxes for min and max values."""
-        widget = QWidget()
-        layout = QHBoxLayout(widget)
-        layout.setContentsMargins(5, 2, 5, 2)
+        containerWidget = QWidget()
+        mainLayout = QHBoxLayout(containerWidget)
+        mainLayout.setContentsMargins(8, 4, 8, 4)
+        mainLayout.setSpacing(8)
         
-        # Minimum value control
-        layout.addWidget(QLabel(self.MIN_LABEL))
-        self.min_spin = QDoubleSpinBox()
-        self.min_spin.setRange(-999999, 999999)
-        self.min_spin.setDecimals(6)  # Higher precision for continuous values
-        layout.addWidget(self.min_spin)
+        # Create minimum value controls
+        minLabel = QLabel(self.MIN_LABEL)
+        self.minSpinBox = QDoubleSpinBox()
+        self.minSpinBox.setObjectName("ConstraintSpinBox")
+        self.minSpinBox.setRange(-999999, 999999)
+        self.minSpinBox.setDecimals(6)  # Higher precision for continuous values
         
-        # Maximum value control
-        layout.addWidget(QLabel(self.MAX_LABEL))
-        self.max_spin = QDoubleSpinBox()
-        self.max_spin.setRange(-999999, 999999)
-        self.max_spin.setDecimals(6)
-        layout.addWidget(self.max_spin)
+        # Create maximum value controls
+        maxLabel = QLabel(self.MAX_LABEL)
+        self.maxSpinBox = QDoubleSpinBox()
+        self.maxSpinBox.setObjectName("ConstraintSpinBox")
+        self.maxSpinBox.setRange(-999999, 999999)
+        self.maxSpinBox.setDecimals(6)
         
-        return widget
+        # Add widgets to layout
+        mainLayout.addWidget(minLabel)
+        mainLayout.addWidget(self.minSpinBox)
+        mainLayout.addWidget(maxLabel)
+        mainLayout.addWidget(self.maxSpinBox)
+        
+        return containerWidget
     
     def _load_from_parameter(self) -> None:
         """Load current parameter values into the spinboxes."""
-        self.min_spin.setValue(self.parameter.min_val)
-        self.max_spin.setValue(self.parameter.max_val)
+        self.minSpinBox.setValue(self.parameter.min_val)
+        self.maxSpinBox.setValue(self.parameter.max_val)
     
     def _save_to_parameter(self) -> None:
         """Save spinbox values back to the parameter object."""
-        self.parameter.min_val = self.min_spin.value()
-        self.parameter.max_val = self.max_spin.value()
+        self.parameter.min_val = self.minSpinBox.value()
+        self.parameter.max_val = self.maxSpinBox.value()
 
 
 class ValuesListWidget(BaseConstraintWidget):
@@ -239,8 +262,9 @@ class ValuesListWidget(BaseConstraintWidget):
     
     def _create_widget(self) -> QWidget:
         """Create a text area for entering comma-separated values."""
-        self.text_edit = QTextEdit()
-        self.text_edit.setMaximumHeight(80)
+        self.valuesTextEdit = QTextEdit()
+        self.valuesTextEdit.setObjectName("ConstraintTextEdit")
+        self.valuesTextEdit.setMaximumHeight(80)
         
         # Set appropriate placeholder text based on value type
         if self.is_numerical:
@@ -248,18 +272,18 @@ class ValuesListWidget(BaseConstraintWidget):
         else:
             placeholder = self.CATEGORICAL_VALUES_PLACEHOLDER
         
-        self.text_edit.setPlaceholderText(placeholder)
-        return self.text_edit
+        self.valuesTextEdit.setPlaceholderText(placeholder)
+        return self.valuesTextEdit
     
     def _load_from_parameter(self) -> None:
         """Load current parameter values into the text area."""
         values = getattr(self.parameter, 'values', [])
         values_text = ', '.join(str(v) for v in values)
-        self.text_edit.setPlainText(values_text)
+        self.valuesTextEdit.setPlainText(values_text)
     
     def _save_to_parameter(self) -> None:
         """Parse text area content and save values to the parameter."""
-        text = self.text_edit.toPlainText().strip()
+        text = self.valuesTextEdit.toPlainText().strip()
         
         if not text:
             self.parameter.values = []
@@ -294,17 +318,18 @@ class FixedValueWidget(BaseConstraintWidget):
     
     def _create_widget(self) -> QWidget:
         """Create a single line edit for the fixed value."""
-        self.line_edit = QLineEdit()
-        self.line_edit.setPlaceholderText(self.FIXED_VALUE_PLACEHOLDER)
-        return self.line_edit
+        self.fixedValueLineEdit = QLineEdit()
+        self.fixedValueLineEdit.setObjectName("ConstraintLineEdit")
+        self.fixedValueLineEdit.setPlaceholderText(self.FIXED_VALUE_PLACEHOLDER)
+        return self.fixedValueLineEdit
     
     def _load_from_parameter(self) -> None:
         """Load current parameter value into the line edit."""
-        self.line_edit.setText(str(self.parameter.value))
+        self.fixedValueLineEdit.setText(str(self.parameter.value))
     
     def _save_to_parameter(self) -> None:
         """Parse line edit content and save to the parameter."""
-        text = self.line_edit.text().strip()
+        text = self.fixedValueLineEdit.text().strip()
         
         if not text:
             self.parameter.value = ""
@@ -329,20 +354,20 @@ class SmilesWidget(BaseConstraintWidget):
     
     def _create_widget(self) -> QWidget:
         """Create a text area for entering SMILES strings."""
-        self.text_edit = QTextEdit()
-        self.text_edit.setMaximumHeight(80)
-        self.text_edit.setPlaceholderText(self.SMILES_PLACEHOLDER)
-        return self.text_edit
+        self.smilesTextEdit = QTextEdit()
+        self.smilesTextEdit.setMaximumHeight(80)
+        self.smilesTextEdit.setPlaceholderText(self.SMILES_PLACEHOLDER)
+        return self.smilesTextEdit
     
     def _load_from_parameter(self) -> None:
         """Load current SMILES strings into the text area."""
         smiles = getattr(self.parameter, 'smiles', [])
         smiles_text = ', '.join(smiles)
-        self.text_edit.setPlainText(smiles_text)
+        self.smilesTextEdit.setPlainText(smiles_text)
     
     def _save_to_parameter(self) -> None:
         """Parse text area content and save SMILES strings to the parameter."""
-        text = self.text_edit.toPlainText().strip()
+        text = self.smilesTextEdit.toPlainText().strip()
         
         if not text:
             self.parameter.smiles = []
