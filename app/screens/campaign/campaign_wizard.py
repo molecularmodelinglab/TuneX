@@ -188,3 +188,4 @@ class CampaignWizard(BaseScreen):
         """Apply wizard-specific styles."""
         styles = get_widget_styles() + get_navigation_styles()
         self.setStyleSheet(styles)
+

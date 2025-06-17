@@ -133,3 +133,4 @@ class CampaignInfoStep(BaseStep):
         self.description_input.clear()
         self.target_name_input.clear()
         self.target_mode_combo.setCurrentIndex(0)
+

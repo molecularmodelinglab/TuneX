@@ -204,3 +204,4 @@ class ParametersStep(BaseStep):
         self.parameters.clear()
         if hasattr(self, 'row_manager'):
             self.row_manager.clear_table()
+
