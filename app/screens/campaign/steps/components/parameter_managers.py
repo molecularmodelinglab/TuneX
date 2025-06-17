@@ -9,6 +9,7 @@ specialized classes for different aspects:
 """
 
 from typing import List, Dict, Any, Optional
+
 from PySide6.QtWidgets import (
     QTableWidget,
     QLineEdit,
@@ -45,7 +46,7 @@ class ParameterRowManager:
     COLUMN_CONSTRAINTS = 2
     COLUMN_ACTIONS = 3
 
-    COLUMN_HEADERS = ["Parameter Name", "Type", "Constraints", "Actions"]
+    COLUMN_HEADERS = ["Param. Name", "Param. Type", "Values", "Del."]
 
     CONSTRAINTS_MIN_WIDTH = 400
 
@@ -67,10 +68,10 @@ class ParameterRowManager:
             parameters: List of parameter objects (will be modified)
         """
         self.parameters: List[BaseParameter] = parameters
-        self.constraint_widgets: List[Optional[BaseConstraintWidget]] = []
+        self.constraintWidgets: List[Optional[BaseConstraintWidget]] = []
 
         # Create and setup the table
-        self.table: QTableWidget = self._create_table()
+        self.parametersTable: QTableWidget = self._create_table()
 
     def get_table_widget(self) -> QTableWidget:
         """
@@ -79,7 +80,7 @@ class ParameterRowManager:
         Returns:
             QTableWidget: The configured parameters table
         """
-        return self.table
+        return self.parametersTable
 
     def _create_table(self) -> QTableWidget:
         """
@@ -88,41 +89,53 @@ class ParameterRowManager:
         Returns:
             QTableWidget: Fully configured table ready for use
         """
-        table = QTableWidget()
-        table.setColumnCount(len(self.COLUMN_HEADERS))
-        table.setHorizontalHeaderLabels(self.COLUMN_HEADERS)
+        parametersTable = QTableWidget()
+        parametersTable.setColumnCount(len(self.COLUMN_HEADERS))
+        parametersTable.setHorizontalHeaderLabels(self.COLUMN_HEADERS)
 
         # Configure table appearance and behavior
-        table.horizontalHeader().setStretchLastSection(True)
-        table.setAlternatingRowColors(True)
-        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        parametersTable.setAlternatingRowColors(True)
+        parametersTable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
 
-        # Set minimum width only for constraints column
-        table.setColumnWidth(self.COLUMN_CONSTRAINTS, self.CONSTRAINTS_MIN_WIDTH)
+        # Set specific column widths for better proportions (wider overall)
+        parametersTable.setColumnWidth(self.COLUMN_NAME, 250)      # Parameter Name (wider)
+        parametersTable.setColumnWidth(self.COLUMN_TYPE, 250)      # Type dropdown (wider)
+        parametersTable.setColumnWidth(self.COLUMN_CONSTRAINTS, 600)  # Constraints (much wider)
+        parametersTable.setColumnWidth(self.COLUMN_ACTIONS, 60)    # Actions (slightly wider)
+        
+        # Set minimum table size
+        parametersTable.setMinimumWidth(1200)  # Total width for all columns
+        parametersTable.setMinimumHeight(500)   # Minimum height
+        
+        # Disable stretch to maintain fixed widths
+        parametersTable.horizontalHeader().setStretchLastSection(False)
+        
+        # Set default row height to be taller
+        parametersTable.verticalHeader().setDefaultSectionSize(50)
 
-        return table
+        return parametersTable
 
     def add_new_parameter_row(self) -> None:
         """Add a new parameter row to the table."""
-        row_count = self.table.rowCount()
-        self.table.insertRow(row_count)
+        row_count = self.parametersTable.rowCount()
+        self.parametersTable.insertRow(row_count)
 
         # Create UI components for the row
-        name_edit = self._create_name_widget(row_count)
-        type_combo = self._create_type_combo(row_count)
-        remove_button = self._create_remove_button()
+        nameEdit = self._create_name_widget(row_count)
+        typeComboBox = self._create_type_combo(row_count)
+        removeButton = self._create_remove_button()
 
-        self.table.setCellWidget(row_count, self.COLUMN_NAME, name_edit)
-        self.table.setCellWidget(row_count, self.COLUMN_TYPE, type_combo)
-        self.table.setCellWidget(
+        self.parametersTable.setCellWidget(row_count, self.COLUMN_NAME, nameEdit)
+        self.parametersTable.setCellWidget(row_count, self.COLUMN_TYPE, typeComboBox)
+        self.parametersTable.setCellWidget(
             row_count, self.COLUMN_CONSTRAINTS, self._create_empty_constraints_widget()
         )
-        self.table.setCellWidget(
-            row_count, self.COLUMN_ACTIONS, self._create_button_container(remove_button)
+        self.parametersTable.setCellWidget(
+            row_count, self.COLUMN_ACTIONS, self._create_button_container(removeButton)
         )
 
         self.parameters.append(None)
-        self.constraint_widgets.append(None)
+        self.constraintWidgets.append(None)
 
     def remove_parameter_row(self, row: int) -> None:
         """Remove the specified parameter row from the table."""
@@ -135,31 +148,31 @@ class ParameterRowManager:
             removed_param = self.parameters.pop(row)
             print(f"Removed parameter: {removed_param}")
 
-        if row < len(self.constraint_widgets):
-            self.constraint_widgets.pop(row)
+        if row < len(self.constraintWidgets):
+            self.constraintWidgets.pop(row)
 
     def update_parameter_type(self, row: int, param_type: ParameterType) -> None:
         """Update parameter type and create corresponding constraint widget."""
         if row >= len(self.parameters):
             return
 
-        param_name = self._get_parameter_name_from_ui(row)
+        parameterName = self._get_parameter_name_from_ui(row)
 
         # Create new parameter object
-        parameter = BaseParameter.create_from_type(param_type, param_name)
+        parameter = BaseParameter.create_from_type(param_type, parameterName)
         self.parameters[row] = parameter
 
         # Create constraint widget using factory
-        constraint_widget = create_constraint_widget(parameter)
-        self.constraint_widgets[row] = constraint_widget
+        constraintWidget = create_constraint_widget(parameter)
+        self.constraintWidgets[row] = constraintWidget
 
         # Set constraint widget in table using column constant
-        if constraint_widget:
-            self.table.setCellWidget(
-                row, self.COLUMN_CONSTRAINTS, constraint_widget.get_widget()
+        if constraintWidget:
+            self.parametersTable.setCellWidget(
+                row, self.COLUMN_CONSTRAINTS, constraintWidget.get_widget()
             )
         else:
-            self.table.setCellWidget(
+            self.parametersTable.setCellWidget(
                 row, self.COLUMN_CONSTRAINTS, self._create_empty_constraints_widget()
             )
 
@@ -178,36 +191,36 @@ class ParameterRowManager:
         Returns:
             tuple[bool, Optional[str]]: (is_valid, error_message)
         """
-        if not self.constraint_widgets:
+        if not self.constraintWidgets:
             return False, "No parameters configured"
 
         # Check that all parameters have been created (no None values)
-        none_indices = []
-        for i, widget in enumerate(self.constraint_widgets):
+        noneIndices = []
+        for i, widget in enumerate(self.constraintWidgets):
             if widget is None:
-                none_indices.append(i + 1)
+                noneIndices.append(i + 1)
 
-        if none_indices:
-            indices_str = ", ".join(str(i) for i in none_indices)
-            return False, f"Parameters {indices_str} have no type selected"
+        if noneIndices:
+            indicesString = ", ".join(str(i) for i in noneIndices)
+            return False, f"Parameters {indicesString} have no type selected"
 
         # Validate each widget (which validates its parameter)
-        for i, constraint_widget in enumerate(self.constraint_widgets):
-            if constraint_widget is None:
+        for i, constraintWidget in enumerate(self.constraintWidgets):
+            if constraintWidget is None:
                 continue
 
             # Update parameter name from UI first using helper method
             self._sync_parameter_name(i)
 
             # Let the widget validate itself
-            is_valid, error_msg = constraint_widget.validate()
-            if not is_valid:
-                param_name = (
+            isValid, errorMessage = constraintWidget.validate()
+            if not isValid:
+                parameterName = (
                     self.parameters[i].name
                     if self.parameters[i]
                     else f"Parameter {i + 1}"
                 )
-                return False, f"Parameter '{param_name}' validation error: {error_msg}"
+                return False, f"Parameter '{parameterName}' validation error: {errorMessage}"
 
         # Check for duplicate parameter names
         names = [param.name for param in self.parameters if param is not None]
@@ -223,33 +236,39 @@ class ParameterRowManager:
         This method updates parameter names from the UI and asks each
         constraint widget to sync its data to its parameter.
         """
-        for i in range(len(self.constraint_widgets)):
+        for i in range(len(self.constraintWidgets)):
             # Update parameter name using helper method
             self._sync_parameter_name(i)
 
             # Let constraint widget sync its data
-            constraint_widget = self.constraint_widgets[i]
-            if constraint_widget:
-                constraint_widget._save_to_parameter()
+            constraintWidget = self.constraintWidgets[i]
+            if constraintWidget:
+                constraintWidget._save_to_parameter()
 
     def load_parameters_to_table(self, parameters: List[BaseParameter]) -> None:
         """Load parameters into the table UI."""
         # Clear existing data
-        self.table.setRowCount(0)
+        self.parametersTable.setRowCount(0)
         self.parameters.clear()
-        self.constraint_widgets.clear()
+        self.constraintWidgets.clear()
 
         # Add each parameter
         for parameter in parameters:
             self._add_loaded_parameter_to_table(parameter)
+
+    def clear_table(self) -> None:
+        """Clear all parameters from the table."""
+        self.parametersTable.setRowCount(0)
+        self.parameters.clear()
+        self.constraintWidgets.clear()
 
     def _sync_parameter_name(self, row: int) -> None:
         """Sync parameter name from UI to parameter object."""
         if row >= len(self.parameters) or self.parameters[row] is None:
             return
 
-        param_name = self._get_parameter_name_from_ui(row)
-        self.parameters[row].name = param_name
+        parameterName = self._get_parameter_name_from_ui(row)
+        self.parameters[row].name = parameterName
 
     def _get_parameter_name_from_ui(self, row: int) -> str:
         """
@@ -261,9 +280,9 @@ class ParameterRowManager:
         Returns:
             Parameter name from UI, or default name if widget is invalid/empty
         """
-        name_widget = self.table.cellWidget(row, self.COLUMN_NAME)
-        if isinstance(name_widget, QLineEdit) and name_widget.text().strip():
-            return name_widget.text().strip()
+        nameWidget = self.parametersTable.cellWidget(row, self.COLUMN_NAME)
+        if isinstance(nameWidget, QLineEdit) and nameWidget.text().strip():
+            return nameWidget.text().strip()
         return f"Parameter_{row + 1}"
 
     def _get_parameter_type_from_ui(self, row: int) -> Optional[ParameterType]:
@@ -276,11 +295,11 @@ class ParameterRowManager:
         Returns:
             Selected parameter type, or None if no type selected or widget invalid
         """
-        type_combo = self.table.cellWidget(row, self.COLUMN_TYPE)
-        if isinstance(type_combo, QComboBox):
-            current_index = type_combo.currentIndex()
-            if current_index > 0:  # Skip placeholder (index 0)
-                return type_combo.itemData(current_index)
+        typeComboBox = self.parametersTable.cellWidget(row, self.COLUMN_TYPE)
+        if isinstance(typeComboBox, QComboBox):
+            currentIndex = typeComboBox.currentIndex()
+            if currentIndex > 0:  # Skip placeholder (index 0)
+                return typeComboBox.itemData(currentIndex)
         return None
 
     def _set_parameter_name_in_ui(self, row: int, name: str) -> None:
@@ -291,9 +310,9 @@ class ParameterRowManager:
             row: Table row index
             name: Parameter name to set
         """
-        name_widget = self.table.cellWidget(row, self.COLUMN_NAME)
-        if isinstance(name_widget, QLineEdit):
-            name_widget.setText(name)
+        nameWidget = self.parametersTable.cellWidget(row, self.COLUMN_NAME)
+        if isinstance(nameWidget, QLineEdit):
+            nameWidget.setText(name)
 
     def _set_parameter_type_in_ui(self, row: int, param_type: ParameterType) -> None:
         """
@@ -303,114 +322,120 @@ class ParameterRowManager:
             row: Table row index
             param_type: Parameter type to select
         """
-        type_combo = self.table.cellWidget(row, self.COLUMN_TYPE)
-        if isinstance(type_combo, QComboBox):
+        typeComboBox = self.parametersTable.cellWidget(row, self.COLUMN_TYPE)
+        if isinstance(typeComboBox, QComboBox):
             # Find the index for this parameter type
-            for i in range(type_combo.count()):
-                if type_combo.itemData(i) == param_type:
-                    type_combo.setCurrentIndex(i)
+            for i in range(typeComboBox.count()):
+                if typeComboBox.itemData(i) == param_type:
+                    typeComboBox.setCurrentIndex(i)
                     break
 
     def _create_name_widget(self, row: int) -> QLineEdit:
         """Create a line edit widget for parameter name."""
-        name_edit = QLineEdit(f"Parameter_{row + 1}")
-        return name_edit
+        nameEdit = QLineEdit(f"Parameter_{row + 1}")
+        nameEdit.setObjectName("ParameterNameInput")
+        nameEdit.setPlaceholderText("Enter parameter name...")
+        return nameEdit
 
     def _create_type_combo(self, row: int) -> QComboBox:
         """Create a combo box for parameter type selection."""
-        type_combo = QComboBox()
-        type_combo.addItem("Select parameter type...", None)
+        typeComboBox = QComboBox()
+        typeComboBox.setObjectName("ParameterTypeCombo")
+        typeComboBox.addItem("Select parameter type...", None)
 
-        for param_type, display_name in self.TYPE_DISPLAY_NAMES.items():
-            type_combo.addItem(display_name, param_type)
+        for paramType, displayName in self.TYPE_DISPLAY_NAMES.items():
+            typeComboBox.addItem(displayName, paramType)
 
         # Connect to handler
-        type_combo.currentIndexChanged.connect(
+        typeComboBox.currentIndexChanged.connect(
             lambda index: self._on_type_changed(row, index)
         )
 
-        return type_combo
+        return typeComboBox
 
     def _create_remove_button(self) -> QPushButton:
         """Create a remove button for the parameter row."""
-        remove_button = QPushButton("❌")
-        remove_button.setMaximumWidth(40)
-        remove_button.setToolTip("Remove this parameter")
-        return remove_button
+        removeButton = QPushButton("✕") 
+        removeButton.setObjectName("ParameterRemoveButton")
+        removeButton.setMaximumWidth(10)
+        removeButton.setMaximumHeight(10)
+        removeButton.setStyleSheet("font-size: 16px;")
+        removeButton.setToolTip("Remove this parameter")
+        return removeButton
 
     def _create_button_container(self, button: QPushButton) -> QWidget:
         """Create a centered container for the remove button."""
-        button_widget = QWidget()
-        button_layout = QHBoxLayout(button_widget)
-        button_layout.addStretch()
-        button_layout.addWidget(button)
-        button_layout.addStretch()
-        button_layout.setContentsMargins(0, 0, 0, 0)
+        buttonWidget = QWidget()
+        buttonLayout = QHBoxLayout(buttonWidget)
+        buttonLayout.addStretch()
+        buttonLayout.addWidget(button)
+        buttonLayout.addStretch()
+        buttonLayout.setContentsMargins(0, 0, 0, 0)
 
         # Connect remove functionality
         button.clicked.connect(lambda: self._remove_by_button(button))
 
-        return button_widget
+        return buttonWidget
 
     def _create_empty_constraints_widget(self) -> QWidget:
         """Create an empty placeholder widget for the constraints column."""
-        empty_widget = QWidget()
-        empty_widget.setEnabled(False)
-        return empty_widget
+        emptyWidget = QWidget()
+        emptyWidget.setEnabled(False)
+        return emptyWidget
 
     def _on_type_changed(self, row: int, index: int) -> None:
         """Handle parameter type selection change."""
         if index == 0:  # Placeholder selected
             return
 
-        param_type = self._get_parameter_type_from_ui(row)
-        if param_type is not None:
-            self.update_parameter_type(row, param_type)
+        parameterType = self._get_parameter_type_from_ui(row)
+        if parameterType is not None:
+            self.update_parameter_type(row, parameterType)
 
     def _remove_by_button(self, button: QPushButton) -> None:
         """Find row by button and remove it."""
-        for row in range(self.table.rowCount()):
-            widget = self.table.cellWidget(row, self.COLUMN_ACTIONS)
+        for row in range(self.parametersTable.rowCount()):
+            widget = self.parametersTable.cellWidget(row, self.COLUMN_ACTIONS)
             if widget and widget.findChild(QPushButton) == button:
                 self.remove_parameter_row(row)
                 break
 
     def _add_loaded_parameter_to_table(self, parameter: BaseParameter) -> None:
         """Add a loaded parameter to the table."""
-        row_count = self.table.rowCount()
-        self.table.insertRow(row_count)
+        rowCount = self.parametersTable.rowCount()
+        self.parametersTable.insertRow(rowCount)
 
-        name_edit = QLineEdit()
-        self.table.setCellWidget(row_count, self.COLUMN_NAME, name_edit)
-        self._set_parameter_name_in_ui(row_count, parameter.name)
+        nameEdit = QLineEdit()
+        self.parametersTable.setCellWidget(rowCount, self.COLUMN_NAME, nameEdit)
+        self._set_parameter_name_in_ui(rowCount, parameter.name)
 
         # Type combo with pre-selected value using helper method
-        type_combo = self._create_type_combo(row_count)
-        self.table.setCellWidget(row_count, self.COLUMN_TYPE, type_combo)
-        self._set_parameter_type_in_ui(row_count, parameter.parameter_type)
+        typeComboBox = self._create_type_combo(rowCount)
+        self.parametersTable.setCellWidget(rowCount, self.COLUMN_TYPE, typeComboBox)
+        self._set_parameter_type_in_ui(rowCount, parameter.parameter_type)
 
         # Constraint widget
-        constraint_widget = create_constraint_widget(parameter)
-        if constraint_widget:
-            self.table.setCellWidget(
-                row_count, self.COLUMN_CONSTRAINTS, constraint_widget.get_widget()
+        constraintWidget = create_constraint_widget(parameter)
+        if constraintWidget:
+            self.parametersTable.setCellWidget(
+                rowCount, self.COLUMN_CONSTRAINTS, constraintWidget.get_widget()
             )
         else:
-            self.table.setCellWidget(
-                row_count,
+            self.parametersTable.setCellWidget(
+                rowCount,
                 self.COLUMN_CONSTRAINTS,
                 self._create_empty_constraints_widget(),
             )
 
         # Remove button
-        remove_button = self._create_remove_button()
-        self.table.setCellWidget(
-            row_count, self.COLUMN_ACTIONS, self._create_button_container(remove_button)
+        removeButton = self._create_remove_button()
+        self.parametersTable.setCellWidget(
+            rowCount, self.COLUMN_ACTIONS, self._create_button_container(removeButton)
         )
 
         # Store parameter and widget
         self.parameters.append(parameter)
-        self.constraint_widgets.append(constraint_widget)
+        self.constraintWidgets.append(constraintWidget)
 
 
 class ParameterSerializer:
@@ -433,11 +458,11 @@ class ParameterSerializer:
         Returns:
             List of dictionaries representing the parameters
         """
-        parameters_data = []
+        parametersData = []
         for param in parameters:
             if param is not None:
-                parameters_data.append(param.to_dict())
-        return parameters_data
+                parametersData.append(param.to_dict())
+        return parametersData
 
     @staticmethod
     def deserialize_parameters(
@@ -458,10 +483,10 @@ class ParameterSerializer:
         """
         parameters = []
 
-        for param_dict in parameters_data:
+        for paramDict in parameters_data:
             try:
                 # Let the parameter classes handle their own deserialization
-                parameter = BaseParameter.from_dict(param_dict)
+                parameter = BaseParameter.from_dict(paramDict)
                 parameters.append(parameter)
             except Exception as e:
                 print(f"Error loading parameter: {e}")
