@@ -1,7 +1,13 @@
+"""
+Data import step for campaign creation wizard.
+"""
+
 from typing import List, Dict, Any, Optional
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QFileDialog
+from PySide6.QtWidgets import QVBoxLayout, QFileDialog
 
+from app.core.base import BaseStep
+from app.shared.components.headers import MainHeader, SectionHeader
 from app.models.parameters.base import BaseParameter
 from .components.parameter_managers import ParameterSerializer
 from .components.data_import_widgets import (
@@ -14,47 +20,56 @@ from .components.csv_template_generator import CSVTemplateGenerator
 from .components.csv_data_importer import CSVDataImporter, CSVValidationResult
 
 
-class DataImportStep(QWidget):
+class DataImportStep(BaseStep):
     """
-    Step 3: Import experimental data from CSV files.
-
+    Third step of campaign creation wizard.
+    
     This step coordinates multiple specialized widgets:
     - PageHeaderWidget: Title and description
     - UploadSectionWidget: File upload functionality
     - TemplateSectionWidget: Template generation
+    - DataPreviewWidget: Data preview and validation
 
     The step follows the same pattern as other wizard steps:
     - validate(): Check if data is properly imported and valid
-    - save_data(): Save imported data to campaign_data
+    - save_data(): Save imported data to shared_data
     - load_data(): Load previously imported data (if any)
     """
 
     MAIN_LAYOUT_SPACING = 30
     MAIN_LAYOUT_MARGINS = (40, 40, 40, 40)
 
-    def __init__(self, campaign_data: Dict[str, Any]) -> None:
+    def __init__(self, shared_data: dict, parent=None):
         """
         Initialize the data import step.
 
         Args:
-            campaign_data: Shared campaign configuration data
+            shared_data: Shared campaign configuration data
         """
-        super().__init__()
-        self.campaign_data = campaign_data
+        # Initialize data before calling super()
         self.imported_data: List[Dict[str, Any]] = []
         self.parameters: List[BaseParameter] = []
         self.selected_file_path: Optional[str] = None
         self.validation_result: Optional[CSVValidationResult] = None
-
         self.serializer = ParameterSerializer()
-
-        self._setup_ui()
+        
+        super().__init__(shared_data, parent)
+        
+        # Connect signals after UI is setup
         self._connect_signals()
 
-    def _setup_ui(self) -> None:
-        """Create and arrange the main UI components."""
+    def _setup_widget(self):
+        """Setup the data import step UI."""
         layout = self._create_main_layout()
 
+        # Create title and description
+        title = MainHeader("Data Import")
+        layout.addWidget(title)
+        
+        description = SectionHeader("Import historical data to help optimize your campaign parameters.")
+        layout.addWidget(description)
+
+        # Create specialized widgets
         self.header_widget = PageHeaderWidget()
         self.upload_widget = UploadSectionWidget()
         self.template_widget = TemplateSectionWidget()
@@ -75,8 +90,10 @@ class DataImportStep(QWidget):
 
     def _connect_signals(self) -> None:
         """Connect signals from child widgets."""
-        self.upload_widget.file_selected.connect(self._on_file_selected)
-        self.template_widget.template_requested.connect(self._on_template_requested)
+        if hasattr(self, 'upload_widget'):
+            self.upload_widget.file_selected.connect(self._on_file_selected)
+        if hasattr(self, 'template_widget'):
+            self.template_widget.template_requested.connect(self._on_template_requested)
 
     def _on_file_selected(self, file_path: str) -> None:
         """Handle file selection from upload widget."""
@@ -98,173 +115,140 @@ class DataImportStep(QWidget):
             print("Please configure parameters in Step 2 before importing data")
             return
 
-        print(f"Importing CSV data from: {file_path}")
-        print(f"Validating against {len(self.parameters)} configured parameters")
+        try:
+            # Create CSV data importer
+            csv_importer = CSVDataImporter(self.parameters)
 
-        importer = CSVDataImporter(self.parameters)
-        self.imported_data, self.validation_result = importer.import_csv(file_path)
+            # Import and validate the CSV data
+            self.imported_data, self.validation_result = csv_importer.import_csv(file_path)
 
-        self._display_import_results()
+            if self.validation_result.is_valid:
+                print(f"Successfully imported {len(self.imported_data)} rows of data")
 
-    def _display_import_results(self) -> None:
-        """Display the results of CSV import and validation."""
-        if not self.validation_result:
-            return
+                # Update preview widget
+                self.preview_widget.display_data(
+                    self.imported_data,
+                    self.validation_result
+                )
+            else:
+                print(f"CSV validation failed: {self.validation_result.error_message}")
+                # Note: DataPreviewWidget doesn't have display_validation_errors method
 
-        result = self.validation_result
+        except Exception as e:
+            print(f"Error importing CSV file: {e}")
+            # Note: DataPreviewWidget doesn't have display_error method
 
-        print("\n" + "=" * 50)
-        print("CSV IMPORT RESULTS")
-        print("=" * 50)
-
-        print(f"{result.get_summary()}")
-        print(f"Total rows processed: {result.total_rows}")
-        print(f"Valid rows: {result.valid_rows}")
-
-        if result.missing_columns:
-            print(f"\n Missing columns: {', '.join(result.missing_columns)}")
-
-        if result.extra_columns:
-            print(f"\n Extra columns: {', '.join(result.extra_columns)}")
-
-        if result.errors:
-            print("\n General errors:")
-            for error in result.errors:
-                print(f"   • {error}")
-
-        if result.row_errors:
-            print("\n Row errors:")
-            for row_num in sorted(result.row_errors.keys())[:5]:
-                errors = result.row_errors[row_num]
-                print(f"   Row {row_num}: {', '.join(errors)}")
-
-            if len(result.row_errors) > 5:
-                print(f"   ... and {len(result.row_errors) - 5} more rows with errors")
-
-        if result.warnings:
-            print("\n  Warnings:")
-            for warning in result.warnings:
-                print(f"   • {warning}")
-
-        if result.is_valid:
-            print(
-                f"\n Successfully imported {len(self.imported_data)} rows of experimental data!"
-            )
-
-            self.preview_widget.display_data(self.imported_data, self.validation_result)
-            preview_summary = self.preview_widget.get_display_summary()
-            print(f" {preview_summary}")
-        else:
-            print("\n Please fix the errors above and try importing again.")
-            self.preview_widget.clear_data()
-
-        print("=" * 50 + "\n")
-
-    def _on_template_requested(self, format_type: str) -> None:
-        """Handle template generation request."""
-        if format_type == "csv":
-            self._generate_csv_template()
-        else:
-            print(f"Unsupported template format: {format_type}")
-
-    def _generate_csv_template(self) -> None:
-        """Generate and save CSV template based on configured parameters."""
+    def _on_template_requested(self) -> None:
+        """Handle template download request."""
         if not self.parameters:
-            print("No parameters available for template generation")
-            print("Please configure parameters in Step 2 before generating a template")
+            print("No parameters configured - cannot generate template")
             return
 
+        # Show file save dialog
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save CSV Template", "experiment_template.csv", "CSV files (*.csv)"
+            self,
+            "Save CSV Template",
+            "campaign_data_template.csv",
+            "CSV Files (*.csv);;All Files (*)"
         )
 
-        if not file_path:
-            print("Template generation cancelled by user")
-            return
+        if file_path:
+            try:
+                generator = CSVTemplateGenerator(self.parameters)
+                generator.generate_template(file_path)
+                print(f"Template saved to: {file_path}")
 
-        generator = CSVTemplateGenerator(self.parameters)
-        success = generator.generate_template(file_path)
+                # Template saved successfully (no UI update method available)
 
-        if success:
-            template_info = generator.get_template_info()
-            print("Template generation completed!")
-            print(f"Columns: {', '.join(template_info['column_names'])}")
-            print(f"Parameters included: {template_info['num_parameters']}")
-            print(f"Example rows: {template_info['num_example_rows']}")
-        else:
-            print("Failed to generate template")
+            except Exception as e:
+                print(f"Error generating template: {e}")
+                # Error occurred (no UI update method available)
 
     def validate(self) -> bool:
         """
-        Validate that experimental data has been imported and is valid.
-
+        Validate that data import is complete and valid.
+        
+        Data import is optional, so this step always passes validation.
+        However, if data is imported, it must be valid.
+        
         Returns:
-            bool: True if validation passed, False otherwise
+            bool: True if no data imported or data is valid, False if data is invalid
         """
-        if not self.selected_file_path:
-            print("No data file selected - skipping data import (optional step)")
+        if not self.imported_data:
+            print("No data imported - proceeding without historical data")
             return True
 
-        if not self.validation_result:
-            print("File was selected but not processed - please try importing again")
+        if self.validation_result and not self.validation_result.is_valid:
+            print(f"Imported data is invalid: {self.validation_result.error_message}")
             return False
 
-        if not self.validation_result.is_valid:
-            print("Data import failed validation - please fix errors and try again")
-            return False
-
-        print(f"Data import validation passed - {len(self.imported_data)} rows ready")
+        print(f"Data import validation passed - {len(self.imported_data)} rows imported")
         return True
 
     def save_data(self) -> None:
-        """
-        Save imported experimental data to campaign configuration.
-        """
-        if (
-            self.imported_data
-            and self.validation_result
-            and self.validation_result.is_valid
-        ):
-            self.campaign_data["experimental_data"] = self.imported_data
-            print(
-                f"Saved {len(self.imported_data)} rows of experimental data to campaign"
-            )
-        else:
-            self.campaign_data["experimental_data"] = []
-            print("No experimental data to save (optional step skipped)")
-
-        if self.selected_file_path:
-            self.campaign_data["data_file_path"] = self.selected_file_path
-
-    def load_data(self) -> None:
-        """
-        Load previously imported experimental data (if any).
-        """
-        self._load_parameters_from_campaign_data()
-
-    def _load_parameters_from_campaign_data(self) -> None:
-        """
-        Load parameters from campaign data for use in template generation.
-
-        This method deserializes the parameters configured in the previous step
-        so we can generate appropriate CSV templates.
-        """
+        """Save imported data to shared data."""
         try:
-            parameters_data = self.campaign_data.get("parameters", [])
-            if parameters_data:
-                self.parameters = self.serializer.deserialize_parameters(
-                    parameters_data
-                )
-                print(
-                    f"Loaded {len(self.parameters)} parameters for template generation"
-                )
+            # Save file path and imported data
+            self.shared_data['imported_file_path'] = self.selected_file_path
+            self.shared_data['imported_data'] = self.imported_data.copy()
+            
+            # Save validation result summary
+            if self.validation_result:
+                self.shared_data['import_validation'] = {
+                    'is_valid': self.validation_result.is_valid,
+                    'row_count': len(self.imported_data),
+                    'error_message': self.validation_result.error_message
+                }
 
-                for param in self.parameters:
-                    print(f"  Parameter: {param.name} ({param.parameter_type.value})")
-            else:
-                print("No parameters found in campaign data")
-                self.parameters = []
+            print(f"Successfully saved import data - {len(self.imported_data)} rows")
 
         except Exception as e:
-            print(f"Error loading parameters: {e}")
-            self.parameters = []
+            print(f"Error saving import data: {e}")
+
+    def load_data(self) -> None:
+        """Load previously imported data from shared data."""
+        try:
+            # Load parameters from previous steps
+            parameters_data = self.shared_data.get('parameters', [])
+            if parameters_data:
+                self.parameters = self.serializer.deserialize_parameters(parameters_data)
+                print(f"Loaded {len(self.parameters)} parameters for data validation")
+
+            # Load previously imported data
+            self.selected_file_path = self.shared_data.get('imported_file_path')
+            self.imported_data = self.shared_data.get('imported_data', [])
+
+            # Load validation result
+            validation_data = self.shared_data.get('import_validation', {})
+            if validation_data:
+                # Reconstruct validation result
+                self.validation_result = CSVValidationResult()
+                self.validation_result.is_valid = validation_data.get('is_valid', True)
+                self.validation_result.total_rows = validation_data.get('row_count', 0)
+                self.validation_result.valid_rows = len(self.imported_data)
+                if not self.validation_result.is_valid:
+                    error_message = validation_data.get('error_message', '')
+                    if error_message:
+                        self.validation_result.add_error(error_message)
+
+            # Update UI with loaded data
+            if self.imported_data:
+                print(f"Loaded {len(self.imported_data)} rows of previously imported data")
+                if hasattr(self, 'preview_widget'):
+                    self.preview_widget.display_data(self.imported_data, self.validation_result)
+                # Note: UploadSectionWidget doesn't have show_selected_file method
+
+        except Exception as e:
+            print(f"Error loading import data: {e}")
+
+    def reset(self):
+        """Reset import step to initial state."""
+        self.selected_file_path = None
+        self.imported_data = []
+        self.validation_result = None
+        
+        # Reset UI widgets
+        if hasattr(self, 'preview_widget'):
+            self.preview_widget.clear_data()
+        # Note: UploadSectionWidget doesn't have a clear method, 
+        # so we'll just reset our internal state
