@@ -14,8 +14,12 @@ from app.models.parameters.types import (
     ContinuousNumerical, Categorical, Fixed, Substance
 )
 from .constraint_widgets import (
-    BaseConstraintWidget, MinMaxStepWidget, MinMaxWidget, 
-    ValuesListWidget, FixedValueWidget, SmilesWidget
+    BaseConstraintWidget, 
+    MinMaxStepWidget, 
+    MinMaxWidget, 
+    ValuesListWidget, 
+    FixedValueWidget, 
+    SmilesWidget
 )
 
 
@@ -40,7 +44,19 @@ def create_constraint_widget(parameter: BaseParameter) -> Optional[BaseConstrain
         >>> isinstance(widget, MinMaxStepWidget)
         True
     """
+    return _create_widget_by_type(parameter)
 
+
+def _create_widget_by_type(parameter: BaseParameter) -> Optional[BaseConstraintWidget]:
+    """
+    Private method to create widgets based on parameter type.
+    
+    Args:
+        parameter: The parameter object for which to create a widget
+        
+    Returns:
+        BaseConstraintWidget: The appropriate widget instance, or None if unsupported
+    """
     if isinstance(parameter, DiscreteNumericalRegular):
         return MinMaxStepWidget(parameter)
     elif isinstance(parameter, ContinuousNumerical):
