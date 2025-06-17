@@ -52,7 +52,9 @@ class PageHeaderWidget(QWidget):
         layout.setContentsMargins(*self.NO_MARGINS)
 
         self.title_label = QLabel(self.TITLE_TEXT)
+        self.title_label.setObjectName("DataImportTitle")
         self.description_label = QLabel(self.DESCRIPTION_TEXT)
+        self.description_label.setObjectName("DataImportDescription")
 
         layout.addWidget(self.title_label)
         layout.addWidget(self.description_label)
@@ -111,6 +113,7 @@ class DragDropArea(QFrame):
 
     def __init__(self) -> None:
         super().__init__()
+        self.setObjectName("DragDropArea")
         self.file_validator = FileValidator()
         self._setup_ui()
         self._setup_drag_drop()
@@ -125,10 +128,12 @@ class DragDropArea(QFrame):
         layout.setContentsMargins(*self.NO_MARGINS)
 
         self.drop_text = QLabel(self.DROP_AREA_TEXT)
+        self.drop_text.setObjectName("DropAreaText")
         self.drop_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.drop_text)
 
         self.browse_button = QPushButton(self.BROWSE_BUTTON_TEXT)
+        self.browse_button.setObjectName("DataImportBrowseButton")
         layout.addWidget(self.browse_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def _setup_drag_drop(self) -> None:
@@ -206,6 +211,7 @@ class UploadSectionWidget(QWidget):
 
         # Section title
         self.section_title = QLabel(self.SECTION_TITLE)
+        self.section_title.setObjectName("DataImportSectionTitle")
         layout.addWidget(self.section_title)
 
         # Drag & drop area
@@ -260,9 +266,11 @@ class TemplateSectionWidget(QWidget):
         layout.setContentsMargins(*self.NO_MARGINS)
 
         self.section_title = QLabel(self.SECTION_TITLE)
+        self.section_title.setObjectName("DataImportSectionTitle")
         layout.addWidget(self.section_title)
 
         self.download_csv_button = QPushButton(self.DOWNLOAD_CSV_BUTTON_TEXT)
+        self.download_csv_button.setObjectName("DataImportTemplateButton")
         layout.addWidget(self.download_csv_button)
 
     def _connect_signals(self) -> None:
@@ -303,10 +311,12 @@ class DataPreviewWidget(QWidget):
 
         # Section title
         self.section_title = QLabel(self.SECTION_TITLE)
+        self.section_title.setObjectName("DataImportSectionTitle")
         layout.addWidget(self.section_title)
 
         # Preview table
         self.table = self._create_preview_table()
+        self.table.setObjectName("DataPreviewTable")
         layout.addWidget(self.table)
 
         # Initially show no data message
