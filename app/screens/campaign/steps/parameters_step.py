@@ -2,7 +2,7 @@
 Parameters configuration step for campaign creation wizard.
 """
 
-from typing import List
+from typing import List, Optional
 
 from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton
 
@@ -37,7 +37,7 @@ class ParametersStep(BaseStep):
             shared_data: Dictionary containing campaign configuration data
         """
         # Initialize parameters list before calling super()
-        self.parameters: List[BaseParameter] = []
+        self.parameters: List[Optional[BaseParameter]] = []
 
         super().__init__(shared_data, parent)
 

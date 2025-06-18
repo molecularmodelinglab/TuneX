@@ -60,14 +60,14 @@ class ParameterRowManager:
         ParameterType.SUBSTANCE: "Substance (SMILES)",
     }
 
-    def __init__(self, parameters: List[BaseParameter]) -> None:
+    def __init__(self, parameters: List[Optional[BaseParameter]]) -> None:
         """
         Initialize the row manager.
 
         Args:
             parameters: List of parameter objects (will be modified)
         """
-        self.parameters: List[Optional[BaseParameter]] = []
+        self.parameters: List[Optional[BaseParameter]] = parameters
         self.constraintWidgets: List[Optional[BaseConstraintWidget]] = []
 
         # Create and setup the table
@@ -218,6 +218,7 @@ class ParameterRowManager:
 
             # Let the widget validate itself
             isValid, errorMessage = constraintWidget.validate()
+
             if not isValid:
                 param = self.parameters[i]
                 if param is not None:
@@ -456,7 +457,9 @@ class ParameterSerializer:
     """
 
     @staticmethod
-    def serialize_parameters(parameters: List[BaseParameter]) -> List[Dict[str, Any]]:
+    def serialize_parameters(
+        parameters: List[Optional[BaseParameter]],
+    ) -> List[Dict[str, Any]]:
         """
         Convert parameter objects to dictionary format for saving.
 
