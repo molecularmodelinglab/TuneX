@@ -38,7 +38,10 @@ This is a very early prototype with basic functionality only.
 
 ## Tech Stack
 - **UI Framework**: PySide6 (Qt6)
-- **Language**: Python 3.x
+- **Language**: Python 3.11
+
+## Precommit checks
+poetry run pre-commit
 
 ## Architecture Overview
 
