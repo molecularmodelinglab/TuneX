@@ -7,7 +7,7 @@ and data validation using the existing parameter validation methods.
 """
 
 import csv
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
 from app.models.parameters.base import BaseParameter
 
@@ -49,6 +49,22 @@ class CSVValidationResult:
         error_count = len(self.errors) + len(self.row_errors)
         return f" Validation failed: {error_count} errors found"
 
+    def get_error_for_row(self, row_index: int) -> Optional[str]:
+        """
+        Get error message for specific row, or None if no error.
+
+        TODO: Implement actual error lookup logic when CSVValidationResult
+        structure is finalized.
+
+        Args:
+            row_index: Zero-based row index
+
+        Returns:
+            Error message string or None if no error for this row
+        """
+        # Not implemented
+        return None
+
 
 class CSVDataImporter:
     """
@@ -63,7 +79,11 @@ class CSVDataImporter:
 
     TARGET_COLUMN_NAME = "target_value"
 
-    def __init__(self, parameters: List[BaseParameter], campaign_data: Dict[str, Any] = None) -> None:
+    def __init__(
+        self,
+        parameters: List[BaseParameter],
+        campaign_data: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """
         Initialize the CSV importer.
 
@@ -88,7 +108,7 @@ class CSVDataImporter:
             - validation_result: Detailed validation information
         """
         result = CSVValidationResult()
-        imported_data = []
+        imported_data: List[Dict[str, Any]] = []
 
         try:
             raw_data, headers = self._parse_csv_file(file_path)
@@ -165,7 +185,9 @@ class CSVDataImporter:
             result: Validation result object to update
         """
         expected_columns = set(param.name for param in self.parameters)
-        expected_columns.add(self.campaign_data['target'].get('name', self.TARGET_COLUMN_NAME))
+        expected_columns.add(
+            self.campaign_data["target"].get("name", self.TARGET_COLUMN_NAME)
+        )
         actual_columns = set(headers)
 
         missing = expected_columns - actual_columns
@@ -181,9 +203,7 @@ class CSVDataImporter:
             result.extra_columns = list(extra)
             for col in extra:
                 result.add_warning(f"Extra column found: '{col}' (will be ignored)")
-                print(
-                    f"Warning: Extra column '{col}' found in CSV (will be ignored)"
-                )
+                print(f"Warning: Extra column '{col}' found in CSV (will be ignored)")
 
         # Check for duplicate headers
         if len(headers) != len(set(headers)):

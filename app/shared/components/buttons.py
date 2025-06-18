@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt
 
 class PrimaryButton(QPushButton):
     """Primary action button with consistent styling."""
-    
+
     def __init__(self, text: str, parent=None):
         super().__init__(text, parent)
         self.setObjectName("PrimaryButton")
@@ -17,7 +17,7 @@ class PrimaryButton(QPushButton):
 
 class SecondaryButton(QPushButton):
     """Secondary action button with consistent styling."""
-    
+
     def __init__(self, text: str, parent=None):
         super().__init__(text, parent)
         self.setObjectName("SecondaryButton")
@@ -26,7 +26,7 @@ class SecondaryButton(QPushButton):
 
 class DangerButton(QPushButton):
     """Danger/destructive action button with consistent styling."""
-    
+
     def __init__(self, text: str, parent=None):
         super().__init__(text, parent)
         self.setObjectName("DangerButton")
@@ -35,13 +35,13 @@ class DangerButton(QPushButton):
 
 class NavigationButton(QPushButton):
     """Navigation button for wizard-style interfaces."""
-    
+
     def __init__(self, text: str, button_type: str = "next", parent=None):
         super().__init__(text, parent)
-        
+
         if button_type == "back":
             self.setObjectName("BackButton")
         else:
             self.setObjectName("NextButton")
-            
+
         self.setCursor(Qt.CursorShape.PointingHandCursor)

@@ -9,11 +9,11 @@ from app.models.parameters.types import (
 )
 
 __all__ = [
-    'BaseParameter',
-    'DiscreteNumericalRegular',
-    'DiscreteNumericalIrregular', 
-    'ContinuousNumerical',
-    'Categorical',
-    'Fixed',
-    'Substance',
+    "BaseParameter",
+    "DiscreteNumericalRegular",
+    "DiscreteNumericalIrregular",
+    "ContinuousNumerical",
+    "Categorical",
+    "Fixed",
+    "Substance",
 ]

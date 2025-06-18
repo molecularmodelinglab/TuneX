@@ -23,7 +23,7 @@ from .components.csv_data_importer import CSVDataImporter, CSVValidationResult
 class DataImportStep(BaseStep):
     """
     Third step of campaign creation wizard.
-    
+
     This step coordinates multiple specialized widgets:
     - PageHeaderWidget: Title and description
     - UploadSectionWidget: File upload functionality
@@ -52,9 +52,9 @@ class DataImportStep(BaseStep):
         self.selected_file_path: Optional[str] = None
         self.validation_result: Optional[CSVValidationResult] = None
         self.serializer = ParameterSerializer()
-        
+
         super().__init__(shared_data, parent)
-        
+
         # Connect signals after UI is setup
         self._connect_signals()
 
@@ -65,8 +65,10 @@ class DataImportStep(BaseStep):
         # Create title and description
         title = MainHeader("Data Import")
         layout.addWidget(title)
-        
-        description = SectionHeader("Import historical data to help optimize your campaign parameters.")
+
+        description = SectionHeader(
+            "Import historical data to help optimize your campaign parameters."
+        )
         layout.addWidget(description)
 
         # Create specialized widgets
@@ -90,9 +92,9 @@ class DataImportStep(BaseStep):
 
     def _connect_signals(self) -> None:
         """Connect signals from child widgets."""
-        if hasattr(self, 'upload_widget'):
+        if hasattr(self, "upload_widget"):
             self.upload_widget.file_selected.connect(self._on_file_selected)
-        if hasattr(self, 'template_widget'):
+        if hasattr(self, "template_widget"):
             self.template_widget.template_requested.connect(self._on_template_requested)
 
     def _on_file_selected(self, file_path: str) -> None:
@@ -120,15 +122,16 @@ class DataImportStep(BaseStep):
             csv_importer = CSVDataImporter(self.parameters, self.shared_data)
 
             # Import and validate the CSV data
-            self.imported_data, self.validation_result = csv_importer.import_csv(file_path)
+            self.imported_data, self.validation_result = csv_importer.import_csv(
+                file_path
+            )
 
             if self.validation_result.is_valid:
                 print(f"Successfully imported {len(self.imported_data)} rows of data")
 
                 # Update preview widget
                 self.preview_widget.display_data(
-                    self.imported_data,
-                    self.validation_result
+                    self.imported_data, self.validation_result
                 )
             else:
                 print(f"CSV validation failed: {self.validation_result.get_summary()}")
@@ -150,7 +153,7 @@ class DataImportStep(BaseStep):
             self,
             "Save CSV Template",
             "campaign_data_template.csv",
-            "CSV Files (*.csv);;All Files (*)"
+            "CSV Files (*.csv);;All Files (*)",
         )
 
         if file_path:
@@ -168,10 +171,10 @@ class DataImportStep(BaseStep):
     def validate(self) -> bool:
         """
         Validate that data import is complete and valid.
-        
+
         Data import is optional, so this step always passes validation.
         However, if data is imported, it must be valid.
-        
+
         Returns:
             bool: True if no data imported or data is valid, False if data is invalid
         """
@@ -183,22 +186,24 @@ class DataImportStep(BaseStep):
             print(f"Imported data is invalid: {self.validation_result.get_summary()}")
             return False
 
-        print(f"Data import validation passed - {len(self.imported_data)} rows imported")
+        print(
+            f"Data import validation passed - {len(self.imported_data)} rows imported"
+        )
         return True
 
     def save_data(self) -> None:
         """Save imported data to shared data."""
         try:
             # Save file path and imported data
-            self.shared_data['imported_file_path'] = self.selected_file_path
-            self.shared_data['imported_data'] = self.imported_data.copy()
-            
+            self.shared_data["imported_file_path"] = self.selected_file_path
+            self.shared_data["imported_data"] = self.imported_data.copy()
+
             # Save validation result summary
             if self.validation_result:
-                self.shared_data['import_validation'] = {
-                    'is_valid': self.validation_result.is_valid,
-                    'row_count': len(self.imported_data),
-                    'error_message': self.validation_result.get_summary()
+                self.shared_data["import_validation"] = {
+                    "is_valid": self.validation_result.is_valid,
+                    "row_count": len(self.imported_data),
+                    "error_message": self.validation_result.get_summary(),
                 }
 
             print(f"Successfully saved import data - {len(self.imported_data)} rows")
@@ -210,33 +215,39 @@ class DataImportStep(BaseStep):
         """Load previously imported data from shared data."""
         try:
             # Load parameters from previous steps
-            parameters_data = self.shared_data.get('parameters', [])
+            parameters_data = self.shared_data.get("parameters", [])
             if parameters_data:
-                self.parameters = self.serializer.deserialize_parameters(parameters_data)
+                self.parameters = self.serializer.deserialize_parameters(
+                    parameters_data
+                )
                 print(f"Loaded {len(self.parameters)} parameters for data validation")
 
             # Load previously imported data
-            self.selected_file_path = self.shared_data.get('imported_file_path')
-            self.imported_data = self.shared_data.get('imported_data', [])
+            self.selected_file_path = self.shared_data.get("imported_file_path")
+            self.imported_data = self.shared_data.get("imported_data", [])
 
             # Load validation result
-            validation_data = self.shared_data.get('import_validation', {})
+            validation_data = self.shared_data.get("import_validation", {})
             if validation_data:
                 # Reconstruct validation result
                 self.validation_result = CSVValidationResult()
-                self.validation_result.is_valid = validation_data.get('is_valid', True)
-                self.validation_result.total_rows = validation_data.get('row_count', 0)
+                self.validation_result.is_valid = validation_data.get("is_valid", True)
+                self.validation_result.total_rows = validation_data.get("row_count", 0)
                 self.validation_result.valid_rows = len(self.imported_data)
                 if not self.validation_result.is_valid:
-                    error_message = validation_data.get('error_message', '')
+                    error_message = validation_data.get("error_message", "")
                     if error_message:
                         self.validation_result.add_error(error_message)
 
             # Update UI with loaded data
             if self.imported_data:
-                print(f"Loaded {len(self.imported_data)} rows of previously imported data")
-                if hasattr(self, 'preview_widget'):
-                    self.preview_widget.display_data(self.imported_data, self.validation_result)
+                print(
+                    f"Loaded {len(self.imported_data)} rows of previously imported data"
+                )
+                if hasattr(self, "preview_widget"):
+                    self.preview_widget.display_data(
+                        self.imported_data, self.validation_result
+                    )
                 # Note: UploadSectionWidget doesn't have show_selected_file method
 
         except Exception as e:
@@ -247,9 +258,9 @@ class DataImportStep(BaseStep):
         self.selected_file_path = None
         self.imported_data = []
         self.validation_result = None
-        
+
         # Reset UI widgets
-        if hasattr(self, 'preview_widget'):
+        if hasattr(self, "preview_widget"):
             self.preview_widget.clear_data()
-        # Note: UploadSectionWidget doesn't have a clear method, 
+        # Note: UploadSectionWidget doesn't have a clear method,
         # so we'll just reset our internal state

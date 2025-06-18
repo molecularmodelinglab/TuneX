@@ -67,7 +67,7 @@ class ParameterRowManager:
         Args:
             parameters: List of parameter objects (will be modified)
         """
-        self.parameters: List[BaseParameter] = parameters
+        self.parameters: List[Optional[BaseParameter]] = []
         self.constraintWidgets: List[Optional[BaseConstraintWidget]] = []
 
         # Create and setup the table
@@ -98,18 +98,22 @@ class ParameterRowManager:
         parametersTable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
 
         # Set specific column widths for better proportions (wider overall)
-        parametersTable.setColumnWidth(self.COLUMN_NAME, 250)      # Parameter Name (wider)
-        parametersTable.setColumnWidth(self.COLUMN_TYPE, 250)      # Type dropdown (wider)
-        parametersTable.setColumnWidth(self.COLUMN_CONSTRAINTS, 600)  # Constraints (much wider)
-        parametersTable.setColumnWidth(self.COLUMN_ACTIONS, 60)    # Actions (slightly wider)
-        
+        parametersTable.setColumnWidth(self.COLUMN_NAME, 250)  # Parameter Name (wider)
+        parametersTable.setColumnWidth(self.COLUMN_TYPE, 250)  # Type dropdown (wider)
+        parametersTable.setColumnWidth(
+            self.COLUMN_CONSTRAINTS, 600
+        )  # Constraints (much wider)
+        parametersTable.setColumnWidth(
+            self.COLUMN_ACTIONS, 60
+        )  # Actions (slightly wider)
+
         # Set minimum table size
         parametersTable.setMinimumWidth(1200)  # Total width for all columns
-        parametersTable.setMinimumHeight(500)   # Minimum height
-        
+        parametersTable.setMinimumHeight(500)  # Minimum height
+
         # Disable stretch to maintain fixed widths
         parametersTable.horizontalHeader().setStretchLastSection(False)
-        
+
         # Set default row height to be taller
         parametersTable.verticalHeader().setDefaultSectionSize(50)
 
@@ -215,12 +219,15 @@ class ParameterRowManager:
             # Let the widget validate itself
             isValid, errorMessage = constraintWidget.validate()
             if not isValid:
-                parameterName = (
-                    self.parameters[i].name
-                    if self.parameters[i]
-                    else f"Parameter {i + 1}"
+                param = self.parameters[i]
+                if param is not None:
+                    parameterName = param.name
+                else:
+                    parameterName = f"Parameter {i + 1}"
+                return (
+                    False,
+                    f"Parameter '{parameterName}' validation error: {errorMessage}",
                 )
-                return False, f"Parameter '{parameterName}' validation error: {errorMessage}"
 
         # Check for duplicate parameter names
         names = [param.name for param in self.parameters if param is not None]
@@ -266,9 +273,10 @@ class ParameterRowManager:
         """Sync parameter name from UI to parameter object."""
         if row >= len(self.parameters) or self.parameters[row] is None:
             return
-
-        parameterName = self._get_parameter_name_from_ui(row)
-        self.parameters[row].name = parameterName
+        parameter = self.parameters[row]
+        if parameter is None:
+            return
+        parameter.name = self._get_parameter_name_from_ui(row)
 
     def _get_parameter_name_from_ui(self, row: int) -> str:
         """
@@ -355,7 +363,7 @@ class ParameterRowManager:
 
     def _create_remove_button(self) -> QPushButton:
         """Create a remove button for the parameter row."""
-        removeButton = QPushButton("✕") 
+        removeButton = QPushButton("✕")
         removeButton.setObjectName("ParameterRemoveButton")
         removeButton.setMaximumWidth(10)
         removeButton.setMaximumHeight(10)

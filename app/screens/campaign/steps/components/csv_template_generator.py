@@ -12,7 +12,7 @@ BaseParameter objects and their constraints.
 """
 
 import csv
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Optional
 
 from app.models.parameters.base import BaseParameter
 
@@ -31,7 +31,11 @@ class CSVTemplateGenerator:
     TARGET_COLUMN_NAME = "target_value"
     TARGET_EXAMPLE_VALUES = [0.85, 0.92, 0.78]
 
-    def __init__(self, parameters: List[BaseParameter], campaign_data: Dict[str, Any] = None) -> None:
+    def __init__(
+        self,
+        parameters: List[BaseParameter],
+        campaign_data: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """
         Initialize the template generator.
 
@@ -85,9 +89,11 @@ class CSVTemplateGenerator:
 
         # Use target name from campaign data if available, otherwise use default
         target_name = self.TARGET_COLUMN_NAME
-        if self.campaign_data and 'target' in self.campaign_data:
-            target_name = self.campaign_data['target'].get('name', self.TARGET_COLUMN_NAME)
-        
+        if self.campaign_data and "target" in self.campaign_data:
+            target_name = self.campaign_data["target"].get(
+                "name", self.TARGET_COLUMN_NAME
+            )
+
         headers.append(target_name)
 
         return headers

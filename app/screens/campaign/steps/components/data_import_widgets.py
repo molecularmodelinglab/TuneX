@@ -436,7 +436,7 @@ class DataPreviewWidget(QWidget):
             return f"Displaying {valid_rows} valid rows ({error_rows} rows with errors hidden)"
         else:
             return f"Displaying all {valid_rows} rows (no errors)"
-        
+
     def display_validation_errors(self) -> None:
         """
         Display validation errors in the table.

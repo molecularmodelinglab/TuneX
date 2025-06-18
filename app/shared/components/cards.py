@@ -5,12 +5,11 @@ Reusable card components for TuneX application.
 from PySide6.QtWidgets import QFrame, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
-from app.shared.components.headers import MainHeader, Subtitle
 
 
 class Card(QFrame):
     """Basic card container with consistent styling."""
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("Card")
@@ -19,28 +18,30 @@ class Card(QFrame):
 
 class EmptyStateCard(QFrame):
     """Card displaying empty state with icon and message."""
-    
-    def __init__(self, 
-                 primary_message: str = "No items found",
-                 secondary_message: str = "Try a different action",
-                 icon_pixmap: QPixmap = None,
-                 parent=None):
+
+    def __init__(
+        self,
+        primary_message: str = "No items found",
+        secondary_message: str = "Try a different action",
+        icon_pixmap: QPixmap = None,
+        parent=None,
+    ):
         super().__init__(parent)
         self.setObjectName("EmptyStateCard")
         self.setFrameStyle(QFrame.Shape.StyledPanel)
-        
+
         # Setup layout
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(10)
-        
+
         # Add icon if provided
         if icon_pixmap:
             icon_label = QLabel()
             icon_label.setPixmap(icon_pixmap)
             icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(icon_label)
-        
+
         # Primary message
         primary_label = QLabel(primary_message)
         primary_label.setObjectName("PrimaryMessage")
@@ -53,7 +54,7 @@ class EmptyStateCard(QFrame):
             }
         """)
         layout.addWidget(primary_label)
-        
+
         # Secondary message
         secondary_label = QLabel(secondary_message)
         secondary_label.setObjectName("SecondaryMessage")
