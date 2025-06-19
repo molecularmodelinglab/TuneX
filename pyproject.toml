@@ -32,7 +32,9 @@ pre-commit = "*"
 mypy = "*"
 poetry = "*"
 ruff = "*"
-
+pytest = "*"
+pytest-cov = "*"
+pytest-qt = "*"
 
 [build-system]
 requires = ["poetry-core>=1.5.0"]

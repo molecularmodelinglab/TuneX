@@ -33,7 +33,6 @@ This is a very early prototype with basic functionality only.
 - [ ] Results visualization and analysis
 - [ ] Data export functionality
 - [ ] User settings and preferences
-- [ ] TESTS
 - [ ] Many more screens and features...
 
 ## Tech Stack
@@ -43,30 +42,53 @@ This is a very early prototype with basic functionality only.
 ## Precommit checks
 poetry run pre-commit
 
+## Testing
+
+This project uses `pytest` for testing. To run the tests, execute the following command:
+
+```bash
+poetry run pytest
+```
+
+### Test Coverage
+
+To generate a test coverage report, you can use `pytest-cov`. Run the following command:
+
+```bash
+poetry run pytest --cov=app tests/
+```
+
+This will run the tests and output a coverage report to the console. To generate an HTML report for more detailed analysis, use:
+
+```bash
+poetry run pytest --cov=app --cov-report=html tests/
+```
+
+The report will be generated in an `htmlcov` directory.
+
 ## Architecture Overview
 
 ### Code Structure
 ```
 app/
-├── models/
-│   ├── parameters/
-│   │   ├── base.py           # BaseParameter abstract class
-│   │   └── types.py          # Concrete parameter implementations
-│   └── enums.py              # Parameter types and other enums
-└── widgets/
-    └── campaign/
-        └── create/
-            ├── steps/
-            │   ├── campaign_info_step.py
-            │   ├── parameters_step.py
-            │   └── data_import_step.py
-            └── components/          # Reusable UI components
-                ├── parameter_managers.py    # ParameterRowManager, ParameterSerializer
-                ├── constraint_widgets.py    # Parameter-specific constraint widgets
-                ├── widget_factory.py        # Factory for constraint widget creation
-                ├── data_import_widgets.py   # Upload, template, preview widgets
-                ├── csv_template_generator.py
-                └── csv_data_importer.py
+├── main_application.py     # Main application entry point
+├── core/                   # Core components, base classes
+│   └── base.py
+├── models/                 # Data models for the application
+│   ├── enums.py
+│   └── parameters/         # Parameter definitions
+│       ├── base.py
+│       └── types.py
+├── screens/                # UI screens
+│   ├── campaign/           # Campaign creation wizard screens
+│   │   ├── campaign_wizard.py
+│   │   └── steps/          # Individual steps in the wizard
+│   │       └── ...
+│   └── start/              # Start screen
+│       └── start_screen.py
+├── shared/                 # Shared components and styles
+│   ├── components/
+│   └── styles/
 ```
 
 ### Key Classes
