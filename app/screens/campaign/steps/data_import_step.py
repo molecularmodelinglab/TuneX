@@ -2,22 +2,23 @@
 Data import step for campaign creation wizard.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
-from PySide6.QtWidgets import QVBoxLayout, QFileDialog
+from PySide6.QtWidgets import QFileDialog, QVBoxLayout
 
 from app.core.base import BaseStep
-from app.shared.components.headers import MainHeader, SectionHeader
 from app.models.parameters.base import BaseParameter
-from .components.parameter_managers import ParameterSerializer
-from .components.data_import_widgets import (
-    PageHeaderWidget,
-    UploadSectionWidget,
-    TemplateSectionWidget,
-    DataPreviewWidget,
-)
-from .components.csv_template_generator import CSVTemplateGenerator
+from app.shared.components.headers import MainHeader, SectionHeader
+
 from .components.csv_data_importer import CSVDataImporter, CSVValidationResult
+from .components.csv_template_generator import CSVTemplateGenerator
+from .components.data_import_widgets import (
+    DataPreviewWidget,
+    PageHeaderWidget,
+    TemplateSectionWidget,
+    UploadSectionWidget,
+)
+from .components.parameter_managers import ParameterSerializer
 
 
 class DataImportStep(BaseStep):
@@ -66,9 +67,7 @@ class DataImportStep(BaseStep):
         title = MainHeader("Data Import")
         layout.addWidget(title)
 
-        description = SectionHeader(
-            "Import historical data to help optimize your campaign parameters."
-        )
+        description = SectionHeader("Import historical data to help optimize your campaign parameters.")
         layout.addWidget(description)
 
         # Create specialized widgets
@@ -122,17 +121,13 @@ class DataImportStep(BaseStep):
             csv_importer = CSVDataImporter(self.parameters, self.shared_data)
 
             # Import and validate the CSV data
-            self.imported_data, self.validation_result = csv_importer.import_csv(
-                file_path
-            )
+            self.imported_data, self.validation_result = csv_importer.import_csv(file_path)
 
             if self.validation_result.is_valid:
                 print(f"Successfully imported {len(self.imported_data)} rows of data")
 
                 # Update preview widget
-                self.preview_widget.display_data(
-                    self.imported_data, self.validation_result
-                )
+                self.preview_widget.display_data(self.imported_data, self.validation_result)
             else:
                 print(f"CSV validation failed: {self.validation_result.get_summary()}")
                 # Note: DataPreviewWidget doesn't have display_validation_errors method
@@ -186,9 +181,7 @@ class DataImportStep(BaseStep):
             print(f"Imported data is invalid: {self.validation_result.get_summary()}")
             return False
 
-        print(
-            f"Data import validation passed - {len(self.imported_data)} rows imported"
-        )
+        print(f"Data import validation passed - {len(self.imported_data)} rows imported")
         return True
 
     def save_data(self) -> None:
@@ -217,9 +210,7 @@ class DataImportStep(BaseStep):
             # Load parameters from previous steps
             parameters_data = self.shared_data.get("parameters", [])
             if parameters_data:
-                self.parameters = self.serializer.deserialize_parameters(
-                    parameters_data
-                )
+                self.parameters = self.serializer.deserialize_parameters(parameters_data)
                 print(f"Loaded {len(self.parameters)} parameters for data validation")
 
             # Load previously imported data
@@ -241,13 +232,9 @@ class DataImportStep(BaseStep):
 
             # Update UI with loaded data
             if self.imported_data:
-                print(
-                    f"Loaded {len(self.imported_data)} rows of previously imported data"
-                )
+                print(f"Loaded {len(self.imported_data)} rows of previously imported data")
                 if hasattr(self, "preview_widget"):
-                    self.preview_widget.display_data(
-                        self.imported_data, self.validation_result
-                    )
+                    self.preview_widget.display_data(self.imported_data, self.validation_result)
                 # Note: UploadSectionWidget doesn't have show_selected_file method
 
         except Exception as e:

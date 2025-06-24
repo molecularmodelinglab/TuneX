@@ -7,8 +7,8 @@ from typing import Optional
 
 from PySide6.QtWidgets import QMainWindow, QStackedWidget
 
-from app.screens.start.start_screen import StartScreen
 from app.screens.campaign.campaign_wizard import CampaignWizard
+from app.screens.start.start_screen import StartScreen
 
 
 class MainApplication(QMainWindow):

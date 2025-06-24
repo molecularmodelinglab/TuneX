@@ -14,20 +14,21 @@ Focus on functionality first - styling will be added later.
 """
 
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFileDialog,
+    QFrame,
+    QHeaderView,
     QLabel,
     QPushButton,
-    QFrame,
-    QFileDialog,
     QTableWidget,
     QTableWidgetItem,
-    QHeaderView,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QDragEnterEvent, QDropEvent
 
 from .csv_data_importer import CSVValidationResult
 
@@ -37,7 +38,10 @@ class PageHeaderWidget(QWidget):
 
     # Text Constants
     TITLE_TEXT = "Import Previous Experiments"
-    DESCRIPTION_TEXT = "Add existing experimental data from CSV files. This step is optional - you can skip it and create campaigns without historical data."
+    DESCRIPTION_TEXT = (
+        "Add existing experimental data from CSV files. This step is optional - "
+        "you can skip it and create campaigns without historical data."
+    )
 
     # Layout Constants
     NO_MARGINS = (0, 0, 0, 0)
@@ -225,9 +229,7 @@ class UploadSectionWidget(QWidget):
 
     def _on_browse_clicked(self) -> None:
         """Handle browse button click."""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, self.DIALOG_TITLE, "", self.FILE_FILTER
-        )
+        file_path, _ = QFileDialog.getOpenFileName(self, self.DIALOG_TITLE, "", self.FILE_FILTER)
 
         if file_path:
             is_valid, error_msg = self.file_validator.validate_file(file_path)
@@ -332,9 +334,7 @@ class DataPreviewWidget(QWidget):
 
         # Configure headers
         table.horizontalHeader().setStretchLastSection(True)
-        table.horizontalHeader().setSectionResizeMode(
-            QHeaderView.ResizeMode.Interactive
-        )
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         table.verticalHeader().setVisible(True)  # Show row numbers
 
         return table
@@ -450,9 +450,7 @@ class DataPreviewWidget(QWidget):
         # Add error column if it doesn't exist
         if "Error" not in self.table.horizontalHeaderLabels():
             self.table.insertColumn(self.table.columnCount())
-            self.table.setHorizontalHeaderItem(
-                self.table.columnCount() - 1, QTableWidgetItem("Error")
-            )
+            self.table.setHorizontalHeaderItem(self.table.columnCount() - 1, QTableWidgetItem("Error"))
 
         # Populate error messages
         for row_index, row_data in enumerate(self.imported_data):

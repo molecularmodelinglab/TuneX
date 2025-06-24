@@ -3,20 +3,20 @@ Campaign creation wizard screen.
 Multi-step process for creating new campaigns.
 """
 
+from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
     QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Signal as pyqtSignal
 
 from app.core.base import BaseScreen
-from app.shared.components.buttons import NavigationButton
-from app.shared.styles.theme import get_widget_styles, get_navigation_styles
 from app.screens.campaign.steps.campaign_info_step import CampaignInfoStep
-from app.screens.campaign.steps.parameters_step import ParametersStep
 from app.screens.campaign.steps.data_import_step import DataImportStep
+from app.screens.campaign.steps.parameters_step import ParametersStep
+from app.shared.components.buttons import NavigationButton
+from app.shared.styles.theme import get_navigation_styles, get_widget_styles
 
 
 class CampaignWizard(BaseScreen):

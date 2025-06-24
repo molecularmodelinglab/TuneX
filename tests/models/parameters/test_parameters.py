@@ -1,14 +1,15 @@
 import pytest
+
+from app.models.enums import ParameterType
 from app.models.parameters.base import BaseParameter
 from app.models.parameters.types import (
-    DiscreteNumericalRegular,
-    DiscreteNumericalIrregular,
-    ContinuousNumerical,
     Categorical,
+    ContinuousNumerical,
+    DiscreteNumericalIrregular,
+    DiscreteNumericalRegular,
     Fixed,
     Substance,
 )
-from app.models.enums import ParameterType
 
 
 def test_base_parameter_creation():

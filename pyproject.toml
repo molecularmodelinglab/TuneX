@@ -42,3 +42,21 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 package-mode = false
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N806", # variable names should be lowercase
+    "N815", # variable names in class scope should be lowercase
+]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["tunex"]

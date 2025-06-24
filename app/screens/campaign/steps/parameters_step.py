@@ -4,11 +4,12 @@ Parameters configuration step for campaign creation wizard.
 
 from typing import List, Optional
 
-from PySide6.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton
+from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout
 
 from app.core.base import BaseStep
-from app.shared.components.headers import MainHeader, SectionHeader
 from app.models.parameters.base import BaseParameter
+from app.shared.components.headers import MainHeader, SectionHeader
+
 from .components.parameter_managers import ParameterRowManager, ParameterSerializer
 
 
@@ -55,9 +56,7 @@ class ParametersStep(BaseStep):
         main_layout.addWidget(title)
 
         # Description
-        description = SectionHeader(
-            "Configure the parameters you want to optimize in your campaign."
-        )
+        description = SectionHeader("Configure the parameters you want to optimize in your campaign.")
         main_layout.addWidget(description)
 
         # Setup managers
@@ -150,9 +149,7 @@ class ParametersStep(BaseStep):
             # Store in shared data
             self.shared_data["parameters"] = parameters_data
 
-            print(
-                f"Successfully saved {len(parameters_data)} parameters to campaign data"
-            )
+            print(f"Successfully saved {len(parameters_data)} parameters to campaign data")
 
             # Debug output - in production this might be logged instead
             for i, param_dict in enumerate(parameters_data, 1):

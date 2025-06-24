@@ -16,12 +16,12 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from PySide6.QtWidgets import (
-    QWidget,
+    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
-    QDoubleSpinBox,
     QLineEdit,
     QTextEdit,
+    QWidget,
 )
 
 from app.models.parameters.base import BaseParameter
@@ -47,18 +47,12 @@ class BaseConstraintWidget(ABC):
     MAX_LABEL = "Max:"
     STEP_LABEL = "Step:"
 
-    NUMERICAL_VALUES_PLACEHOLDER = (
-        "Enter numerical values, comma separated (e.g., 1.5, 2.0, 3.5)"
-    )
-    CATEGORICAL_VALUES_PLACEHOLDER = (
-        "Enter categories, comma separated (e.g., Low, Medium, High)"
-    )
+    NUMERICAL_VALUES_PLACEHOLDER = "Enter numerical values, comma separated (e.g., 1.5, 2.0, 3.5)"
+    CATEGORICAL_VALUES_PLACEHOLDER = "Enter categories, comma separated (e.g., Low, Medium, High)"
     FIXED_VALUE_PLACEHOLDER = "Enter fixed value (number or text)"
     SMILES_PLACEHOLDER = "Enter SMILES strings, comma separated\nExample: CCO, CCN, CCC"
 
-    INVALID_NUMERICAL_VALUES_WARNING = (
-        "Warning: Invalid numerical values: {}, error: {}"
-    )
+    INVALID_NUMERICAL_VALUES_WARNING = "Warning: Invalid numerical values: {}, error: {}"
 
     def __init__(self, parameter: BaseParameter) -> None:
         """
@@ -179,41 +173,41 @@ class MinMaxStepWidget(BaseConstraintWidget):
 
     def _create_widget(self) -> QWidget:
         """Create spinboxes for min, max, and step values."""
-        containerWidget = QWidget()
-        mainLayout = QHBoxLayout(containerWidget)
-        mainLayout.setContentsMargins(12, 8, 12, 8)
-        mainLayout.setSpacing(12)
+        container_widget = QWidget()
+        main_layout = QHBoxLayout(container_widget)
+        main_layout.setContentsMargins(12, 8, 12, 8)
+        main_layout.setSpacing(12)
 
         # Create min value controls
-        minLabel = QLabel(self.MIN_LABEL)
+        min_label = QLabel(self.MIN_LABEL)
         self.minSpinBox = QDoubleSpinBox()
         self.minSpinBox.setObjectName("ConstraintSpinBox")
         self.minSpinBox.setRange(-999999, 999999)
         self.minSpinBox.setDecimals(3)  # Allow decimal precision
 
         # Create max value controls
-        maxLabel = QLabel(self.MAX_LABEL)
+        max_label = QLabel(self.MAX_LABEL)
         self.maxSpinBox = QDoubleSpinBox()
         self.maxSpinBox.setObjectName("ConstraintSpinBox")
         self.maxSpinBox.setRange(-999999, 999999)
         self.maxSpinBox.setDecimals(3)
 
         # Create step value controls
-        stepLabel = QLabel(self.STEP_LABEL)
+        step_label = QLabel(self.STEP_LABEL)
         self.stepSpinBox = QDoubleSpinBox()
         self.stepSpinBox.setObjectName("ConstraintSpinBox")
         self.stepSpinBox.setRange(0.001, 999999)  # Step must be positive
         self.stepSpinBox.setDecimals(3)
 
         # Add widgets to layout
-        mainLayout.addWidget(minLabel)
-        mainLayout.addWidget(self.minSpinBox)
-        mainLayout.addWidget(maxLabel)
-        mainLayout.addWidget(self.maxSpinBox)
-        mainLayout.addWidget(stepLabel)
-        mainLayout.addWidget(self.stepSpinBox)
+        main_layout.addWidget(min_label)
+        main_layout.addWidget(self.minSpinBox)
+        main_layout.addWidget(max_label)
+        main_layout.addWidget(self.maxSpinBox)
+        main_layout.addWidget(step_label)
+        main_layout.addWidget(self.stepSpinBox)
 
-        return containerWidget
+        return container_widget
 
     def _load_from_parameter(self) -> None:
         """Load current parameter values into the spinboxes."""
@@ -252,32 +246,32 @@ class MinMaxWidget(BaseConstraintWidget):
 
     def _create_widget(self) -> QWidget:
         """Create spinboxes for min and max values."""
-        containerWidget = QWidget()
-        mainLayout = QHBoxLayout(containerWidget)
-        mainLayout.setContentsMargins(8, 4, 8, 4)
-        mainLayout.setSpacing(8)
+        container_widget = QWidget()
+        main_layout = QHBoxLayout(container_widget)
+        main_layout.setContentsMargins(8, 4, 8, 4)
+        main_layout.setSpacing(8)
 
         # Create minimum value controls
-        minLabel = QLabel(self.MIN_LABEL)
+        min_label = QLabel(self.MIN_LABEL)
         self.minSpinBox = QDoubleSpinBox()
         self.minSpinBox.setObjectName("ConstraintSpinBox")
         self.minSpinBox.setRange(-999999, 999999)
         self.minSpinBox.setDecimals(6)  # Higher precision for continuous values
 
         # Create maximum value controls
-        maxLabel = QLabel(self.MAX_LABEL)
+        max_label = QLabel(self.MAX_LABEL)
         self.maxSpinBox = QDoubleSpinBox()
         self.maxSpinBox.setObjectName("ConstraintSpinBox")
         self.maxSpinBox.setRange(-999999, 999999)
         self.maxSpinBox.setDecimals(6)
 
         # Add widgets to layout
-        mainLayout.addWidget(minLabel)
-        mainLayout.addWidget(self.minSpinBox)
-        mainLayout.addWidget(maxLabel)
-        mainLayout.addWidget(self.maxSpinBox)
+        main_layout.addWidget(min_label)
+        main_layout.addWidget(self.minSpinBox)
+        main_layout.addWidget(max_label)
+        main_layout.addWidget(self.maxSpinBox)
 
-        return containerWidget
+        return container_widget
 
     def _load_from_parameter(self) -> None:
         """Load current parameter values into the spinboxes."""

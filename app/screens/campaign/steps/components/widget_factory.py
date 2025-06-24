@@ -10,20 +10,21 @@ from typing import Optional
 
 from app.models.parameters.base import BaseParameter
 from app.models.parameters.types import (
-    DiscreteNumericalRegular,
-    DiscreteNumericalIrregular,
-    ContinuousNumerical,
     Categorical,
+    ContinuousNumerical,
+    DiscreteNumericalIrregular,
+    DiscreteNumericalRegular,
     Fixed,
     Substance,
 )
+
 from .constraint_widgets import (
     BaseConstraintWidget,
+    FixedValueWidget,
     MinMaxStepWidget,
     MinMaxWidget,
-    ValuesListWidget,
-    FixedValueWidget,
     SmilesWidget,
+    ValuesListWidget,
 )
 
 

@@ -1,8 +1,8 @@
 import random
-from typing import Dict, Any, Optional, List, Union
+from typing import Any, Dict, List, Optional, Union
 
-from app.models.parameters.base import BaseParameter
 from app.models.enums import ParameterType
+from app.models.parameters.base import BaseParameter
 
 
 class DiscreteNumericalRegular(BaseParameter):
@@ -235,9 +235,7 @@ class Categorical(BaseParameter):
 
     def __init__(self, name: str, values: List[str]) -> None:
         super().__init__(name)
-        self.values = [
-            str(v).strip() for v in values
-        ]  # Ensure strings and strip whitespace
+        self.values = [str(v).strip() for v in values]  # Ensure strings and strip whitespace
 
     @classmethod
     def create_default(cls, name: str) -> "Categorical":
@@ -364,9 +362,7 @@ class Substance(BaseParameter):
 
     def __init__(self, name: str, smiles: List[str]) -> None:
         super().__init__(name)
-        self.smiles = [
-            str(s).strip() for s in smiles
-        ]  # Ensure strings and strip whitespace
+        self.smiles = [str(s).strip() for s in smiles]  # Ensure strings and strip whitespace
 
     @classmethod
     def create_default(cls, name: str) -> "Substance":

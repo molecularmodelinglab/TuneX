@@ -3,20 +3,20 @@ Start screen for TuneX application.
 Main entry point showing welcome UI and navigation to other screens.
 """
 
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QSizePolicy,
-)
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QStyle
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QSizePolicy,
+    QStyle,
+    QVBoxLayout,
+    QWidget,
+)
 
 from app.core.base import BaseScreen
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
-from app.shared.components.headers import MainHeader, SectionHeader
 from app.shared.components.cards import EmptyStateCard
+from app.shared.components.headers import MainHeader, SectionHeader
 from app.shared.styles.theme import get_widget_styles
 
 

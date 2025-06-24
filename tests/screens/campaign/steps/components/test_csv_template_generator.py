@@ -1,15 +1,15 @@
-import unittest
+import csv
 import os
 import shutil
-import csv
+import unittest
 from typing import List
 
 from app.models.parameters.base import BaseParameter
 from app.models.parameters.types import (
-    DiscreteNumericalRegular,
     Categorical,
     ContinuousNumerical,
     DiscreteNumericalIrregular,
+    DiscreteNumericalRegular,
     Fixed,
     Substance,
 )

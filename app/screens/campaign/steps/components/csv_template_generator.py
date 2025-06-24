@@ -12,7 +12,7 @@ BaseParameter objects and their constraints.
 """
 
 import csv
-from typing import List, Dict, Any, Union, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from app.models.parameters.base import BaseParameter
 
@@ -65,9 +65,7 @@ class CSVTemplateGenerator:
             self._write_csv_file(file_path, headers, rows)
 
             print(f"CSV template generated successfully: {file_path}")
-            print(
-                f"Template includes {len(headers)} columns and {len(rows)} example rows"
-            )
+            print(f"Template includes {len(headers)} columns and {len(rows)} example rows")
 
             return True
 
@@ -90,9 +88,7 @@ class CSVTemplateGenerator:
         # Use target name from campaign data if available, otherwise use default
         target_name = self.TARGET_COLUMN_NAME
         if self.campaign_data and "target" in self.campaign_data:
-            target_name = self.campaign_data["target"].get(
-                "name", self.TARGET_COLUMN_NAME
-            )
+            target_name = self.campaign_data["target"].get("name", self.TARGET_COLUMN_NAME)
 
         headers.append(target_name)
 
@@ -116,18 +112,14 @@ class CSVTemplateGenerator:
                 row.append(str(example_value))
 
             # Add target value
-            target_value = self.TARGET_EXAMPLE_VALUES[
-                row_index % len(self.TARGET_EXAMPLE_VALUES)
-            ]
+            target_value = self.TARGET_EXAMPLE_VALUES[row_index % len(self.TARGET_EXAMPLE_VALUES)]
             row.append(str(target_value))
 
             rows.append(row)
 
         return rows
 
-    def _generate_example_value(
-        self, parameter: BaseParameter
-    ) -> Union[str, float, int]:
+    def _generate_example_value(self, parameter: BaseParameter) -> Union[str, float, int]:
         """
         Generate a valid example value for a specific parameter.
 
@@ -139,9 +131,7 @@ class CSVTemplateGenerator:
         """
         return parameter.get_random_valid_value()
 
-    def _write_csv_file(
-        self, file_path: str, headers: List[str], rows: List[List[str]]
-    ) -> None:
+    def _write_csv_file(self, file_path: str, headers: List[str], rows: List[List[str]]) -> None:
         """
         Write the CSV file with headers and data rows.
 
@@ -174,7 +164,5 @@ class CSVTemplateGenerator:
             "num_columns": len(headers),
             "column_names": headers,
             "num_example_rows": self.NUM_EXAMPLE_ROWS,
-            "parameter_types": [
-                param.parameter_type.value for param in self.parameters
-            ],
+            "parameter_types": [param.parameter_type.value for param in self.parameters],
         }

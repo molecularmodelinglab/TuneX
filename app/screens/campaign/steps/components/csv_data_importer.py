@@ -7,7 +7,7 @@ and data validation using the existing parameter validation methods.
 """
 
 import csv
-from typing import List, Dict, Any, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.models.parameters.base import BaseParameter
 
@@ -93,9 +93,7 @@ class CSVDataImporter:
         self.parameters = parameters
         self.campaign_data = campaign_data or {}
 
-    def import_csv(
-        self, file_path: str
-    ) -> Tuple[List[Dict[str, Any]], CSVValidationResult]:
+    def import_csv(self, file_path: str) -> Tuple[List[Dict[str, Any]], CSVValidationResult]:
         """
         Import and validate CSV file.
 
@@ -174,9 +172,7 @@ class CSVDataImporter:
 
         return data_rows, headers
 
-    def _validate_columns(
-        self, headers: List[str], result: CSVValidationResult
-    ) -> None:
+    def _validate_columns(self, headers: List[str], result: CSVValidationResult) -> None:
         """
         Validate that CSV headers match the configured parameters.
 
@@ -185,9 +181,7 @@ class CSVDataImporter:
             result: Validation result object to update
         """
         expected_columns = set(param.name for param in self.parameters)
-        expected_columns.add(
-            self.campaign_data["target"].get("name", self.TARGET_COLUMN_NAME)
-        )
+        expected_columns.add(self.campaign_data["target"].get("name", self.TARGET_COLUMN_NAME))
         actual_columns = set(headers)
 
         missing = expected_columns - actual_columns
@@ -245,16 +239,12 @@ class CSVDataImporter:
                 if param.name in row_dict:
                     raw_value = row_dict[param.name]
 
-                    is_valid, converted_value, error_msg = (
-                        self._validate_parameter_value(param, raw_value, row_index)
-                    )
+                    is_valid, converted_value, error_msg = self._validate_parameter_value(param, raw_value, row_index)
 
                     if is_valid:
                         row_dict[param.name] = converted_value
                     else:
-                        result.add_row_error(
-                            row_index + 1, error_msg
-                        )  # +1 for human-readable row numbers
+                        result.add_row_error(row_index + 1, error_msg)  # +1 for human-readable row numbers
                         row_has_errors = True
 
             # Only add valid rows to final data

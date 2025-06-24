@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 from app.models.enums import ParameterType
 
@@ -126,9 +126,7 @@ class BaseParameter(ABC):
     def parameter_type(self) -> ParameterType:
         """Get the parameter type enum value."""
         if self.TYPE is None:
-            raise NotImplementedError(
-                f"{self.__class__.__name__} must define TYPE class attribute"
-            )
+            raise NotImplementedError(f"{self.__class__.__name__} must define TYPE class attribute")
         return self.TYPE
 
     @abstractmethod

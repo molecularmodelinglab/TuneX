@@ -3,18 +3,17 @@ Campaign information step for campaign creation wizard.
 """
 
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QComboBox,
     QFormLayout,
+    QHBoxLayout,
     QLineEdit,
     QTextEdit,
-    QHBoxLayout,
-    QComboBox,
+    QVBoxLayout,
 )
 
 from app.core.base import BaseStep
-from app.shared.components.headers import MainHeader
 from app.models.enums import TargetMode
-from app.shared.components.headers import SectionHeader
+from app.shared.components.headers import MainHeader, SectionHeader
 
 
 class CampaignInfoStep(BaseStep):

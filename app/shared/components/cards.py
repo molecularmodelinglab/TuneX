@@ -2,9 +2,9 @@
 Reusable card components for TuneX application.
 """
 
-from PySide6.QtWidgets import QFrame, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
 
 class Card(QFrame):

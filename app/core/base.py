@@ -3,6 +3,7 @@ Base classes for TuneX application screens and widgets.
 """
 
 from typing import Optional
+
 from PySide6.QtWidgets import QMainWindow, QWidget
 
 

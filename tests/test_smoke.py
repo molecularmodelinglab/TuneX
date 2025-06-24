@@ -1,7 +1,8 @@
 from PySide6.QtCore import Qt
+
 from app.main_application import MainApplication
-from app.screens.start.start_screen import StartScreen
 from app.screens.campaign.campaign_wizard import CampaignWizard
+from app.screens.start.start_screen import StartScreen
 
 
 def test_main_application_creation(qapp):

@@ -1,14 +1,14 @@
-import unittest
 import os
 import shutil
+import unittest
 from typing import List
 
 from app.models.parameters.base import BaseParameter
 from app.models.parameters.types import (
-    DiscreteNumericalRegular,
     Categorical,
     ContinuousNumerical,
     DiscreteNumericalIrregular,
+    DiscreteNumericalRegular,
     Fixed,
     Substance,
 )
@@ -83,9 +83,7 @@ class TestCSVDataImporter(unittest.TestCase):
 
         self.assertTrue(result.is_valid)
         self.assertEqual(len(result.warnings), 1)
-        self.assertIn(
-            "Extra column found: 'extra_param' (will be ignored)", result.warnings
-        )
+        self.assertIn("Extra column found: 'extra_param' (will be ignored)", result.warnings)
         self.assertEqual(len(data), 1)
 
     def test_import_duplicate_columns(self):
@@ -115,9 +113,7 @@ class TestCSVDataImporter(unittest.TestCase):
         self.assertFalse(result.is_valid)
         self.assertEqual(len(data), 0)
         self.assertIn(1, result.row_errors)
-        self.assertIn(
-            "Cannot convert 'abc' for parameter 'temp'", result.row_errors[1][0]
-        )
+        self.assertIn("Cannot convert 'abc' for parameter 'temp'", result.row_errors[1][0])
 
     def test_import_out_of_range_value(self):
         csv_path = self._create_csv(
@@ -133,9 +129,7 @@ class TestCSVDataImporter(unittest.TestCase):
         self.assertFalse(result.is_valid)
         self.assertEqual(len(data), 0)
         self.assertIn(1, result.row_errors)
-        self.assertIn(
-            "Value 110.0 is outside range [0.0, 100.0]", result.row_errors[1][0]
-        )
+        self.assertIn("Value 110.0 is outside range [0.0, 100.0]", result.row_errors[1][0])
 
     def test_import_invalid_categorical_value(self):
         csv_path = self._create_csv(
