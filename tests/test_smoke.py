@@ -3,6 +3,8 @@ from PySide6.QtCore import Qt
 from app.main_application import MainApplication
 from app.screens.campaign.campaign_wizard import CampaignWizard
 from app.screens.start.start_screen import StartScreen
+from app.screens.workspace.select_workspace import SelectWorkspaceScreen
+from app.shared.constants import ScreenName
 
 
 def test_main_application_creation(qapp):
@@ -12,17 +14,17 @@ def test_main_application_creation(qapp):
     assert window.isVisible() is False  # Should not be visible until .show() is called
 
 
-def test_initial_screen_is_start_screen(qapp):
+def test_initial_screen_is_select_worspace_screen(qapp):
     """Test if the initial screen is the StartScreen."""
     window = MainApplication()
-    assert isinstance(window.stacked_widget.currentWidget(), StartScreen)
+    assert isinstance(window.stacked_widget.currentWidget(), SelectWorkspaceScreen)
 
 
 def test_navigation_to_campaign_wizard(qtbot):
     """Test navigation from StartScreen to CampaignWizard."""
     window = MainApplication()
     qtbot.addWidget(window)
-    window.show()
+    window.navigate_to(ScreenName.START)
 
     # Initially, we are on the start screen
     assert isinstance(window.stacked_widget.currentWidget(), StartScreen)

@@ -7,3 +7,4 @@ class ScreenName(Enum):
     START = "start"
     CAMPAIGN_WIZARD = "campaign_wizard"
     BROWSE_CAMPAIGNS = "browse_campaigns"
+    SELECT_WORKSPACE = "select_workspace"
