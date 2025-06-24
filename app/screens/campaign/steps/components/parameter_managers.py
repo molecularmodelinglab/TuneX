@@ -49,17 +49,36 @@ class ParameterRowManager:
 
     COLUMN_HEADERS = ["Param. Name", "Param. Type", "Values", "Del."]
 
+    # UI Geometry Constants
     CONSTRAINTS_MIN_WIDTH = 400
+    COLUMN_WIDTH_NAME = 250
+    COLUMN_WIDTH_TYPE = 250
+    COLUMN_WIDTH_CONSTRAINTS = 600
+    COLUMN_WIDTH_ACTIONS = 60
 
-    # Parameter type display names for the UI dropdown
-    TYPE_DISPLAY_NAMES = {
-        ParameterType.DISCRETE_NUMERICAL_REGULAR: "Discrete Numerical (Regular)",
-        ParameterType.DISCRETE_NUMERICAL_IRREGULAR: "Discrete Numerical (Irregular)",
-        ParameterType.CONTINUOUS_NUMERICAL: "Continuous Numerical",
-        ParameterType.CATEGORICAL: "Categorical",
-        ParameterType.FIXED: "Fixed Value",
-        ParameterType.SUBSTANCE: "Substance (SMILES)",
-    }
+    TABLE_MIN_WIDTH = 1200
+    TABLE_MIN_HEIGHT = 500
+    DEFAULT_ROW_HEIGHT = 50
+
+    # Button Constants
+    REMOVE_BUTTON_MAX_WIDTH = 10
+    REMOVE_BUTTON_MAX_HEIGHT = 10
+    REMOVE_BUTTON_TEXT = "✕"
+    REMOVE_BUTTON_FONT_SIZE = "16px"
+    REMOVE_BUTTON_TOOLTIP = "Remove this parameter"
+
+    # Layout Constants
+    BUTTON_LAYOUT_MARGINS = (0, 0, 0, 0)
+
+    # UI Text Constants
+    DEFAULT_PARAMETER_NAME_PREFIX = "Parameter_"
+    PARAMETER_NAME_PLACEHOLDER = "Enter parameter name..."
+    PARAMETER_TYPE_PLACEHOLDER = "Select parameter type..."
+
+    # Object Names for Styling
+    OBJECT_NAME_PARAMETER_INPUT = "ParameterNameInput"
+    OBJECT_NAME_TYPE_COMBO = "ParameterTypeCombo"
+    OBJECT_NAME_REMOVE_BUTTON = "ParameterRemoveButton"
 
     def __init__(self, parameters: List[Optional[BaseParameter]]) -> None:
         """
@@ -99,20 +118,20 @@ class ParameterRowManager:
         parameters_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
 
         # Set specific column widths for better proportions (wider overall)
-        parameters_table.setColumnWidth(self.COLUMN_NAME, 250)  # Parameter Name (wider)
-        parameters_table.setColumnWidth(self.COLUMN_TYPE, 250)  # Type dropdown (wider)
-        parameters_table.setColumnWidth(self.COLUMN_CONSTRAINTS, 600)  # Constraints (much wider)
-        parameters_table.setColumnWidth(self.COLUMN_ACTIONS, 60)  # Actions (slightly wider)
+        parameters_table.setColumnWidth(self.COLUMN_NAME, self.COLUMN_WIDTH_NAME)
+        parameters_table.setColumnWidth(self.COLUMN_TYPE, self.COLUMN_WIDTH_TYPE)
+        parameters_table.setColumnWidth(self.COLUMN_CONSTRAINTS, self.COLUMN_WIDTH_CONSTRAINTS)
+        parameters_table.setColumnWidth(self.COLUMN_ACTIONS, self.COLUMN_WIDTH_ACTIONS)
 
         # Set minimum table size
-        parameters_table.setMinimumWidth(1200)  # Total width for all columns
-        parameters_table.setMinimumHeight(500)  # Minimum height
+        parameters_table.setMinimumWidth(self.TABLE_MIN_WIDTH)
+        parameters_table.setMinimumHeight(self.TABLE_MIN_HEIGHT)
 
         # Disable stretch to maintain fixed widths
         parameters_table.horizontalHeader().setStretchLastSection(False)
 
         # Set default row height to be taller
-        parameters_table.verticalHeader().setDefaultSectionSize(50)
+        parameters_table.verticalHeader().setDefaultSectionSize(self.DEFAULT_ROW_HEIGHT)
 
         return parameters_table
 
@@ -215,7 +234,7 @@ class ParameterRowManager:
                 if param is not None:
                     parameter_name = param.name
                 else:
-                    parameter_name = f"Parameter {i + 1}"
+                    parameter_name = f"{self.DEFAULT_PARAMETER_NAME_PREFIX}{i + 1}"
                 return (
                     False,
                     f"Parameter '{parameter_name}' validation error: {error_message}",
@@ -283,7 +302,7 @@ class ParameterRowManager:
         name_widget = self.parameters_table.cellWidget(row, self.COLUMN_NAME)
         if isinstance(name_widget, QLineEdit) and name_widget.text().strip():
             return name_widget.text().strip()
-        return f"Parameter_{row + 1}"
+        return f"{self.DEFAULT_PARAMETER_NAME_PREFIX}{row + 1}"
 
     def _get_parameter_type_from_ui(self, row: int) -> Optional[ParameterType]:
         """
@@ -332,19 +351,19 @@ class ParameterRowManager:
 
     def _create_name_widget(self, row: int) -> QLineEdit:
         """Create a line edit widget for parameter name."""
-        name_edit = QLineEdit(f"Parameter_{row + 1}")
-        name_edit.setObjectName("ParameterNameInput")
-        name_edit.setPlaceholderText("Enter parameter name...")
+        name_edit = QLineEdit(f"{self.DEFAULT_PARAMETER_NAME_PREFIX}{row + 1}")
+        name_edit.setObjectName(self.OBJECT_NAME_PARAMETER_INPUT)
+        name_edit.setPlaceholderText(self.PARAMETER_NAME_PLACEHOLDER)
         return name_edit
 
     def _create_type_combo(self, row: int) -> QComboBox:
         """Create a combo box for parameter type selection."""
         type_combo_box = QComboBox()
-        type_combo_box.setObjectName("ParameterTypeCombo")
-        type_combo_box.addItem("Select parameter type...", None)
+        type_combo_box.setObjectName(self.OBJECT_NAME_TYPE_COMBO)
+        type_combo_box.addItem(self.PARAMETER_TYPE_PLACEHOLDER, None)
 
-        for param_type, display_name in self.TYPE_DISPLAY_NAMES.items():
-            type_combo_box.addItem(display_name, param_type)
+        for param_type in ParameterType:
+            type_combo_box.addItem(param_type.display_name, param_type)
 
         # Connect to handler
         type_combo_box.currentIndexChanged.connect(lambda index: self._on_type_changed(row, index))
@@ -353,12 +372,12 @@ class ParameterRowManager:
 
     def _create_remove_button(self) -> QPushButton:
         """Create a remove button for the parameter row."""
-        remove_button = QPushButton("✕")
-        remove_button.setObjectName("ParameterRemoveButton")
-        remove_button.setMaximumWidth(10)
-        remove_button.setMaximumHeight(10)
-        remove_button.setStyleSheet("font-size: 16px;")
-        remove_button.setToolTip("Remove this parameter")
+        remove_button = QPushButton(self.REMOVE_BUTTON_TEXT)
+        remove_button.setObjectName(self.OBJECT_NAME_REMOVE_BUTTON)
+        remove_button.setMaximumWidth(self.REMOVE_BUTTON_MAX_WIDTH)
+        remove_button.setMaximumHeight(self.REMOVE_BUTTON_MAX_HEIGHT)
+        remove_button.setStyleSheet(f"font-size: {self.REMOVE_BUTTON_FONT_SIZE};")
+        remove_button.setToolTip(self.REMOVE_BUTTON_TOOLTIP)
         return remove_button
 
     def _create_button_container(self, button: QPushButton) -> QWidget:
@@ -368,7 +387,7 @@ class ParameterRowManager:
         button_layout.addStretch()
         button_layout.addWidget(button)
         button_layout.addStretch()
-        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.setContentsMargins(*self.BUTTON_LAYOUT_MARGINS)
 
         # Connect remove functionality
         button.clicked.connect(lambda: self._remove_by_button(button))

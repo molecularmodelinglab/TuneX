@@ -54,6 +54,34 @@ class BaseConstraintWidget(ABC):
 
     INVALID_NUMERICAL_VALUES_WARNING = "Warning: Invalid numerical values: {}, error: {}"
 
+    # Spinbox constants
+    SPINBOX_MIN_RANGE = -999999
+    SPINBOX_MAX_RANGE = 999999
+    SPINBOX_STEP_MIN_RANGE = 0.001
+    DISCRETE_SPINBOX_DECIMALS = 3
+    CONTINUOUS_SPINBOX_DECIMALS = 6
+
+    # Default values
+    DEFAULT_MIN_VALUE = 0.0
+    DEFAULT_MAX_VALUE_MINMAX_STEP = 10.0
+    DEFAULT_MAX_VALUE_MINMAX = 1.0
+    DEFAULT_STEP_VALUE = 1.0
+    DEFAULT_EMPTY_STRING = ""
+
+    # Layout constants
+    MINMAX_STEP_LAYOUT_MARGINS = (12, 8, 12, 8)
+    MINMAX_STEP_LAYOUT_SPACING = 12
+    MINMAX_LAYOUT_MARGINS = (8, 4, 8, 4)
+    MINMAX_LAYOUT_SPACING = 8
+
+    # Widget sizing constants
+    TEXT_EDIT_MAX_HEIGHT = 80
+
+    # Object names for styling
+    OBJECT_NAME_CONSTRAINT_SPINBOX = "ConstraintSpinBox"
+    OBJECT_NAME_CONSTRAINT_TEXTEDIT = "ConstraintTextEdit"
+    OBJECT_NAME_CONSTRAINT_LINEEDIT = "ConstraintLineEdit"
+
     def __init__(self, parameter: BaseParameter) -> None:
         """
         Initialize the constraint widget for a specific parameter.
@@ -175,29 +203,29 @@ class MinMaxStepWidget(BaseConstraintWidget):
         """Create spinboxes for min, max, and step values."""
         container_widget = QWidget()
         main_layout = QHBoxLayout(container_widget)
-        main_layout.setContentsMargins(12, 8, 12, 8)
-        main_layout.setSpacing(12)
+        main_layout.setContentsMargins(*self.MINMAX_STEP_LAYOUT_MARGINS)
+        main_layout.setSpacing(self.MINMAX_STEP_LAYOUT_SPACING)
 
         # Create min value controls
         min_label = QLabel(self.MIN_LABEL)
         self.minSpinBox = QDoubleSpinBox()
-        self.minSpinBox.setObjectName("ConstraintSpinBox")
-        self.minSpinBox.setRange(-999999, 999999)
-        self.minSpinBox.setDecimals(3)  # Allow decimal precision
+        self.minSpinBox.setObjectName(self.OBJECT_NAME_CONSTRAINT_SPINBOX)
+        self.minSpinBox.setRange(self.SPINBOX_MIN_RANGE, self.SPINBOX_MAX_RANGE)
+        self.minSpinBox.setDecimals(self.DISCRETE_SPINBOX_DECIMALS)
 
         # Create max value controls
         max_label = QLabel(self.MAX_LABEL)
         self.maxSpinBox = QDoubleSpinBox()
-        self.maxSpinBox.setObjectName("ConstraintSpinBox")
-        self.maxSpinBox.setRange(-999999, 999999)
-        self.maxSpinBox.setDecimals(3)
+        self.maxSpinBox.setObjectName(self.OBJECT_NAME_CONSTRAINT_SPINBOX)
+        self.maxSpinBox.setRange(self.SPINBOX_MIN_RANGE, self.SPINBOX_MAX_RANGE)
+        self.maxSpinBox.setDecimals(self.DISCRETE_SPINBOX_DECIMALS)
 
         # Create step value controls
         step_label = QLabel(self.STEP_LABEL)
         self.stepSpinBox = QDoubleSpinBox()
-        self.stepSpinBox.setObjectName("ConstraintSpinBox")
-        self.stepSpinBox.setRange(0.001, 999999)  # Step must be positive
-        self.stepSpinBox.setDecimals(3)
+        self.stepSpinBox.setObjectName(self.OBJECT_NAME_CONSTRAINT_SPINBOX)
+        self.stepSpinBox.setRange(self.SPINBOX_STEP_MIN_RANGE, self.SPINBOX_MAX_RANGE)
+        self.stepSpinBox.setDecimals(self.DISCRETE_SPINBOX_DECIMALS)
 
         # Add widgets to layout
         main_layout.addWidget(min_label)
@@ -211,9 +239,9 @@ class MinMaxStepWidget(BaseConstraintWidget):
 
     def _load_from_parameter(self) -> None:
         """Load current parameter values into the spinboxes."""
-        self.minSpinBox.setValue(getattr(self.parameter, "min_val", 0.0))
-        self.maxSpinBox.setValue(getattr(self.parameter, "max_val", 10.0))
-        self.stepSpinBox.setValue(getattr(self.parameter, "step", 1.0))
+        self.minSpinBox.setValue(getattr(self.parameter, "min_val", self.DEFAULT_MIN_VALUE))
+        self.maxSpinBox.setValue(getattr(self.parameter, "max_val", self.DEFAULT_MAX_VALUE_MINMAX_STEP))
+        self.stepSpinBox.setValue(getattr(self.parameter, "step", self.DEFAULT_STEP_VALUE))
 
     def _save_to_parameter(self) -> None:
         """Save spinbox values back to the parameter object."""
@@ -248,22 +276,22 @@ class MinMaxWidget(BaseConstraintWidget):
         """Create spinboxes for min and max values."""
         container_widget = QWidget()
         main_layout = QHBoxLayout(container_widget)
-        main_layout.setContentsMargins(8, 4, 8, 4)
-        main_layout.setSpacing(8)
+        main_layout.setContentsMargins(*self.MINMAX_LAYOUT_MARGINS)
+        main_layout.setSpacing(self.MINMAX_LAYOUT_SPACING)
 
         # Create minimum value controls
         min_label = QLabel(self.MIN_LABEL)
         self.minSpinBox = QDoubleSpinBox()
-        self.minSpinBox.setObjectName("ConstraintSpinBox")
-        self.minSpinBox.setRange(-999999, 999999)
-        self.minSpinBox.setDecimals(6)  # Higher precision for continuous values
+        self.minSpinBox.setObjectName(self.OBJECT_NAME_CONSTRAINT_SPINBOX)
+        self.minSpinBox.setRange(self.SPINBOX_MIN_RANGE, self.SPINBOX_MAX_RANGE)
+        self.minSpinBox.setDecimals(self.CONTINUOUS_SPINBOX_DECIMALS)
 
         # Create maximum value controls
         max_label = QLabel(self.MAX_LABEL)
         self.maxSpinBox = QDoubleSpinBox()
-        self.maxSpinBox.setObjectName("ConstraintSpinBox")
-        self.maxSpinBox.setRange(-999999, 999999)
-        self.maxSpinBox.setDecimals(6)
+        self.maxSpinBox.setObjectName(self.OBJECT_NAME_CONSTRAINT_SPINBOX)
+        self.maxSpinBox.setRange(self.SPINBOX_MIN_RANGE, self.SPINBOX_MAX_RANGE)
+        self.maxSpinBox.setDecimals(self.CONTINUOUS_SPINBOX_DECIMALS)
 
         # Add widgets to layout
         main_layout.addWidget(min_label)
@@ -275,8 +303,8 @@ class MinMaxWidget(BaseConstraintWidget):
 
     def _load_from_parameter(self) -> None:
         """Load current parameter values into the spinboxes."""
-        self.minSpinBox.setValue(getattr(self.parameter, "min_val", 0.0))
-        self.maxSpinBox.setValue(getattr(self.parameter, "max_val", 1.0))
+        self.minSpinBox.setValue(getattr(self.parameter, "min_val", self.DEFAULT_MIN_VALUE))
+        self.maxSpinBox.setValue(getattr(self.parameter, "max_val", self.DEFAULT_MAX_VALUE_MINMAX))
 
     def _save_to_parameter(self) -> None:
         """Save spinbox values back to the parameter object."""
@@ -315,8 +343,8 @@ class ValuesListWidget(BaseConstraintWidget):
     def _create_widget(self) -> QWidget:
         """Create a text area for entering comma-separated values."""
         self.valuesTextEdit = QTextEdit()
-        self.valuesTextEdit.setObjectName("ConstraintTextEdit")
-        self.valuesTextEdit.setMaximumHeight(80)
+        self.valuesTextEdit.setObjectName(self.OBJECT_NAME_CONSTRAINT_TEXTEDIT)
+        self.valuesTextEdit.setMaximumHeight(self.TEXT_EDIT_MAX_HEIGHT)
 
         # Set appropriate placeholder text based on value type
         if self.is_numerical:
@@ -382,13 +410,13 @@ class FixedValueWidget(BaseConstraintWidget):
     def _create_widget(self) -> QWidget:
         """Create a single line edit for the fixed value."""
         self.fixedValueLineEdit = QLineEdit()
-        self.fixedValueLineEdit.setObjectName("ConstraintLineEdit")
+        self.fixedValueLineEdit.setObjectName(self.OBJECT_NAME_CONSTRAINT_LINEEDIT)
         self.fixedValueLineEdit.setPlaceholderText(self.FIXED_VALUE_PLACEHOLDER)
         return self.fixedValueLineEdit
 
     def _load_from_parameter(self) -> None:
         """Load current parameter value into the line edit."""
-        value = getattr(self.parameter, "value", "")
+        value = getattr(self.parameter, "value", self.DEFAULT_EMPTY_STRING)
         self.fixedValueLineEdit.setText(str(value))
 
     def _save_to_parameter(self) -> None:
@@ -398,7 +426,7 @@ class FixedValueWidget(BaseConstraintWidget):
         text = self.fixedValueLineEdit.text().strip()
 
         if not text:
-            self.parameter.value = ""
+            self.parameter.value = self.DEFAULT_EMPTY_STRING
             return
 
         try:
@@ -429,7 +457,7 @@ class SmilesWidget(BaseConstraintWidget):
     def _create_widget(self) -> QWidget:
         """Create a text area for entering SMILES strings."""
         self.smilesTextEdit = QTextEdit()
-        self.smilesTextEdit.setMaximumHeight(80)
+        self.smilesTextEdit.setMaximumHeight(self.TEXT_EDIT_MAX_HEIGHT)
         self.smilesTextEdit.setPlaceholderText(self.SMILES_PLACEHOLDER)
         return self.smilesTextEdit
 
