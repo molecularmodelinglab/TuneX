@@ -61,6 +61,9 @@ class MainApplication(QMainWindow):
 
     def _connect_navigation(self):
         """Connect navigation signals between screens."""
+        # From workspace selection to the start screen
+        self.select_workspace.workspace_selected.connect(self._on_workspace_selected)
+
         # Start screen navigation
         self.start_screen.new_campaign_requested.connect(self.show_campaign_wizard)
         self.start_screen.browse_campaigns_requested.connect(self.show_browse_campaigns)
@@ -100,6 +103,11 @@ class MainApplication(QMainWindow):
         # TODO: Navigate to campaign details or start screen
 
         # For now, just return to start screen
+        self.show_start_screen()
+
+    def _on_workspace_selected(self, workspace_path):
+        """Handle workspace selection."""
+        print(f"Workspace_path selected: {workspace_path}")
         self.show_start_screen()
 
     def navigate_to(self, screen_name: ScreenName, data: Optional[dict] = None):
