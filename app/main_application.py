@@ -21,10 +21,15 @@ class MainApplication(QMainWindow):
     - Additional screens can be easily added
     """
 
+    DEFAULT_WINDOW_TITLE = "TuneX"
+    WELCOME_WINDOW_TITLE = "TuneX - Welcome"
+    CREATE_CAMPAIGN_WINDOW_TITLE = "TuneX - Create Campaign"
+    GEOMETRY = (100, 100, 1200, 800)
+
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("TuneX")
-        self.setGeometry(100, 100, 1200, 800)  # Increased window size
+        self.setWindowTitle(self.DEFAULT_WINDOW_TITLE)
+        self.setGeometry(*self.GEOMETRY)
 
         # Setup main navigation
         self._setup_navigation()
@@ -62,14 +67,14 @@ class MainApplication(QMainWindow):
     def show_start_screen(self):
         """Navigate to the start screen."""
         self.stacked_widget.setCurrentWidget(self.start_screen)
-        self.setWindowTitle("TuneX - Welcome")
+        self.setWindowTitle(self.WELCOME_WINDOW_TITLE)
 
     def show_campaign_wizard(self):
         """Navigate to campaign creation wizard."""
         # Reset wizard state when starting new campaign
         self.campaign_wizard.reset_wizard()
         self.stacked_widget.setCurrentWidget(self.campaign_wizard)
-        self.setWindowTitle("TuneX - Create Campaign")
+        self.setWindowTitle(self.CREATE_CAMPAIGN_WINDOW_TITLE)
 
     def show_browse_campaigns(self):
         """Navigate to browse campaigns screen."""

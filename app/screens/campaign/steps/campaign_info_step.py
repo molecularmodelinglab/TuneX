@@ -23,17 +23,33 @@ class CampaignInfoStep(BaseStep):
     Collects basic campaign information: name, description, and target configuration.
     """
 
+    TITLE = "Campaign Information"
+    NAME_LABEL = "Campaign Name:"
+    NAME_PLACEHOLDER = "Enter campaign name"
+    DESCRIPTION_LABEL = "Description:"
+    DESCRIPTION_PLACEHOLDER = "Enter campaign description"
+    TARGET_LABEL = "Target/Objective:"
+    TARGET_NAME_PLACEHOLDER = "Enter target name"
+    FORM_INPUT_OBJECT_NAME = "FormInput"
+    FORM_LABEL_OBJECT_NAME = "FormLabel"
+
+    MARGINS = (30, 30, 30, 30)
+    MAIN_SPACING = 25
+    FORM_SPACING = 15
+    TARGET_SPACING = 15
+    DESCRIPTION_HEIGHT = 100
+
     def __init__(self, shared_data: dict, parent=None):
         super().__init__(shared_data, parent)
 
     def _setup_widget(self):
         """Setup the campaign info step UI."""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(30, 30, 30, 30)
-        main_layout.setSpacing(25)
+        main_layout.setContentsMargins(*self.MARGINS)
+        main_layout.setSpacing(self.MAIN_SPACING)
 
         # Title
-        title = MainHeader("Campaign Information")
+        title = MainHeader(self.TITLE)
         main_layout.addWidget(title)
 
         # Form
@@ -45,24 +61,24 @@ class CampaignInfoStep(BaseStep):
     def _create_form(self, parent_layout):
         """Create form with all input fields."""
         form_layout = QFormLayout()
-        form_layout.setSpacing(15)
+        form_layout.setSpacing(self.FORM_SPACING)
         parent_layout.addLayout(form_layout)
 
         # Campaign name
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Enter campaign name")
-        self.name_input.setObjectName("FormInput")
-        form_label = SectionHeader("Campaign Name:")
-        form_label.setObjectName("FormLabel")
+        self.name_input.setPlaceholderText(self.NAME_PLACEHOLDER)
+        self.name_input.setObjectName(self.FORM_INPUT_OBJECT_NAME)
+        form_label = SectionHeader(self.NAME_LABEL)
+        form_label.setObjectName(self.FORM_LABEL_OBJECT_NAME)
         form_layout.addRow(form_label, self.name_input)
 
         # Description
         self.description_input = QTextEdit()
-        self.description_input.setPlaceholderText("Enter campaign description")
-        self.description_input.setFixedHeight(100)
-        self.description_input.setObjectName("FormInput")
-        desc_label = SectionHeader("Description:")
-        desc_label.setObjectName("FormLabel")
+        self.description_input.setPlaceholderText(self.DESCRIPTION_PLACEHOLDER)
+        self.description_input.setFixedHeight(self.DESCRIPTION_HEIGHT)
+        self.description_input.setObjectName(self.FORM_INPUT_OBJECT_NAME)
+        desc_label = SectionHeader(self.DESCRIPTION_LABEL)
+        desc_label.setObjectName(self.FORM_LABEL_OBJECT_NAME)
         form_layout.addRow(desc_label, self.description_input)
 
         # Target section
@@ -71,22 +87,22 @@ class CampaignInfoStep(BaseStep):
     def _create_target_section(self, form_layout):
         """Create target configuration section."""
         target_layout = QHBoxLayout()
-        target_layout.setSpacing(15)
+        target_layout.setSpacing(self.TARGET_SPACING)
 
         # Target name
         self.target_name_input = QLineEdit()
-        self.target_name_input.setPlaceholderText("Enter target name")
-        self.target_name_input.setObjectName("FormInput")
+        self.target_name_input.setPlaceholderText(self.TARGET_NAME_PLACEHOLDER)
+        self.target_name_input.setObjectName(self.FORM_INPUT_OBJECT_NAME)
         target_layout.addWidget(self.target_name_input)
 
         # Target mode
         self.target_mode_combo = QComboBox()
-        self.target_mode_combo.setObjectName("FormInput")
+        self.target_mode_combo.setObjectName(self.FORM_INPUT_OBJECT_NAME)
         self._populate_target_mode_combo()
         target_layout.addWidget(self.target_mode_combo)
 
-        target_label = SectionHeader("Target/Objective:")
-        target_label.setObjectName("FormLabel")
+        target_label = SectionHeader(self.TARGET_LABEL)
+        target_label.setObjectName(self.FORM_LABEL_OBJECT_NAME)
         form_layout.addRow(target_label, target_layout)
 
     def _populate_target_mode_combo(self):

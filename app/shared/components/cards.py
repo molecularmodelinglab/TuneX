@@ -19,6 +19,8 @@ class Card(QFrame):
 class EmptyStateCard(QFrame):
     """Card displaying empty state with icon and message."""
 
+    SPACING = 10
+
     def __init__(
         self,
         primary_message: str = "No items found",
@@ -33,7 +35,7 @@ class EmptyStateCard(QFrame):
         # Setup layout
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.setSpacing(10)
+        layout.setSpacing(self.SPACING)
 
         # Add icon if provided
         if icon_pixmap:

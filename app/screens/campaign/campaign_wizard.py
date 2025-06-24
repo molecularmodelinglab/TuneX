@@ -31,6 +31,15 @@ class CampaignWizard(BaseScreen):
     back_to_start_requested = pyqtSignal()
     campaign_created = pyqtSignal(dict)  # Emits campaign data when created
 
+    WINDOW_TITLE = "TuneX - Create Campaign"
+    BACK_BUTTON_TEXT = "← Back"
+    NEXT_BUTTON_TEXT = "Next →"
+    CREATE_CAMPAIGN_BUTTON_TEXT = "Create Campaign"
+    MAIN_LAYOUT_MARGINS = (0, 0, 0, 0)
+    MAIN_LAYOUT_SPACING = 0
+    NAV_LAYOUT_MARGINS = (30, 20, 30, 20)
+    NAV_LAYOUT_SPACING = 15
+
     def __init__(self, parent=None):
         # Initialize data before calling super() since BaseScreen calls _setup_screen()
         self.current_step = 0
@@ -45,7 +54,7 @@ class CampaignWizard(BaseScreen):
         }
 
         super().__init__(parent)
-        self.setWindowTitle("TuneX - Create Campaign")
+        self.setWindowTitle(self.WINDOW_TITLE)
 
     def _setup_screen(self):
         """Setup the campaign wizard UI."""
@@ -55,8 +64,8 @@ class CampaignWizard(BaseScreen):
 
         # Main layout
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(*self.MAIN_LAYOUT_MARGINS)
+        main_layout.setSpacing(self.MAIN_LAYOUT_SPACING)
 
         # Create content area
         self._create_content_area(main_layout)
@@ -90,11 +99,11 @@ class CampaignWizard(BaseScreen):
         nav_container = QWidget()
         nav_container.setObjectName("NavigationContainer")
         nav_layout = QHBoxLayout(nav_container)
-        nav_layout.setContentsMargins(30, 20, 30, 20)
-        nav_layout.setSpacing(15)
+        nav_layout.setContentsMargins(*self.NAV_LAYOUT_MARGINS)
+        nav_layout.setSpacing(self.NAV_LAYOUT_SPACING)
 
         # Back button
-        self.back_button = NavigationButton("← Back", "back")
+        self.back_button = NavigationButton(self.BACK_BUTTON_TEXT, "back")
         self.back_button.clicked.connect(self._go_back)
 
         # Add stretch to push buttons apart
@@ -102,7 +111,7 @@ class CampaignWizard(BaseScreen):
         nav_layout.addStretch()
 
         # Next button
-        self.next_button = NavigationButton("Next →", "next")
+        self.next_button = NavigationButton(self.NEXT_BUTTON_TEXT, "next")
         self.next_button.clicked.connect(self._go_next)
         nav_layout.addWidget(self.next_button)
 
@@ -147,9 +156,9 @@ class CampaignWizard(BaseScreen):
 
         # Update next button text
         if self.current_step == self.total_steps - 1:
-            self.next_button.setText("Create Campaign")
+            self.next_button.setText(self.CREATE_CAMPAIGN_BUTTON_TEXT)
         else:
-            self.next_button.setText("Next →")
+            self.next_button.setText(self.NEXT_BUTTON_TEXT)
 
         # Load data into current step
         current_widget = self.stacked_widget.currentWidget()

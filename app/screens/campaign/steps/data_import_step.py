@@ -37,6 +37,12 @@ class DataImportStep(BaseStep):
     - load_data(): Load previously imported data (if any)
     """
 
+    TITLE = "Data Import"
+    DESCRIPTION = "Import historical data to help optimize your campaign parameters."
+    SAVE_TEMPLATE_DIALOG_TITLE = "Save CSV Template"
+    DEFAULT_TEMPLATE_FILENAME = "campaign_data_template.csv"
+    CSV_FILE_FILTER = "CSV Files (*.csv);;All Files (*)"
+
     MAIN_LAYOUT_SPACING = 30
     MAIN_LAYOUT_MARGINS = (40, 40, 40, 40)
 
@@ -64,10 +70,10 @@ class DataImportStep(BaseStep):
         layout = self._create_main_layout()
 
         # Create title and description
-        title = MainHeader("Data Import")
+        title = MainHeader(self.TITLE)
         layout.addWidget(title)
 
-        description = SectionHeader("Import historical data to help optimize your campaign parameters.")
+        description = SectionHeader(self.DESCRIPTION)
         layout.addWidget(description)
 
         # Create specialized widgets
@@ -146,9 +152,9 @@ class DataImportStep(BaseStep):
         # Show file save dialog
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            "Save CSV Template",
-            "campaign_data_template.csv",
-            "CSV Files (*.csv);;All Files (*)",
+            self.SAVE_TEMPLATE_DIALOG_TITLE,
+            self.DEFAULT_TEMPLATE_FILENAME,
+            self.CSV_FILE_FILTER,
         )
 
         if file_path:

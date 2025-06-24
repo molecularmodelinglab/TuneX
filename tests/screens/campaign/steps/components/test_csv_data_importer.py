@@ -113,7 +113,7 @@ class TestCSVDataImporter(unittest.TestCase):
         self.assertFalse(result.is_valid)
         self.assertEqual(len(data), 0)
         self.assertIn(1, result.row_errors)
-        self.assertIn("Cannot convert 'abc' for parameter 'temp'", result.row_errors[1][0])
+        self.assertIn("Cannot convert value 'abc' for parameter 'temp'", result.row_errors[1][0])
 
     def test_import_out_of_range_value(self):
         csv_path = self._create_csv(
@@ -129,7 +129,7 @@ class TestCSVDataImporter(unittest.TestCase):
         self.assertFalse(result.is_valid)
         self.assertEqual(len(data), 0)
         self.assertIn(1, result.row_errors)
-        self.assertIn("Value 110.0 is outside range [0.0, 100.0]", result.row_errors[1][0])
+        self.assertIn("Value 110.0 is outside range [0.0, 100.0].", result.row_errors[1][0])
 
     def test_import_invalid_categorical_value(self):
         csv_path = self._create_csv(

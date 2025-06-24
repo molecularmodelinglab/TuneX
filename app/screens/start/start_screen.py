@@ -32,9 +32,20 @@ class StartScreen(BaseScreen):
     new_campaign_requested = pyqtSignal()
     browse_campaigns_requested = pyqtSignal()
 
+    WINDOW_TITLE = "TuneX - Welcome"
+    HEADER_TEXT = "TuneX"
+    NEW_CAMPAIGN_BUTTON_TEXT = "+ New Campaign"
+    BROWSE_CAMPAIGNS_BUTTON_TEXT = "Browse All"
+    RECENT_CAMPAIGNS_HEADER_TEXT = "Recently Opened Campaigns"
+    NO_RECENT_CAMPAIGNS_TEXT = "No recent campaigns"
+    NO_RECENT_CAMPAIGNS_SUBTEXT = "Browse or create a new one"
+    MARGINS = (30, 30, 30, 30)
+    SPACING = 25
+    BUTTON_SPACING = 15
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("TuneX - Welcome")
+        self.setWindowTitle(self.WINDOW_TITLE)
 
     def _setup_screen(self):
         """Setup the start screen UI."""
@@ -44,8 +55,8 @@ class StartScreen(BaseScreen):
 
         # Main layout
         self.main_layout = QVBoxLayout(central_widget)
-        self.main_layout.setContentsMargins(30, 30, 30, 30)
-        self.main_layout.setSpacing(25)
+        self.main_layout.setContentsMargins(*self.MARGINS)
+        self.main_layout.setSpacing(self.SPACING)
 
         # Create UI sections
         self._create_header()
@@ -57,22 +68,22 @@ class StartScreen(BaseScreen):
 
     def _create_header(self):
         """Create the application header."""
-        header = MainHeader("TuneX")
+        header = MainHeader(self.HEADER_TEXT)
         header.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.main_layout.addWidget(header)
 
     def _create_action_buttons(self):
         """Create main action buttons."""
         button_layout = QHBoxLayout()
-        button_layout.setSpacing(15)
+        button_layout.setSpacing(self.BUTTON_SPACING)
 
         # New Campaign button
-        self.new_campaign_btn = PrimaryButton("+ New Campaign")
+        self.new_campaign_btn = PrimaryButton(self.NEW_CAMPAIGN_BUTTON_TEXT)
         self.new_campaign_btn.setObjectName("NewCampaignButton")
         self.new_campaign_btn.clicked.connect(self.new_campaign_requested.emit)
 
         # Browse All button
-        self.browse_all_btn = SecondaryButton("Browse All")
+        self.browse_all_btn = SecondaryButton(self.BROWSE_CAMPAIGNS_BUTTON_TEXT)
         self.browse_all_btn.setObjectName("BrowseAllButton")
         self.browse_all_btn.clicked.connect(self.browse_campaigns_requested.emit)
 
@@ -85,15 +96,15 @@ class StartScreen(BaseScreen):
     def _create_recent_campaigns_section(self):
         """Create recent campaigns section."""
         # Section title
-        section_header = SectionHeader("Recently Opened Campaigns")
+        section_header = SectionHeader(self.RECENT_CAMPAIGNS_HEADER_TEXT)
         self.main_layout.addWidget(section_header)
         self.main_layout.addSpacing(15)
 
         # Empty state card
         icon_pixmap = self._get_folder_icon_pixmap()
         empty_state = EmptyStateCard(
-            primary_message="No recent campaigns",
-            secondary_message="Browse or create a new one",
+            primary_message=self.NO_RECENT_CAMPAIGNS_TEXT,
+            secondary_message=self.NO_RECENT_CAMPAIGNS_SUBTEXT,
             icon_pixmap=icon_pixmap,
         )
 

@@ -44,10 +44,10 @@ class CSVValidationResult:
     def get_summary(self) -> str:
         """Get a summary of validation results."""
         if self.is_valid:
-            return f" Validation passed: {self.valid_rows}/{self.total_rows} rows valid"
+            return f"Validation passed: {self.valid_rows}/{self.total_rows} rows valid"
 
         error_count = len(self.errors) + len(self.row_errors)
-        return f" Validation failed: {error_count} errors found"
+        return f"Validation failed: {error_count} errors found"
 
     def get_error_for_row(self, row_index: int) -> Optional[str]:
         """
@@ -268,7 +268,7 @@ class CSVDataImporter:
             Tuple of (is_valid, converted_value, error_message)
         """
         if not raw_value:
-            return False, None, f"Empty value for parameter '{parameter.name}'"
+            return False, None, f"Empty value for parameter '{parameter.name}'."
 
         try:
             converted_value = parameter.convert_value(raw_value)
@@ -278,11 +278,11 @@ class CSVDataImporter:
             if is_valid:
                 return True, converted_value, ""
             else:
-                return False, None, f"Parameter '{parameter.name}': {error_msg}"
+                return False, None, f"Parameter '{parameter.name}': {error_msg}."
 
         except (ValueError, TypeError) as e:
             return (
                 False,
                 None,
-                f"Cannot convert '{raw_value}' for parameter '{parameter.name}': {e}",
+                f"Cannot convert value '{raw_value}' for parameter '{parameter.name}': {e}",
             )

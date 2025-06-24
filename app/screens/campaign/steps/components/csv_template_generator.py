@@ -70,7 +70,7 @@ class CSVTemplateGenerator:
             return True
 
         except Exception as e:
-            print(f"Error generating CSV template: {e}")
+            print(f"Error generating CSV template: {e!r}")
             return False
 
     def _generate_headers(self) -> List[str]:

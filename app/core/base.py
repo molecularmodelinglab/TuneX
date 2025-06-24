@@ -15,10 +15,14 @@ class BaseScreen(QMainWindow):
     navigation, and styling.
     """
 
+    DEFAULT_WINDOW_TITLE = "TuneX"
+
+    GEOMETRY = (100, 100, 1200, 700)
+
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("TuneX")
-        self.setGeometry(100, 100, 1200, 700)  # Increased window size
+        self.setWindowTitle(self.DEFAULT_WINDOW_TITLE)
+        self.setGeometry(*self.GEOMETRY)
         self._setup_screen()
         self._apply_styles()
 
