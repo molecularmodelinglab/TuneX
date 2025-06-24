@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 from PySide6.QtWidgets import QFileDialog, QVBoxLayout
 
 from app.core.base import BaseStep
+from app.models.campaign import Campaign
 from app.models.parameters.base import BaseParameter
 from app.shared.components.headers import MainHeader, SectionHeader
 
@@ -46,12 +47,12 @@ class DataImportStep(BaseStep):
     MAIN_LAYOUT_SPACING = 30
     MAIN_LAYOUT_MARGINS = (40, 40, 40, 40)
 
-    def __init__(self, shared_data: dict, parent=None):
+    def __init__(self, wizard_data: Campaign, parent=None):
         """
         Initialize the data import step.
 
         Args:
-            shared_data: Shared campaign configuration data
+            wizard_data: The campaign data model
         """
         # Initialize data before calling super()
         self.imported_data: List[Dict[str, Any]] = []
@@ -60,7 +61,8 @@ class DataImportStep(BaseStep):
         self.validation_result: Optional[CSVValidationResult] = None
         self.serializer = ParameterSerializer()
 
-        super().__init__(shared_data, parent)
+        super().__init__(wizard_data, parent)
+        self.campaign: Campaign = self.wizard_data
 
         # Connect signals after UI is setup
         self._connect_signals()
@@ -123,21 +125,9 @@ class DataImportStep(BaseStep):
             return
 
         try:
-            # Create CSV data importer
-            csv_importer = CSVDataImporter(self.parameters, self.shared_data)
-
-            # Import and validate the CSV data
+            csv_importer = CSVDataImporter(self.parameters, self.campaign)
             self.imported_data, self.validation_result = csv_importer.import_csv(file_path)
-
-            if self.validation_result.is_valid:
-                print(f"Successfully imported {len(self.imported_data)} rows of data")
-
-                # Update preview widget
-                self.preview_widget.display_data(self.imported_data, self.validation_result)
-            else:
-                print(f"CSV validation failed: {self.validation_result.get_summary()}")
-                # Note: DataPreviewWidget doesn't have display_validation_errors method
-                self.preview_widget.display_validation_errors()
+            self._update_preview()
 
         except Exception as e:
             print(f"Error importing CSV file: {e}")
@@ -159,7 +149,7 @@ class DataImportStep(BaseStep):
 
         if file_path:
             try:
-                generator = CSVTemplateGenerator(self.parameters, self.shared_data)
+                generator = CSVTemplateGenerator(self.parameters, self.campaign)
                 generator.generate_template(file_path)
                 print(f"Template saved to: {file_path}")
 
@@ -193,17 +183,8 @@ class DataImportStep(BaseStep):
     def save_data(self) -> None:
         """Save imported data to shared data."""
         try:
-            # Save file path and imported data
-            self.shared_data["imported_file_path"] = self.selected_file_path
-            self.shared_data["imported_data"] = self.imported_data.copy()
-
-            # Save validation result summary
-            if self.validation_result:
-                self.shared_data["import_validation"] = {
-                    "is_valid": self.validation_result.is_valid,
-                    "row_count": len(self.imported_data),
-                    "error_message": self.validation_result.get_summary(),
-                }
+            # Save imported data
+            self.campaign.initial_dataset = self.imported_data.copy()
 
             print(f"Successfully saved import data - {len(self.imported_data)} rows")
 
@@ -211,40 +192,39 @@ class DataImportStep(BaseStep):
             print(f"Error saving import data: {e}")
 
     def load_data(self) -> None:
-        """Load previously imported data from shared data."""
+        """Load previously imported data from the campaign model."""
         try:
-            # Load parameters from previous steps
-            parameters_data = self.shared_data.get("parameters", [])
-            if parameters_data:
-                self.parameters = self.serializer.deserialize_parameters(parameters_data)
-                print(f"Loaded {len(self.parameters)} parameters for data validation")
+            self.parameters = self.campaign.parameters
+            self.imported_data = self.campaign.initial_dataset
 
-            # Load previously imported data
-            self.selected_file_path = self.shared_data.get("imported_file_path")
-            self.imported_data = self.shared_data.get("imported_data", [])
-
-            # Load validation result
-            validation_data = self.shared_data.get("import_validation", {})
-            if validation_data:
-                # Reconstruct validation result
-                self.validation_result = CSVValidationResult()
-                self.validation_result.is_valid = validation_data.get("is_valid", True)
-                self.validation_result.total_rows = validation_data.get("row_count", 0)
-                self.validation_result.valid_rows = len(self.imported_data)
-                if not self.validation_result.is_valid:
-                    error_message = validation_data.get("error_message", "")
-                    if error_message:
-                        self.validation_result.add_error(error_message)
-
-            # Update UI with loaded data
             if self.imported_data:
-                print(f"Loaded {len(self.imported_data)} rows of previously imported data")
-                if hasattr(self, "preview_widget"):
-                    self.preview_widget.display_data(self.imported_data, self.validation_result)
-                # Note: UploadSectionWidget doesn't have show_selected_file method
+                self._validate_data()
+                self._update_preview()
+                print(f"Loaded and re-validated {len(self.imported_data)} rows of data")
 
         except Exception as e:
             print(f"Error loading import data: {e}")
+
+    def _validate_data(self) -> None:
+        """Re-validate the current self.imported_data."""
+        if not self.parameters:
+            print("No parameters configured - cannot validate CSV data")
+            return
+
+        csv_importer = CSVDataImporter(self.parameters, self.campaign)
+        self.imported_data, self.validation_result = csv_importer.validate_data(self.imported_data)
+
+    def _update_preview(self) -> None:
+        """Update the preview widget with the current data and validation results."""
+        if not hasattr(self, "preview_widget"):
+            return
+
+        if self.validation_result and self.validation_result.is_valid:
+            print(f"Successfully imported {len(self.imported_data)} rows of data")
+            self.preview_widget.display_data(self.imported_data, self.validation_result)
+        elif self.validation_result:
+            print(f"CSV validation failed: {self.validation_result.get_summary()}")
+            self.preview_widget.display_validation_errors()
 
     def reset(self):
         """Reset import step to initial state."""

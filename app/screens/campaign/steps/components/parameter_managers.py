@@ -464,7 +464,7 @@ class ParameterSerializer:
 
     @staticmethod
     def serialize_parameters(
-        parameters: List[Optional[BaseParameter]],
+        parameters: List[BaseParameter],
     ) -> List[Dict[str, Any]]:
         """
         Convert parameter objects to dictionary format for saving.
@@ -475,11 +475,7 @@ class ParameterSerializer:
         Returns:
             List of dictionaries representing the parameters
         """
-        parameters_data = []
-        for param in parameters:
-            if param is not None:
-                parameters_data.append(param.to_dict())
-        return parameters_data
+        return [param.to_dict() for param in parameters]
 
     @staticmethod
     def deserialize_parameters(

@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.base import BaseScreen
+from app.models.campaign import Campaign
 from app.screens.campaign.steps.campaign_info_step import CampaignInfoStep
 from app.screens.campaign.steps.data_import_step import DataImportStep
 from app.screens.campaign.steps.parameters_step import ParametersStep
@@ -29,7 +30,7 @@ class CampaignWizard(BaseScreen):
 
     # Navigation signals
     back_to_start_requested = pyqtSignal()
-    campaign_created = pyqtSignal(dict)  # Emits campaign data when created
+    campaign_created = pyqtSignal(Campaign)  # Emits campaign data when created
 
     WINDOW_TITLE = "TuneX - Create Campaign"
     BACK_BUTTON_TEXT = "← Back"
@@ -46,12 +47,7 @@ class CampaignWizard(BaseScreen):
         self.total_steps = 3
 
         # Shared campaign data
-        self.campaign_data = {
-            "name": "",
-            "description": "",
-            "target": {"name": "", "mode": "Max"},
-            "parameters": [],
-        }
+        self.campaign = Campaign()
 
         super().__init__(parent)
         self.setWindowTitle(self.WINDOW_TITLE)
@@ -82,9 +78,9 @@ class CampaignWizard(BaseScreen):
 
         # Create step widgets
         self.step_widgets = [
-            CampaignInfoStep(self.campaign_data),
-            ParametersStep(self.campaign_data),
-            DataImportStep(self.campaign_data),
+            CampaignInfoStep(self.campaign),
+            ParametersStep(self.campaign),
+            DataImportStep(self.campaign),
         ]
 
         # Add to stacked widget
@@ -167,10 +163,10 @@ class CampaignWizard(BaseScreen):
     def _create_campaign(self):
         """Create campaign with collected data."""
         print("Creating campaign with data:")
-        print(f"Campaign Data: {self.campaign_data}")
+        print(f"Campaign Data: {self.campaign}")
 
         # Emit campaign created signal
-        self.campaign_created.emit(self.campaign_data.copy())
+        self.campaign_created.emit(self.campaign)
 
         # Go back to start screen
         self.back_to_start_requested.emit()
@@ -180,12 +176,7 @@ class CampaignWizard(BaseScreen):
         self.current_step = 0
 
         # Reset campaign data
-        self.campaign_data = {
-            "name": "",
-            "description": "",
-            "target": {"name": "", "mode": "Max"},
-            "parameters": [],
-        }
+        self.campaign = Campaign()
 
         # Reset all step widgets
         for step_widget in self.step_widgets:

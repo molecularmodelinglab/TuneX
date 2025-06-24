@@ -87,8 +87,8 @@ class BaseStep(BaseWidget):
     Extends BaseWidget with step-specific functionality.
     """
 
-    def __init__(self, shared_data: dict, parent=None):
-        self.shared_data = shared_data
+    def __init__(self, wizard_data, parent=None):
+        self.wizard_data = wizard_data
         super().__init__(parent)
 
     def save_data(self):

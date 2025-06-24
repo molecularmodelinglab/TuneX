@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.base import BaseStep
+from app.models.campaign import Campaign
 from app.models.enums import TargetMode
 from app.shared.components.headers import MainHeader, SectionHeader
 
@@ -39,8 +40,9 @@ class CampaignInfoStep(BaseStep):
     TARGET_SPACING = 15
     DESCRIPTION_HEIGHT = 100
 
-    def __init__(self, shared_data: dict, parent=None):
-        super().__init__(shared_data, parent)
+    def __init__(self, wizard_data: Campaign, parent=None):
+        super().__init__(wizard_data, parent)
+        self.campaign: Campaign = self.wizard_data
 
     def _setup_widget(self):
         """Setup the campaign info step UI."""
@@ -124,20 +126,19 @@ class CampaignInfoStep(BaseStep):
 
     def save_data(self):
         """Save form data to shared data."""
-        self.shared_data["name"] = self.name_input.text().strip()
-        self.shared_data["description"] = self.description_input.toPlainText().strip()
-        self.shared_data["target"]["name"] = self.target_name_input.text().strip()
-        self.shared_data["target"]["mode"] = self.target_mode_combo.currentText()
+        self.campaign.name = self.name_input.text().strip()
+        self.campaign.description = self.description_input.toPlainText().strip()
+        self.campaign.target.name = self.target_name_input.text().strip()
+        self.campaign.target.mode = self.target_mode_combo.currentText()
 
     def load_data(self):
         """Load data from shared data into form."""
-        self.name_input.setText(self.shared_data.get("name", ""))
-        self.description_input.setPlainText(self.shared_data.get("description", ""))
+        self.name_input.setText(self.campaign.name)
+        self.description_input.setPlainText(self.campaign.description)
 
-        target_data = self.shared_data.get("target", {})
-        self.target_name_input.setText(target_data.get("name", ""))
+        self.target_name_input.setText(self.campaign.target.name)
 
-        target_mode = target_data.get("mode", TargetMode.MAX.value)
+        target_mode = self.campaign.target.mode or TargetMode.MAX.value
         index = self.target_mode_combo.findText(target_mode)
         if index >= 0:
             self.target_mode_combo.setCurrentIndex(index)

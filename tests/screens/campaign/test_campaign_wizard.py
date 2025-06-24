@@ -104,16 +104,16 @@ class TestCampaignWizard(unittest.TestCase):
         self.wizard.campaign_created.connect(mock_slot)
         self.wizard._go_next()
         self.mock_step3.save_data.assert_called_once()
-        mock_slot.assert_called_once_with(self.wizard.campaign_data)
+        mock_slot.assert_called_once_with(self.wizard.campaign)
 
     def test_reset_wizard(self):
         # Change some data and move to the next step
-        self.wizard.campaign_data["name"] = "Test Campaign"
+        self.wizard.campaign.name = "Test Campaign"
         self.wizard.current_step = 1
         self.wizard.reset_wizard()
 
         self.assertEqual(self.wizard.current_step, 0)
-        self.assertEqual(self.wizard.campaign_data["name"], "")
+        self.assertEqual(self.wizard.campaign.name, "")
         self.mock_step1.reset.assert_called_once()
         self.mock_step2.reset.assert_called_once()
         self.mock_step3.reset.assert_called_once()

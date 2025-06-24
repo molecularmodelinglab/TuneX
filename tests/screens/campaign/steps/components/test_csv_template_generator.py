@@ -4,6 +4,7 @@ import shutil
 import unittest
 from typing import List
 
+from app.models.campaign import Campaign, Target
 from app.models.parameters.base import BaseParameter
 from app.models.parameters.types import (
     Categorical,
@@ -30,14 +31,14 @@ class TestCSVTemplateGenerator(unittest.TestCase):
             Fixed("catalyst", value="Pt"),
             Substance("reagent", smiles=["CCO", "CCCCO"]),
         ]
-        self.campaign_data = {"target": {"name": "yield"}}
+        self.campaign = Campaign(target=Target(name="yield"))
 
     def tearDown(self):
         if os.path.exists(self.test_dir):
             shutil.rmtree(self.test_dir)
 
     def test_generate_template_file_creation(self):
-        generator = CSVTemplateGenerator(self.parameters, self.campaign_data)
+        generator = CSVTemplateGenerator(self.parameters, self.campaign)
         file_path = os.path.join(self.test_dir, "template.csv")
         success = generator.generate_template(file_path)
 
@@ -45,7 +46,7 @@ class TestCSVTemplateGenerator(unittest.TestCase):
         self.assertTrue(os.path.exists(file_path))
 
     def test_generate_template_headers(self):
-        generator = CSVTemplateGenerator(self.parameters, self.campaign_data)
+        generator = CSVTemplateGenerator(self.parameters, self.campaign)
         file_path = os.path.join(self.test_dir, "template.csv")
         generator.generate_template(file_path)
 
@@ -56,7 +57,7 @@ class TestCSVTemplateGenerator(unittest.TestCase):
             self.assertEqual(headers, expected_headers)
 
     def test_generate_template_row_count(self):
-        generator = CSVTemplateGenerator(self.parameters, self.campaign_data)
+        generator = CSVTemplateGenerator(self.parameters, self.campaign)
         file_path = os.path.join(self.test_dir, "template.csv")
         generator.generate_template(file_path)
 
@@ -67,7 +68,7 @@ class TestCSVTemplateGenerator(unittest.TestCase):
             self.assertEqual(len(rows), generator.NUM_EXAMPLE_ROWS)
 
     def test_generate_template_data_validation(self):
-        generator = CSVTemplateGenerator(self.parameters, self.campaign_data)
+        generator = CSVTemplateGenerator(self.parameters, self.campaign)
         file_path = os.path.join(self.test_dir, "template.csv")
         generator.generate_template(file_path)
 

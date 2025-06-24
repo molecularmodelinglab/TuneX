@@ -7,6 +7,7 @@ from typing import Optional
 
 from PySide6.QtWidgets import QMainWindow, QStackedWidget
 
+from app.models.campaign import Campaign
 from app.screens.campaign.campaign_wizard import CampaignWizard
 from app.screens.start.start_screen import StartScreen
 from app.shared.constants import ScreenName
@@ -82,9 +83,9 @@ class MainApplication(QMainWindow):
         # TODO: Implement browse campaigns screen
         print("Browse campaigns functionality coming soon!")
 
-    def on_campaign_created(self, campaign_data: dict):
+    def on_campaign_created(self, campaign: Campaign):
         """Handle campaign creation completion."""
-        print(f"Campaign created successfully: {campaign_data.get('name', 'Unnamed')}")
+        print(f"Campaign created successfully: {campaign.name}")
 
         # TODO: Save campaign to database/file
         # TODO: Show success message

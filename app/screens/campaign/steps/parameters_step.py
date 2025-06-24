@@ -7,10 +7,11 @@ from typing import List, Optional
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout
 
 from app.core.base import BaseStep
+from app.models.campaign import Campaign
 from app.models.parameters.base import BaseParameter
 from app.shared.components.headers import MainHeader, SectionHeader
 
-from .components.parameter_managers import ParameterRowManager, ParameterSerializer
+from .components.parameter_managers import ParameterRowManager
 
 
 class ParametersStep(BaseStep):
@@ -30,17 +31,18 @@ class ParametersStep(BaseStep):
     # UI constants
     ADD_BUTTON_TEXT = "+ Add Parameter"
 
-    def __init__(self, shared_data: dict, parent=None):
+    def __init__(self, wizard_data: Campaign, parent=None):
         """
         Initialize the parameters configuration step.
 
         Args:
-            shared_data: Dictionary containing campaign configuration data
+            wizard_data: The campaign data model
         """
         # Initialize parameters list before calling super()
         self.parameters: List[Optional[BaseParameter]] = []
 
-        super().__init__(shared_data, parent)
+        super().__init__(wizard_data, parent)
+        self.campaign: Campaign = self.wizard_data
 
         # Connect UI signals
         self._connect_signals()
@@ -91,9 +93,6 @@ class ParametersStep(BaseStep):
         # Manager for table rows and UI widgets (creates and owns the table)
         self.row_manager = ParameterRowManager(self.parameters)
 
-        # Manager for data serialization/deserialization
-        self.serializer = ParameterSerializer()
-
     def _connect_signals(self) -> None:
         """Connect UI signals to their handlers."""
         if hasattr(self, "_add_button"):
@@ -143,17 +142,15 @@ class ParametersStep(BaseStep):
             # Ensure all UI data is synced to parameter objects
             self.row_manager.sync_ui_to_parameters()
 
-            # Serialize parameters using the dedicated serializer
-            parameters_data = self.serializer.serialize_parameters(self.parameters)
+            # Filter out any None values before saving
+            valid_parameters = [p for p in self.parameters if p is not None]
+            self.campaign.parameters = valid_parameters
 
-            # Store in shared data
-            self.shared_data["parameters"] = parameters_data
-
-            print(f"Successfully saved {len(parameters_data)} parameters to campaign data")
+            print(f"Successfully saved {len(self.parameters)} parameters to campaign data")
 
             # Debug output - in production this might be logged instead
-            for i, param_dict in enumerate(parameters_data, 1):
-                print(f"  Parameter {i}: {param_dict['name']} ({param_dict['type']})")
+            for i, param in enumerate(self.campaign.parameters, 1):
+                print(f"  Parameter {i}: {param.name} ({param.parameter_type.value})")
 
         except Exception as e:
             print(f"Error saving parameters: {e}")
@@ -169,16 +166,13 @@ class ParametersStep(BaseStep):
         """
         try:
             # Get parameters data from campaign
-            parameters_data = self.shared_data.get("parameters", [])
+            loaded_parameters = self.campaign.parameters
 
-            if not parameters_data:
+            if not loaded_parameters:
                 print("No saved parameters found - starting with empty table")
                 return
 
-            print(f"Loading {len(parameters_data)} parameters from campaign data")
-
-            # Deserialize parameters using the dedicated serializer
-            loaded_parameters = self.serializer.deserialize_parameters(parameters_data)
+            print(f"Loading {len(loaded_parameters)} parameters from campaign data")
 
             # Update our parameters list
             self.parameters.clear()

@@ -9,6 +9,7 @@ and data validation using the existing parameter validation methods.
 import csv
 from typing import Any, Dict, List, Optional, Tuple
 
+from app.models.campaign import Campaign
 from app.models.parameters.base import BaseParameter
 
 
@@ -82,16 +83,17 @@ class CSVDataImporter:
     def __init__(
         self,
         parameters: List[BaseParameter],
-        campaign_data: Optional[Dict[str, Any]] = None,
+        campaign: Campaign,
     ) -> None:
         """
         Initialize the CSV importer.
 
         Args:
             parameters: List of configured parameters from Step 2
+            campaign: The campaign data model
         """
         self.parameters = parameters
-        self.campaign_data = campaign_data or {}
+        self.campaign = campaign
 
     def import_csv(self, file_path: str) -> Tuple[List[Dict[str, Any]], CSVValidationResult]:
         """
@@ -117,7 +119,8 @@ class CSVDataImporter:
             if not result.is_valid:
                 return imported_data, result
 
-            imported_data = self._validate_data_rows(raw_data, headers, result)
+            data_as_dicts = self._convert_rows_to_dicts(raw_data, headers)
+            imported_data = self._validate_data_rows(data_as_dicts, result)
 
             result.valid_rows = result.total_rows - len(result.row_errors)
 
@@ -127,6 +130,32 @@ class CSVDataImporter:
             result.add_error(f"Failed to import CSV: {e}")
 
         return imported_data, result
+
+    def validate_data(self, data: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], CSVValidationResult]:
+        """
+        Validate a list of data dictionaries without reading from a file.
+
+        Args:
+            data: A list of dictionaries, where each dictionary represents a row.
+
+        Returns:
+            A tuple containing the validated data and the validation result.
+        """
+        result = CSVValidationResult()
+        if not data:
+            return [], result
+
+        headers = list(data[0].keys())
+        self._validate_columns(headers, result)
+
+        if not result.is_valid:
+            return [], result
+
+        validated_data = self._validate_data_rows(data, result)
+        result.total_rows = len(data)
+        result.valid_rows = len(validated_data)
+
+        return validated_data, result
 
     def _parse_csv_file(self, file_path: str) -> Tuple[List[List[str]], List[str]]:
         """
@@ -172,6 +201,14 @@ class CSVDataImporter:
 
         return data_rows, headers
 
+    def _convert_rows_to_dicts(self, data_rows: List[List[str]], headers: List[str]) -> List[Dict[str, Any]]:
+        """Convert a list of raw string rows to a list of dictionaries."""
+        dict_rows = []
+        for row in data_rows:
+            row_dict = {header: (row[i].strip() if i < len(row) else "") for i, header in enumerate(headers)}
+            dict_rows.append(row_dict)
+        return dict_rows
+
     def _validate_columns(self, headers: List[str], result: CSVValidationResult) -> None:
         """
         Validate that CSV headers match the configured parameters.
@@ -181,7 +218,7 @@ class CSVDataImporter:
             result: Validation result object to update
         """
         expected_columns = set(param.name for param in self.parameters)
-        expected_columns.add(self.campaign_data["target"].get("name", self.TARGET_COLUMN_NAME))
+        expected_columns.add(self.campaign.target.name or self.TARGET_COLUMN_NAME)
         actual_columns = set(headers)
 
         missing = expected_columns - actual_columns
@@ -208,48 +245,41 @@ class CSVDataImporter:
 
     def _validate_data_rows(
         self,
-        data_rows: List[List[str]],
-        headers: List[str],
+        data_rows: List[Dict[str, Any]],
         result: CSVValidationResult,
     ) -> List[Dict[str, Any]]:
         """
         Validate data in each row against parameter constraints.
 
         Args:
-            data_rows: Raw data rows from CSV
-            headers: Column headers
-            result: Validation result object to update
+            data_rows: A list of dictionaries representing the rows to validate.
+            result: Validation result object to update.
 
         Returns:
-            List of validated data dictionaries
+            List of validated data dictionaries.
         """
         validated_data = []
 
-        for row_index, row in enumerate(data_rows):
-            row_dict = {}
+        for row_index, row_dict in enumerate(data_rows):
             row_has_errors = False
-
-            # Create dictionary from row data
-            for col_index, header in enumerate(headers):
-                value = row[col_index].strip() if col_index < len(row) else ""
-                row_dict[header] = value
+            validated_row = row_dict.copy()
 
             # Validate each parameter column
             for param in self.parameters:
-                if param.name in row_dict:
-                    raw_value = row_dict[param.name]
+                if param.name in validated_row:
+                    raw_value = str(validated_row[param.name])
 
                     is_valid, converted_value, error_msg = self._validate_parameter_value(param, raw_value, row_index)
 
                     if is_valid:
-                        row_dict[param.name] = converted_value
+                        validated_row[param.name] = converted_value
                     else:
-                        result.add_row_error(row_index + 1, error_msg)  # +1 for human-readable row numbers
+                        result.add_row_error(row_index + 1, error_msg)
                         row_has_errors = True
 
             # Only add valid rows to final data
             if not row_has_errors:
-                validated_data.append(row_dict)
+                validated_data.append(validated_row)
 
         return validated_data
 

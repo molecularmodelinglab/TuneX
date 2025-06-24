@@ -3,6 +3,7 @@ import shutil
 import unittest
 from typing import List
 
+from app.models.campaign import Campaign, Target
 from app.models.parameters.base import BaseParameter
 from app.models.parameters.types import (
     Categorical,
@@ -29,7 +30,7 @@ class TestCSVDataImporter(unittest.TestCase):
             Fixed("catalyst", value="Pt"),
             Substance("reagent", smiles=["CCO", "CCCCO"]),
         ]
-        self.campaign_data = {"target": {"name": "yield"}}
+        self.campaign = Campaign(target=Target(name="yield"))
 
     def tearDown(self):
         if os.path.exists(self.test_dir):
@@ -50,7 +51,7 @@ class TestCSVDataImporter(unittest.TestCase):
                 "25.0,5.5,ethanol,2,Pt,CCCCO,92.1",
             ],
         )
-        importer = CSVDataImporter(self.parameters, self.campaign_data)
+        importer = CSVDataImporter(self.parameters, self.campaign)
         data, result = importer.import_csv(csv_path)
 
         self.assertTrue(result.is_valid)
@@ -62,7 +63,7 @@ class TestCSVDataImporter(unittest.TestCase):
 
     def test_import_missing_columns(self):
         csv_path = self._create_csv("missing_col.csv", ["temp,yield", "10.0,85.5"])
-        importer = CSVDataImporter(self.parameters, self.campaign_data)
+        importer = CSVDataImporter(self.parameters, self.campaign)
         data, result = importer.import_csv(csv_path)
 
         self.assertFalse(result.is_valid)
@@ -78,7 +79,7 @@ class TestCSVDataImporter(unittest.TestCase):
                 "10.0,7.0,water,1,Pt,CCO,85.5,ignored",
             ],
         )
-        importer = CSVDataImporter(self.parameters, self.campaign_data)
+        importer = CSVDataImporter(self.parameters, self.campaign)
         data, result = importer.import_csv(csv_path)
 
         self.assertTrue(result.is_valid)
@@ -94,7 +95,7 @@ class TestCSVDataImporter(unittest.TestCase):
                 "10.0,7.0,water,1,Pt,CCO,85.5,20.0",
             ],
         )
-        importer = CSVDataImporter(self.parameters, self.campaign_data)
+        importer = CSVDataImporter(self.parameters, self.campaign)
         data, result = importer.import_csv(csv_path)
         self.assertFalse(result.is_valid)
         self.assertIn("Duplicate column header: 'temp'", result.errors)
@@ -107,7 +108,7 @@ class TestCSVDataImporter(unittest.TestCase):
                 "abc,7.0,water,1,Pt,CCO,85.5",
             ],
         )
-        importer = CSVDataImporter(self.parameters, self.campaign_data)
+        importer = CSVDataImporter(self.parameters, self.campaign)
         data, result = importer.import_csv(csv_path)
 
         self.assertFalse(result.is_valid)
@@ -123,7 +124,7 @@ class TestCSVDataImporter(unittest.TestCase):
                 "110.0,7.0,water,1,Pt,CCO,85.5",
             ],
         )
-        importer = CSVDataImporter(self.parameters, self.campaign_data)
+        importer = CSVDataImporter(self.parameters, self.campaign)
         data, result = importer.import_csv(csv_path)
 
         self.assertFalse(result.is_valid)
@@ -139,7 +140,7 @@ class TestCSVDataImporter(unittest.TestCase):
                 "10.0,7.0,acetone,1,Pt,CCO,85.5",
             ],
         )
-        importer = CSVDataImporter(self.parameters, self.campaign_data)
+        importer = CSVDataImporter(self.parameters, self.campaign)
         data, result = importer.import_csv(csv_path)
 
         self.assertFalse(result.is_valid)
@@ -148,7 +149,7 @@ class TestCSVDataImporter(unittest.TestCase):
         self.assertIn("not in allowed categories", result.row_errors[1][0])
 
     def test_import_file_not_found(self):
-        importer = CSVDataImporter(self.parameters, self.campaign_data)
+        importer = CSVDataImporter(self.parameters, self.campaign)
         data, result = importer.import_csv("non_existent_file.csv")
 
         self.assertFalse(result.is_valid)
@@ -163,7 +164,7 @@ class TestCSVDataImporter(unittest.TestCase):
                 "10.0;7.0;water;1;Pt;CCO;85.5",
             ],
         )
-        importer = CSVDataImporter(self.parameters, self.campaign_data)
+        importer = CSVDataImporter(self.parameters, self.campaign)
         data, result = importer.import_csv(csv_path)
 
         self.assertTrue(result.is_valid)
