@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QMainWindow, QStackedWidget
 
 from app.screens.campaign.campaign_wizard import CampaignWizard
 from app.screens.start.start_screen import StartScreen
+from app.shared.constants import ScreenName
 
 
 class MainApplication(QMainWindow):
@@ -92,7 +93,7 @@ class MainApplication(QMainWindow):
         # For now, just return to start screen
         self.show_start_screen()
 
-    def navigate_to(self, screen_name: str, data: Optional[dict] = None):
+    def navigate_to(self, screen_name: ScreenName, data: Optional[dict] = None):
         """
         Generic navigation method for screen-to-screen communication.
 
@@ -100,11 +101,11 @@ class MainApplication(QMainWindow):
             screen_name: Name of the target screen
             data: Optional data to pass to the target screen
         """
-        if screen_name == "start":
+        if screen_name == ScreenName.START:
             self.show_start_screen()
-        elif screen_name == "campaign_wizard":
+        elif screen_name == ScreenName.CAMPAIGN_WIZARD:
             self.show_campaign_wizard()
-        elif screen_name == "browse_campaigns":
+        elif screen_name == ScreenName.BROWSE_CAMPAIGNS:
             self.show_browse_campaigns()
         else:
             print(f"Unknown screen: {screen_name}")

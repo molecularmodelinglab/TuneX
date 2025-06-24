@@ -6,6 +6,8 @@ from typing import Optional
 
 from PySide6.QtWidgets import QMainWindow, QWidget
 
+from app.shared.constants import ScreenName
+
 
 class BaseScreen(QMainWindow):
     """
@@ -36,7 +38,7 @@ class BaseScreen(QMainWindow):
 
         self.setStyleSheet(get_base_styles())
 
-    def navigate_to(self, screen_name: str, data: Optional[dict] = None):
+    def navigate_to(self, screen_name: ScreenName, data: Optional[dict] = None):
         """Navigate to another screen with optional data."""
         if hasattr(self.parent(), "navigate_to"):
             self.parent().navigate_to(screen_name, data)
