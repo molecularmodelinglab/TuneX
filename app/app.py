@@ -1,9 +1,20 @@
 import sys
+
 from PySide6.QtWidgets import QApplication
-from app.widgets.main_window import MainWindow  # TODO: replace if the interface changes
+
+from app.main_application import MainApplication
+
 
 def main():
     app = QApplication(sys.argv)
-    window = MainWindow()
+
+    # Set application properties
+    app.setApplicationName("TuneX")
+    app.setApplicationVersion("0.0.1")
+    app.setOrganizationName("MML - UNC")
+
+    # Create and show main application window
+    window = MainApplication()
     window.show()
+
     sys.exit(app.exec())

@@ -1,0 +1,20 @@
+*.pyc
+
+
+__pycache__/
+
+# Virtual environments
+.venv/
+
+# mypy
+.mypy_cache/
+
+# Ruff
+.ruff_cache/
+
+# pre-commit
+.pre-commit-cache/
+
+# Dist builds
+build/
+dist/
