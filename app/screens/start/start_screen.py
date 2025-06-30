@@ -33,11 +33,13 @@ class StartScreen(BaseScreen):
     # Signals for navigation
     new_campaign_requested = pyqtSignal()
     browse_campaigns_requested = pyqtSignal()
+    back_requested = pyqtSignal()
 
     WINDOW_TITLE = "TuneX - Welcome"
     HEADER_TEXT = "TuneX"
     NEW_CAMPAIGN_BUTTON_TEXT = "+ New Campaign"
     BROWSE_CAMPAIGNS_BUTTON_TEXT = "Browse All"
+    BACK_BUTTON_TEXT = "Back to Workspace Selection"
     RECENT_CAMPAIGNS_HEADER_TEXT = "Recently Opened Campaigns"
     MARGINS = (30, 30, 30, 30)
     SPACING = 25
@@ -108,7 +110,12 @@ class StartScreen(BaseScreen):
 
         button_layout.addWidget(self.new_campaign_btn)
         button_layout.addWidget(self.browse_all_btn)
-        button_layout.addStretch()  # Push buttons to left
+
+        # Back button
+        self.back_btn = SecondaryButton(self.BACK_BUTTON_TEXT)
+        self.back_btn.clicked.connect(self.back_requested.emit)
+        button_layout.addWidget(self.back_btn)
+        button_layout.addStretch()
 
         self.main_layout.addLayout(button_layout)
 

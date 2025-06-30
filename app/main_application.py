@@ -67,6 +67,7 @@ class MainApplication(QMainWindow):
         # Start screen navigation
         self.start_screen.new_campaign_requested.connect(self.show_campaign_wizard)
         self.start_screen.browse_campaigns_requested.connect(self.show_browse_campaigns)
+        self.start_screen.back_requested.connect(self.show_select_workspace)
 
         # Campaign wizard navigation
         self.campaign_wizard.back_to_start_requested.connect(self.show_start_screen)
