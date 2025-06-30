@@ -10,7 +10,7 @@ from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 
 from app.core.base import BaseScreen
-from app.shared.components.buttons import PrimaryButton
+from app.shared.components.buttons import PrimaryButton, SecondaryButton
 from app.shared.components.headers import MainHeader
 from app.shared.constants import WorkspaceConstants
 from app.shared.styles.theme import get_widget_styles
@@ -27,44 +27,24 @@ class SelectWorkspaceScreen(BaseScreen):
     # UI Text
     WINDOW_TITLE = "TuneX - Select Workspace"
     HEADER_TEXT = "TuneX"
-    SELECT_WORKSPACE_BUTTON_TEXT = "Select workspace"
-    SELECT_WORKSPACE_FOLDER_TEXT = "Select Workspace Folder"
+    CREATE_NEW_BUTTON_TEXT = "Create New Workspace"
+    OPEN_EXISTING_BUTTON_TEXT = "Open Existing Workspace"
+    SELECT_NEW_WORKSPACE_FOLDER_TEXT = "Select Folder for New Workspace"
+    SELECT_EXISTING_WORKSPACE_FOLDER_TEXT = "Select Existing Workspace Folder"
     CREATE_WORKSPACE_TEXT = "Create Workspace"
     FOLDER_NOT_EMPTY_TEXT = "The selected folder is not empty.\nCreate workspace here anyway?"
+    INVALID_WORKSPACE_TEXT = "Invalid Workspace"
+    NOT_A_WORKSPACE_TEXT = (
+        "The selected folder is not a valid TuneX workspace.\n"
+        "Please select a folder containing a workspace configuration file."
+    )
     ERROR_TEXT = "Error"
     FAILED_TO_CREATE_WORKSPACE_TEXT = "Failed to create workspace:\n{}"
     WORKSPACE_SELECTED_TEXT = "Workspace selected: {}"
 
-    # UI Identifiers
-    SELECT_WORKSPACE_BUTTON_ID = "SelectWorkspaceButton"
-
-    # Workspace Configuration
-    WORKSPACE_CONFIG_NAME = "name"
-    WORKSPACE_CONFIG_CREATED = "created"
-    WORKSPACE_CONFIG_VERSION = "version"
-    WORKSPACE_CONFIG_VERSION_VALUE = "1.0"
-
-    # Layout
     MARGINS = (30, 30, 30, 30)
     SPACING = 25
     BUTTON_SPACING = 15
-
-    # Styles
-    SELECT_WORKSPACE_BUTTON_STYLE = """
-        /* "Select Workspace" Button */
-        #{} {{
-            background-color: #007BFF; /* A vibrant blue */
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-        }}
-        #{}:hover {{
-            background-color: #0056b3; /* Darker blue on hover */
-        }}
-    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -99,37 +79,45 @@ class SelectWorkspaceScreen(BaseScreen):
         button_layout = QHBoxLayout()
         button_layout.setSpacing(self.BUTTON_SPACING)
 
-        # New Campaign button
-        self.select_workspace_btn = PrimaryButton(self.SELECT_WORKSPACE_BUTTON_TEXT)
-        self.select_workspace_btn.clicked.connect(self._on_select_workspace)
-        self.select_workspace_btn.setObjectName(self.SELECT_WORKSPACE_BUTTON_ID)
+        # Create New Workspace button
+        self.create_new_btn = PrimaryButton(self.CREATE_NEW_BUTTON_TEXT)
+        self.create_new_btn.clicked.connect(self._on_create_new_workspace)
 
-        button_layout.addWidget(self.select_workspace_btn)
+        # Open Existing Workspace button
+        self.open_existing_btn = SecondaryButton(self.OPEN_EXISTING_BUTTON_TEXT)
+        self.open_existing_btn.clicked.connect(self._on_open_existing_workspace)
+
+        button_layout.addWidget(self.create_new_btn)
+        button_layout.addWidget(self.open_existing_btn)
+        button_layout.addStretch()  # Push buttons to left
 
         self.main_layout.addLayout(button_layout)
 
-    def _on_select_workspace(self):
-        """Handle workspace selection."""
+    def _on_create_new_workspace(self):
+        """Handle creating a new workspace."""
         folder_path = QFileDialog.getExistingDirectory(
             self,
-            self.SELECT_WORKSPACE_FOLDER_TEXT,
-            "",  # Start home directory
+            self.SELECT_NEW_WORKSPACE_FOLDER_TEXT,
+            "",  # Start in home directory
             QFileDialog.Option.ShowDirsOnly,
         )
         if folder_path:  # User didn't cancel
-            self._handle_workspace_folder(folder_path)
-
-    def _handle_workspace_folder(self, folder_path):
-        """Handle the selected workspace folder."""
-        workspace_file = os.path.join(folder_path, WorkspaceConstants.WORKSPACE_CONFIG_FILENAME)
-
-        if os.path.exists(workspace_file):
-            self._open_existing_workspace(folder_path)
-        else:
             self._create_new_workspace(folder_path)
+
+    def _on_open_existing_workspace(self):
+        """Handle opening an existing workspace."""
+        folder_path = QFileDialog.getExistingDirectory(
+            self,
+            self.SELECT_EXISTING_WORKSPACE_FOLDER_TEXT,
+            "",  # Start in home directory
+            QFileDialog.Option.ShowDirsOnly,
+        )
+        if folder_path:  # User didn't cancel
+            self._open_existing_workspace(folder_path)
 
     def _create_new_workspace(self, folder_path):
         """Create a new workspace in the selected folder."""
+        # Check if folder is not empty and ask for confirmation
         if os.listdir(folder_path):
             reply = QMessageBox.question(
                 self,
@@ -141,16 +129,19 @@ class SelectWorkspaceScreen(BaseScreen):
                 return
 
         try:
+            # Create workspace configuration
             workspace_config = {
                 WorkspaceConstants.WORKSPACE_NAME_KEY: os.path.basename(folder_path),
                 WorkspaceConstants.WORKSPACE_CREATED_KEY: datetime.now().isoformat(),
                 WorkspaceConstants.WORKSPACE_VERSION_KEY: WorkspaceConstants.WORKSPACE_VERSION_VALUE,
             }
 
+            # Write workspace config file
             workspace_file = os.path.join(folder_path, WorkspaceConstants.WORKSPACE_CONFIG_FILENAME)
             with open(workspace_file, "w") as f:
                 json.dump(workspace_config, f, indent=2)
 
+            # Create campaigns directory
             campaigns_dir = os.path.join(folder_path, WorkspaceConstants.CAMPAIGNS_DIRNAME)
             os.makedirs(campaigns_dir, exist_ok=True)
 
@@ -161,6 +152,18 @@ class SelectWorkspaceScreen(BaseScreen):
 
     def _open_existing_workspace(self, folder_path):
         """Open an existing workspace."""
+        # Validate that it's a valid workspace
+        workspace_file = os.path.join(folder_path, WorkspaceConstants.WORKSPACE_CONFIG_FILENAME)
+
+        if not os.path.exists(workspace_file):
+            QMessageBox.warning(
+                self,
+                self.INVALID_WORKSPACE_TEXT,
+                self.NOT_A_WORKSPACE_TEXT,
+            )
+            return
+
+        # TODO: Could add more validation here (check config file format, etc.)
         self._workspace_selected(folder_path)
 
     def _workspace_selected(self, folder_path):
@@ -170,9 +173,4 @@ class SelectWorkspaceScreen(BaseScreen):
 
     def _apply_styles(self):
         """Apply screen-specific styles."""
-        self.setStyleSheet(
-            get_widget_styles()
-            + self.SELECT_WORKSPACE_BUTTON_STYLE.format(
-                self.SELECT_WORKSPACE_BUTTON_ID, self.SELECT_WORKSPACE_BUTTON_ID
-            )
-        )
+        self.setStyleSheet(get_widget_styles())
