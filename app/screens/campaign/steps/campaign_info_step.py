@@ -14,11 +14,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QSizePolicy
 
 from app.core.base import BaseStep
 from app.models.campaign import Campaign
 from app.models.campaign import Target
 from app.models.enums import TargetMode
+from app.shared.components.buttons import PrimaryButton, DangerButton
 from app.shared.components.headers import MainHeader, SectionHeader
 
 
@@ -55,7 +57,8 @@ class TargetRow(QWidget):
         layout.addWidget(self.mode_combo)
         
         # Remove button
-        self.remove_btn = QPushButton("Remove")
+        self.remove_btn = DangerButton("Remove")
+        self.remove_btn.setToolTip("Remove this target")
         self.remove_btn.clicked.connect(lambda: self.on_remove_callback(self))
         layout.addWidget(self.remove_btn)
     
@@ -82,19 +85,20 @@ class CampaignInfoStep(BaseStep):
     NAME_PLACEHOLDER = "Enter campaign name"
     DESCRIPTION_LABEL = "Description:"
     DESCRIPTION_PLACEHOLDER = "Enter campaign description"
-    TARGET_LABEL = "Targets/Objectives:"
+    TARGETS_LABEL = "Targets/Objectives:"
     FORM_INPUT_OBJECT_NAME = "FormInput"
     FORM_LABEL_OBJECT_NAME = "FormLabel"
 
     MARGINS = (30, 30, 30, 30)
     MAIN_SPACING = 25
     FORM_SPACING = 15
-    TARGET_SPACING = 15
+    TARGET_SPACING = 10
     DESCRIPTION_HEIGHT = 100
 
     def __init__(self, wizard_data: Campaign, parent=None):
         super().__init__(wizard_data, parent)
         self.campaign: Campaign = self.wizard_data
+        self.target_rows = []
 
     def _setup_widget(self):
         """Setup the campaign info step UI."""
@@ -141,15 +145,22 @@ class CampaignInfoStep(BaseStep):
     def _create_targets_section(self, form_layout):
         """Create targets configuration section."""
         targets_widget = QWidget()
+        targets_widget.setObjectName("TargetsWidget")
+        targets_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         targets_layout = QVBoxLayout(targets_widget)
         targets_layout.setContentsMargins(0, 0, 0, 0)
         targets_layout.setSpacing(self.TARGET_SPACING)
+        # targets_widget.setStyleSheet("background-color: transparent; border-radius: 5px; padding: 10px;")
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll_area.setMaximumHeight(200)
+        scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        scroll_area.setMaximumHeight(400)
+        scroll_area.setObjectName("TargetsScrollArea")
+
+        # scroll_area.setObjectName("FormInput")
 
         self.targets_container = QWidget()
         self.targets_layout = QVBoxLayout(self.targets_container)
@@ -159,8 +170,11 @@ class CampaignInfoStep(BaseStep):
         scroll_area.setWidget(self.targets_container)
         targets_layout.addWidget(scroll_area)
 
-        self.add_target_btn = QPushButton("Add Target")
-        self.add_target_btn.clicked.connect(self._add_target_row)
+        self.add_target_btn = PrimaryButton("Add Another Target")
+        self.add_target_btn.setObjectName("PrimaryButton")
+        self.add_target_btn.setFixedWidth(250)
+        self.add_target_btn.setToolTip("Add a new target to the campaign")
+        self.add_target_btn.clicked.connect(lambda: self._add_target_row())
         targets_layout.addWidget(self.add_target_btn)
 
         targets_label = SectionHeader(self.TARGETS_LABEL)
