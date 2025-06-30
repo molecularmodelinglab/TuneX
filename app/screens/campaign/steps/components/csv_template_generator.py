@@ -87,11 +87,11 @@ class CSVTemplateGenerator:
             headers.append(parameter.name)
 
         # Use target name from campaign data if available, otherwise use default
-        target_name = self.TARGET_COLUMN_NAME
-        if self.campaign and self.campaign.target:
-            target_name = self.campaign.target.name or self.TARGET_COLUMN_NAME
-
-        headers.append(target_name)
+        if self.campaign and self.campaign.targets:
+            for target in self.campaign.targets[:]:
+                headers.append(target.name)
+        else:
+            headers.append(self.TARGET_COLUMN_NAME)
 
         return headers
 
