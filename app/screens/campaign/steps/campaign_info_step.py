@@ -148,7 +148,7 @@ class CampaignInfoStep(BaseStep):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarNever)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll_area.setMaximumHeight(200)
 
         self.targets_container = QWidget()
