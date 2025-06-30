@@ -27,6 +27,14 @@ class Campaign:
     parameters: List[BaseParameter] = field(default_factory=list)
     initial_dataset: List[Dict[str, Any]] = field(default_factory=list)
 
+    def reset(self):
+        """Reset all campaign data to its initial state."""
+        self.name = ""
+        self.description = ""
+        self.target = Target()
+        self.parameters.clear()
+        self.initial_dataset.clear()
+
     def get_parameter_data(self) -> List[Dict[str, Any]]:
         """Serialize parameters to a list of dictionaries."""
         serializer = ParameterSerializer()

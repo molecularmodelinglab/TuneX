@@ -187,7 +187,6 @@ class DataImportStep(BaseStep):
             self.campaign.initial_dataset = self.imported_data.copy()
 
             print(f"Successfully saved import data - {len(self.imported_data)} rows")
-            print(self.campaign.to_dict())
         except Exception as e:
             print(f"Error saving import data: {e}")
 

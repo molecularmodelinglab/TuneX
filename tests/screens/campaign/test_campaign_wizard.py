@@ -1,3 +1,7 @@
+import json
+import os
+import shutil
+import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -50,6 +54,8 @@ class TestCampaignWizard(unittest.TestCase):
         patcher3.start()
 
         self.wizard = CampaignWizard()
+        self.temp_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.temp_dir)
 
     def test_initial_state(self):
         self.assertEqual(self.wizard.current_step, 0)
@@ -117,6 +123,33 @@ class TestCampaignWizard(unittest.TestCase):
         self.mock_step1.reset.assert_called_once()
         self.mock_step2.reset.assert_called_once()
         self.mock_step3.reset.assert_called_once()
+
+    def test_save_campaign_to_file(self):
+        # Set a workspace path
+        self.wizard.workspace_path = self.temp_dir
+        self.wizard.campaign.name = "Test Campaign"
+
+        # Mock the final step validation
+        self.mock_step3.validate.return_value = True
+
+        # Trigger campaign creation
+        self.wizard.current_step = self.wizard.total_steps - 1
+        self.wizard._go_next()
+
+        # Check if the file was created
+        campaigns_dir = os.path.join(self.temp_dir, "campaigns")
+        self.assertTrue(os.path.exists(campaigns_dir))
+
+        # Find the created file
+        saved_files = os.listdir(campaigns_dir)
+        self.assertEqual(len(saved_files), 1)
+        saved_file_path = os.path.join(campaigns_dir, saved_files[0])
+
+        # Check the file content
+        with open(saved_file_path, "r") as f:
+            saved_data = json.load(f)
+
+        self.assertEqual(saved_data["name"], "Test Campaign")
 
 
 if __name__ == "__main__":
