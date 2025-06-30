@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QMainWindow, QStackedWidget
 from app.models.campaign import Campaign
 from app.screens.campaign.campaign_wizard import CampaignWizard
 from app.screens.start.start_screen import StartScreen
+from app.screens.workspace.select_workspace import SelectWorkspaceScreen
 from app.shared.constants import ScreenName
 
 
@@ -40,7 +41,7 @@ class MainApplication(QMainWindow):
         self._connect_navigation()
 
         # Start with welcome screen
-        self.show_start_screen()
+        self.show_select_workspace()
 
     def _setup_navigation(self):
         """Setup the main navigation structure."""
@@ -51,16 +52,22 @@ class MainApplication(QMainWindow):
         # Create screens
         self.start_screen = StartScreen()
         self.campaign_wizard = CampaignWizard()
+        self.select_workspace = SelectWorkspaceScreen()
 
         # Add screens to stack
         self.stacked_widget.addWidget(self.start_screen)
         self.stacked_widget.addWidget(self.campaign_wizard)
+        self.stacked_widget.addWidget(self.select_workspace)
 
     def _connect_navigation(self):
         """Connect navigation signals between screens."""
+        # From workspace selection to the start screen
+        self.select_workspace.workspace_selected.connect(self._on_workspace_selected)
+
         # Start screen navigation
         self.start_screen.new_campaign_requested.connect(self.show_campaign_wizard)
         self.start_screen.browse_campaigns_requested.connect(self.show_browse_campaigns)
+        self.start_screen.back_requested.connect(self.show_select_workspace)
 
         # Campaign wizard navigation
         self.campaign_wizard.back_to_start_requested.connect(self.show_start_screen)
@@ -68,13 +75,20 @@ class MainApplication(QMainWindow):
 
     def show_start_screen(self):
         """Navigate to the start screen."""
+        self.start_screen.set_workspace(self.current_workspace)
         self.stacked_widget.setCurrentWidget(self.start_screen)
+        self.setWindowTitle(self.WELCOME_WINDOW_TITLE)
+
+    def show_select_workspace(self):
+        """Navigate to the start screen."""
+        self.stacked_widget.setCurrentWidget(self.select_workspace)
         self.setWindowTitle(self.WELCOME_WINDOW_TITLE)
 
     def show_campaign_wizard(self):
         """Navigate to campaign creation wizard."""
         # Reset wizard state when starting new campaign
         self.campaign_wizard.reset_wizard()
+        self.campaign_wizard.workspace_path = self.current_workspace
         self.stacked_widget.setCurrentWidget(self.campaign_wizard)
         self.setWindowTitle(self.CREATE_CAMPAIGN_WINDOW_TITLE)
 
@@ -94,6 +108,11 @@ class MainApplication(QMainWindow):
         # For now, just return to start screen
         self.show_start_screen()
 
+    def _on_workspace_selected(self, workspace_path):
+        """Handle workspace selection."""
+        self.current_workspace = workspace_path
+        self.show_start_screen()
+
     def navigate_to(self, screen_name: ScreenName, data: Optional[dict] = None):
         """
         Generic navigation method for screen-to-screen communication.
@@ -108,6 +127,8 @@ class MainApplication(QMainWindow):
             self.show_campaign_wizard()
         elif screen_name == ScreenName.BROWSE_CAMPAIGNS:
             self.show_browse_campaigns()
+        elif screen_name == ScreenName.SELECT_WORKSPACE:
+            self.show_select_workspace()
         else:
             print(f"Unknown screen: {screen_name}")
 

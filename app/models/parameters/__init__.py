@@ -1,4 +1,5 @@
 from app.models.parameters.base import BaseParameter
+from app.models.parameters.serialization import ParameterSerializer
 from app.models.parameters.types import (
     Categorical,
     ContinuousNumerical,
@@ -9,6 +10,7 @@ from app.models.parameters.types import (
 )
 
 __all__ = [
+    "ParameterSerializer",
     "BaseParameter",
     "DiscreteNumericalRegular",
     "DiscreteNumericalIrregular",

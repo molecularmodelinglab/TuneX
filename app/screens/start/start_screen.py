@@ -3,19 +3,21 @@ Start screen for TuneX application.
 Main entry point showing welcome UI and navigation to other screens.
 """
 
+from typing import List
+
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QSizePolicy,
-    QStyle,
     QVBoxLayout,
     QWidget,
 )
 
 from app.core.base import BaseScreen
+from app.models.campaign import Campaign
+from app.screens.start.components.campaign_loader import CampaignLoader
+from app.screens.start.components.recent_campaigns import RecentCampaignsWidget
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
-from app.shared.components.cards import EmptyStateCard
 from app.shared.components.headers import MainHeader, SectionHeader
 from app.shared.styles.theme import get_widget_styles
 
@@ -31,14 +33,14 @@ class StartScreen(BaseScreen):
     # Signals for navigation
     new_campaign_requested = pyqtSignal()
     browse_campaigns_requested = pyqtSignal()
+    back_requested = pyqtSignal()
 
     WINDOW_TITLE = "TuneX - Welcome"
     HEADER_TEXT = "TuneX"
     NEW_CAMPAIGN_BUTTON_TEXT = "+ New Campaign"
     BROWSE_CAMPAIGNS_BUTTON_TEXT = "Browse All"
+    BACK_BUTTON_TEXT = "Back to Workspace Selection"
     RECENT_CAMPAIGNS_HEADER_TEXT = "Recently Opened Campaigns"
-    NO_RECENT_CAMPAIGNS_TEXT = "No recent campaigns"
-    NO_RECENT_CAMPAIGNS_SUBTEXT = "Browse or create a new one"
     MARGINS = (30, 30, 30, 30)
     SPACING = 25
     BUTTON_SPACING = 15
@@ -46,6 +48,25 @@ class StartScreen(BaseScreen):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.WINDOW_TITLE)
+        self.campaigns: List[Campaign] = []
+        self.loader: CampaignLoader | None = None
+        self._update_campaigns_display()
+
+    def set_workspace(self, workspace_path: str):
+        """Set workspace and refresh campaigns."""
+        self.workspace_path = workspace_path
+        self.loader = CampaignLoader(workspace_path)
+        self._refresh_campaigns()
+
+    def _refresh_campaigns(self):
+        """Load campaigns and update display."""
+        if not self.loader:
+            return
+        self.campaigns = self.loader.load_campaigns()
+        print(f"Loaded campaigns: {[c.name for c in self.campaigns]}")
+
+        if hasattr(self, "recent_campaigns_widget") and self.recent_campaigns_widget is not None:
+            self.recent_campaigns_widget.update_campaigns(self.campaigns)
 
     def _setup_screen(self):
         """Setup the start screen UI."""
@@ -61,7 +82,7 @@ class StartScreen(BaseScreen):
         # Create UI sections
         self._create_header()
         self._create_action_buttons()
-        self._create_recent_campaigns_section()
+        self._create_campaigns_section()
 
         # Add stretch to push content to top
         self.main_layout.addStretch()
@@ -89,36 +110,33 @@ class StartScreen(BaseScreen):
 
         button_layout.addWidget(self.new_campaign_btn)
         button_layout.addWidget(self.browse_all_btn)
-        button_layout.addStretch()  # Push buttons to left
+
+        # Back button
+        self.back_btn = SecondaryButton(self.BACK_BUTTON_TEXT)
+        self.back_btn.clicked.connect(self.back_requested.emit)
+        button_layout.addWidget(self.back_btn)
+        button_layout.addStretch()
 
         self.main_layout.addLayout(button_layout)
 
-    def _create_recent_campaigns_section(self):
-        """Create recent campaigns section."""
+    def _create_campaigns_section(self):
+        """Create campaigns section with dynamic content."""
         # Section title
         section_header = SectionHeader(self.RECENT_CAMPAIGNS_HEADER_TEXT)
         self.main_layout.addWidget(section_header)
         self.main_layout.addSpacing(15)
 
-        # Empty state card
-        icon_pixmap = self._get_folder_icon_pixmap()
-        empty_state = EmptyStateCard(
-            primary_message=self.NO_RECENT_CAMPAIGNS_TEXT,
-            secondary_message=self.NO_RECENT_CAMPAIGNS_SUBTEXT,
-            icon_pixmap=icon_pixmap,
-        )
+        # Create container for dynamic content
+        self.recent_campaigns_widget = RecentCampaignsWidget()
+        self.main_layout.addWidget(self.recent_campaigns_widget)
 
-        self.main_layout.addWidget(empty_state)
-
-    def _get_folder_icon_pixmap(self) -> QPixmap:
-        """Get folder icon as pixmap."""
-        style = self.style()
-        icon = style.standardIcon(QStyle.StandardPixmap.SP_DirIcon)
-        return icon.pixmap(64, 64)
+    def _update_campaigns_display(self):
+        """Update the campaigns display based on loaded campaigns."""
+        if hasattr(self, "recent_campaigns_widget"):
+            self.recent_campaigns_widget.update_campaigns(self.campaigns)
 
     def _apply_styles(self):
         """Apply screen-specific styles."""
-
         self.setStyleSheet(
             get_widget_styles()
             + """

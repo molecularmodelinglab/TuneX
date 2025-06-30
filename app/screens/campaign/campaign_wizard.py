@@ -3,6 +3,10 @@ Campaign creation wizard screen.
 Multi-step process for creating new campaigns.
 """
 
+import json
+import os
+from datetime import datetime
+
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -45,6 +49,7 @@ class CampaignWizard(BaseScreen):
         # Initialize data before calling super() since BaseScreen calls _setup_screen()
         self.current_step = 0
         self.total_steps = 3
+        self.workspace_path = None
 
         # Shared campaign data
         self.campaign = Campaign()
@@ -165,18 +170,44 @@ class CampaignWizard(BaseScreen):
         print("Creating campaign with data:")
         print(f"Campaign Data: {self.campaign}")
 
+        # Save campaign to file
+        self._save_campaign_to_file()
+
         # Emit campaign created signal
         self.campaign_created.emit(self.campaign)
 
         # Go back to start screen
         self.back_to_start_requested.emit()
 
+    def _save_campaign_to_file(self):
+        """Save the campaign data to a JSON file in the workspace."""
+        if not self.workspace_path:
+            print("Error: Workspace path not set. Cannot save campaign.")
+            return
+
+        try:
+            campaign_data = self.campaign.to_dict()
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{self.campaign.name}_{timestamp}.json"
+
+            # Correctly join paths to create the full file path
+            campaigns_dir = os.path.join(self.workspace_path, "campaigns")
+            os.makedirs(campaigns_dir, exist_ok=True)
+            file_path = os.path.join(campaigns_dir, filename)
+
+            with open(file_path, "w") as f:
+                json.dump(campaign_data, f, indent=4)
+            print(f"Campaign saved to {file_path}")
+
+        except Exception as e:
+            print(f"Error saving campaign to file: {e}")
+
     def reset_wizard(self):
         """Reset wizard to initial state."""
         self.current_step = 0
 
         # Reset campaign data
-        self.campaign = Campaign()
+        self.campaign.reset()
 
         # Reset all step widgets
         for step_widget in self.step_widgets:
