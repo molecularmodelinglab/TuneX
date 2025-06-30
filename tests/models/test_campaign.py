@@ -10,7 +10,7 @@ class TestCampaignModel(unittest.TestCase):
         campaign = Campaign()
         self.assertEqual(campaign.name, "")
         self.assertEqual(campaign.description, "")
-        self.assertIsInstance(campaign.targets, List[Target])
+        self.assertEqual(campaign.targets, [])
         self.assertEqual(campaign.parameters, [])
         self.assertEqual(campaign.initial_dataset, [])
 
