@@ -150,7 +150,6 @@ class CampaignInfoStep(BaseStep):
         targets_layout = QVBoxLayout(targets_widget)
         targets_layout.setContentsMargins(0, 0, 0, 0)
         targets_layout.setSpacing(self.TARGET_SPACING)
-        # targets_widget.setStyleSheet("background-color: transparent; border-radius: 5px; padding: 10px;")
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
