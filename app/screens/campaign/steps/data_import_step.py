@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QFileDialog, QVBoxLayout
 
 from app.core.base import BaseStep
 from app.models.campaign import Campaign
+from app.models.parameters import ParameterSerializer
 from app.models.parameters.base import BaseParameter
 from app.shared.components.headers import MainHeader, SectionHeader
 
@@ -19,7 +20,6 @@ from .components.data_import_widgets import (
     TemplateSectionWidget,
     UploadSectionWidget,
 )
-from .components.parameter_managers import ParameterSerializer
 
 
 class DataImportStep(BaseStep):
@@ -187,7 +187,7 @@ class DataImportStep(BaseStep):
             self.campaign.initial_dataset = self.imported_data.copy()
 
             print(f"Successfully saved import data - {len(self.imported_data)} rows")
-
+            print(self.campaign.to_dict())
         except Exception as e:
             print(f"Error saving import data: {e}")
 

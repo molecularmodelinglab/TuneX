@@ -5,6 +5,7 @@ Data models for the campaign.
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
+from app.models.parameters import ParameterSerializer
 from app.models.parameters.base import BaseParameter
 
 
@@ -28,20 +29,12 @@ class Campaign:
 
     def get_parameter_data(self) -> List[Dict[str, Any]]:
         """Serialize parameters to a list of dictionaries."""
-        from app.screens.campaign.steps.components.parameter_managers import (
-            ParameterSerializer,
-        )
-
         serializer = ParameterSerializer()
         return serializer.serialize_parameters(self.parameters)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Campaign":
         """Create a Campaign instance from a dictionary."""
-        from app.screens.campaign.steps.components.parameter_managers import (
-            ParameterSerializer,
-        )
-
         serializer = ParameterSerializer()
         parameters = serializer.deserialize_parameters(data.get("parameters", []))
 
@@ -52,3 +45,17 @@ class Campaign:
             parameters=parameters,
             initial_dataset=data.get("initial_dataset", []),
         )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert Campaign instance to a dictionary."""
+        serializer = ParameterSerializer()
+        return {
+            "name": self.name,
+            "description": self.description,
+            "target": {
+                "name": self.target.name,
+                "mode": self.target.mode,
+            },
+            "parameters": serializer.serialize_parameters(self.parameters),
+            "initial_dataset": self.initial_dataset,
+        }

@@ -74,6 +74,7 @@ class MainApplication(QMainWindow):
 
     def show_start_screen(self):
         """Navigate to the start screen."""
+        self.start_screen.set_workspace(self.current_workspace)
         self.stacked_widget.setCurrentWidget(self.start_screen)
         self.setWindowTitle(self.WELCOME_WINDOW_TITLE)
 
@@ -107,7 +108,7 @@ class MainApplication(QMainWindow):
 
     def _on_workspace_selected(self, workspace_path):
         """Handle workspace selection."""
-        print(f"Workspace_path selected: {workspace_path}")
+        self.current_workspace = workspace_path
         self.show_start_screen()
 
     def navigate_to(self, screen_name: ScreenName, data: Optional[dict] = None):

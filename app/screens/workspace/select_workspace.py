@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox, QSizePolicy
 from app.core.base import BaseScreen
 from app.shared.components.buttons import PrimaryButton
 from app.shared.components.headers import MainHeader
+from app.shared.constants import WorkspaceConstants
 from app.shared.styles.theme import get_widget_styles
 
 
@@ -33,10 +34,6 @@ class SelectWorkspaceScreen(BaseScreen):
     ERROR_TEXT = "Error"
     FAILED_TO_CREATE_WORKSPACE_TEXT = "Failed to create workspace:\n{}"
     WORKSPACE_SELECTED_TEXT = "Workspace selected: {}"
-
-    # File System
-    WORKSPACE_FILENAME = "tunex_workspace.json"
-    CAMPAIGNS_DIRNAME = "campaigns"
 
     # UI Identifiers
     SELECT_WORKSPACE_BUTTON_ID = "SelectWorkspaceButton"
@@ -124,7 +121,7 @@ class SelectWorkspaceScreen(BaseScreen):
 
     def _handle_workspace_folder(self, folder_path):
         """Handle the selected workspace folder."""
-        workspace_file = os.path.join(folder_path, self.WORKSPACE_FILENAME)
+        workspace_file = os.path.join(folder_path, WorkspaceConstants.WORKSPACE_CONFIG_FILENAME)
 
         if os.path.exists(workspace_file):
             self._open_existing_workspace(folder_path)
@@ -145,16 +142,16 @@ class SelectWorkspaceScreen(BaseScreen):
 
         try:
             workspace_config = {
-                self.WORKSPACE_CONFIG_NAME: os.path.basename(folder_path),
-                self.WORKSPACE_CONFIG_CREATED: datetime.now().isoformat(),
-                self.WORKSPACE_CONFIG_VERSION: self.WORKSPACE_CONFIG_VERSION_VALUE,
+                WorkspaceConstants.WORKSPACE_NAME_KEY: os.path.basename(folder_path),
+                WorkspaceConstants.WORKSPACE_CREATED_KEY: datetime.now().isoformat(),
+                WorkspaceConstants.WORKSPACE_VERSION_KEY: WorkspaceConstants.WORKSPACE_VERSION_VALUE,
             }
 
-            workspace_file = os.path.join(folder_path, self.WORKSPACE_FILENAME)
+            workspace_file = os.path.join(folder_path, WorkspaceConstants.WORKSPACE_CONFIG_FILENAME)
             with open(workspace_file, "w") as f:
                 json.dump(workspace_config, f, indent=2)
 
-            campaigns_dir = os.path.join(folder_path, self.CAMPAIGNS_DIRNAME)
+            campaigns_dir = os.path.join(folder_path, WorkspaceConstants.CAMPAIGNS_DIRNAME)
             os.makedirs(campaigns_dir, exist_ok=True)
 
             self._workspace_selected(folder_path)

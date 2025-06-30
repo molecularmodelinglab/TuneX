@@ -4,7 +4,6 @@ from app.main_application import MainApplication
 from app.screens.campaign.campaign_wizard import CampaignWizard
 from app.screens.start.start_screen import StartScreen
 from app.screens.workspace.select_workspace import SelectWorkspaceScreen
-from app.shared.constants import ScreenName
 
 
 def test_main_application_creation(qapp):
@@ -24,7 +23,7 @@ def test_navigation_to_campaign_wizard(qtbot):
     """Test navigation from StartScreen to CampaignWizard."""
     window = MainApplication()
     qtbot.addWidget(window)
-    window.navigate_to(ScreenName.START)
+    window._on_workspace_selected("dummy_path")
 
     # Initially, we are on the start screen
     assert isinstance(window.stacked_widget.currentWidget(), StartScreen)
@@ -41,6 +40,7 @@ def test_navigation_back_to_start_screen(qtbot):
     """Test navigation from CampaignWizard back to StartScreen."""
     window = MainApplication()
     qtbot.addWidget(window)
+    window._on_workspace_selected("dummy_path")
     window.show()
 
     # Go to campaign wizard first
