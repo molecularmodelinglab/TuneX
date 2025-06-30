@@ -9,12 +9,65 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QTextEdit,
     QVBoxLayout,
+    QPushButton,
+    QScrollArea,
+    QWidget,
 )
+from PySide6.QtCore import Qt
 
 from app.core.base import BaseStep
 from app.models.campaign import Campaign
+from app.models.campaign import Target
 from app.models.enums import TargetMode
 from app.shared.components.headers import MainHeader, SectionHeader
+
+
+class TargetRow(QWidget):
+    """Individual target row widget."""
+    
+    def __init__(self, target: Target, on_remove_callback, parent=None):
+        super().__init__(parent)
+        self.target = target
+        self.on_remove_callback = on_remove_callback
+        self._setup_ui()
+    
+    def _setup_ui(self):
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Target name input
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("Enter target name")
+        self.name_input.setObjectName("FormInput")
+        self.name_input.setText(self.target.name)
+        layout.addWidget(self.name_input)
+        
+        # Target mode combo
+        self.mode_combo = QComboBox()
+        self.mode_combo.setObjectName("FormInput")
+        for mode in TargetMode:
+            self.mode_combo.addItem(mode.value)
+        
+        # Set current mode
+        index = self.mode_combo.findText(self.target.mode or TargetMode.MAX.value)
+        if index >= 0:
+            self.mode_combo.setCurrentIndex(index)
+        layout.addWidget(self.mode_combo)
+        
+        # Remove button
+        self.remove_btn = QPushButton("Remove")
+        self.remove_btn.clicked.connect(lambda: self.on_remove_callback(self))
+        layout.addWidget(self.remove_btn)
+    
+    def get_target_data(self) -> Target:
+        """Get target data from this row."""
+        self.target.name = self.name_input.text().strip()
+        self.target.mode = self.mode_combo.currentText()
+        return self.target
+    
+    def is_valid(self) -> bool:
+        """Check if this target row has valid data."""
+        return bool(self.name_input.text().strip())
 
 
 class CampaignInfoStep(BaseStep):
@@ -29,8 +82,7 @@ class CampaignInfoStep(BaseStep):
     NAME_PLACEHOLDER = "Enter campaign name"
     DESCRIPTION_LABEL = "Description:"
     DESCRIPTION_PLACEHOLDER = "Enter campaign description"
-    TARGET_LABEL = "Target/Objective:"
-    TARGET_NAME_PLACEHOLDER = "Enter target name"
+    TARGET_LABEL = "Targets/Objectives:"
     FORM_INPUT_OBJECT_NAME = "FormInput"
     FORM_LABEL_OBJECT_NAME = "FormLabel"
 
@@ -84,33 +136,62 @@ class CampaignInfoStep(BaseStep):
         form_layout.addRow(desc_label, self.description_input)
 
         # Target section
-        self._create_target_section(form_layout)
+        self._create_targets_section(form_layout)
 
-    def _create_target_section(self, form_layout):
-        """Create target configuration section."""
-        target_layout = QHBoxLayout()
-        target_layout.setSpacing(self.TARGET_SPACING)
+    def _create_targets_section(self, form_layout):
+        """Create targets configuration section."""
+        targets_widget = QWidget()
+        targets_layout = QVBoxLayout(targets_widget)
+        targets_layout.setContentsMargins(0, 0, 0, 0)
+        targets_layout.setSpacing(self.TARGET_SPACING)
 
-        # Target name
-        self.target_name_input = QLineEdit()
-        self.target_name_input.setPlaceholderText(self.TARGET_NAME_PLACEHOLDER)
-        self.target_name_input.setObjectName(self.FORM_INPUT_OBJECT_NAME)
-        target_layout.addWidget(self.target_name_input)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarNever)
+        scroll_area.setMaximumHeight(200)
 
-        # Target mode
-        self.target_mode_combo = QComboBox()
-        self.target_mode_combo.setObjectName(self.FORM_INPUT_OBJECT_NAME)
-        self._populate_target_mode_combo()
-        target_layout.addWidget(self.target_mode_combo)
+        self.targets_container = QWidget()
+        self.targets_layout = QVBoxLayout(self.targets_container)
+        self.targets_layout.setContentsMargins(0, 0, 0, 0)
+        self.targets_layout.setSpacing(5)
+        
+        scroll_area.setWidget(self.targets_container)
+        targets_layout.addWidget(scroll_area)
 
-        target_label = SectionHeader(self.TARGET_LABEL)
-        target_label.setObjectName(self.FORM_LABEL_OBJECT_NAME)
-        form_layout.addRow(target_label, target_layout)
+        self.add_target_btn = QPushButton("Add Target")
+        self.add_target_btn.clicked.connect(self._add_target_row)
+        targets_layout.addWidget(self.add_target_btn)
 
-    def _populate_target_mode_combo(self):
-        """Populate target mode dropdown."""
-        for mode in TargetMode:
-            self.target_mode_combo.addItem(mode.value)
+        targets_label = SectionHeader(self.TARGETS_LABEL)
+        targets_label.setObjectName(self.FORM_LABEL_OBJECT_NAME)
+        form_layout.addRow(targets_label, targets_widget)
+
+    def _add_target_row(self, target: Target = None):
+        """Add a new target row."""
+        if target is None:
+            target = Target()
+        
+        target_row = TargetRow(target, self._remove_target_row)
+        self.target_rows.append(target_row)
+        self.targets_layout.addWidget(target_row)
+        
+        # Update remove button visibility
+        self._update_remove_buttons()
+
+    def _remove_target_row(self, target_row: TargetRow):
+        """Remove a target row."""
+        if target_row in self.target_rows:
+            self.target_rows.remove(target_row)
+            self.targets_layout.removeWidget(target_row)
+            target_row.deleteLater()
+            self._update_remove_buttons()
+
+    def _update_remove_buttons(self):
+        """Update remove button visibility based on number of targets."""
+        show_remove = len(self.target_rows) > 1
+        for row in self.target_rows:
+            row.remove_btn.setVisible(show_remove)
 
     def validate(self) -> bool:
         """Validate form data."""
@@ -118,8 +199,13 @@ class CampaignInfoStep(BaseStep):
             print("Campaign name is required")  # TODO: Better error handling
             return False
 
-        if not self.target_name_input.text().strip():
-            print("Target name is required")  # TODO: Better error handling
+        if not self.target_rows:
+            print("At least one target is required")  # TODO: Better error handling
+            return False
+        
+        valid_targets = [row for row in self.target_rows if row.is_valid()]
+        if not valid_targets:
+            print("At least one target must have a name")  # TODO: Better error handling
             return False
 
         return True
@@ -128,24 +214,34 @@ class CampaignInfoStep(BaseStep):
         """Save form data to shared data."""
         self.campaign.name = self.name_input.text().strip()
         self.campaign.description = self.description_input.toPlainText().strip()
-        self.campaign.target.name = self.target_name_input.text().strip()
-        self.campaign.target.mode = self.target_mode_combo.currentText()
+
+        self.campaign.targets = []
+        for row in self.target_rows:
+            if row.is_valid():
+                self.campaign.targets.append(row.get_target_data())
+
 
     def load_data(self):
         """Load data from shared data into form."""
         self.name_input.setText(self.campaign.name)
         self.description_input.setPlainText(self.campaign.description)
 
-        self.target_name_input.setText(self.campaign.target.name)
+        # Clear existing target rows
+        for row in self.target_rows[:]:
+            self._remove_target_row(row)
 
-        target_mode = self.campaign.target.mode or TargetMode.MAX.value
-        index = self.target_mode_combo.findText(target_mode)
-        if index >= 0:
-            self.target_mode_combo.setCurrentIndex(index)
+        # Load targets or add one empty target if none exist
+        if self.campaign.targets:
+            for target in self.campaign.targets:
+                self._add_target_row(target)
+        else:
+            self._add_target_row()
 
     def reset(self):
         """Reset form to initial state."""
         self.name_input.clear()
         self.description_input.clear()
-        self.target_name_input.clear()
-        self.target_mode_combo.setCurrentIndex(0)
+
+        for row in self.target_rows[:]:
+            self._remove_target_row(row)
+        self._add_target_row()
