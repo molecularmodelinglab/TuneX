@@ -63,10 +63,13 @@ class Campaign:
         return {
             "name": self.name,
             "description": self.description,
-            "target": {
-                "name": self.target.name,
-                "mode": self.target.mode,
-            },
+            "targets": [
+                {
+                    "name": target.name,
+                    "mode": target.mode,
+                }
+                for target in self.targets
+            ],
             "parameters": serializer.serialize_parameters(self.parameters),
             "initial_dataset": self.initial_dataset,
         }
