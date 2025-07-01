@@ -9,12 +9,13 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QFont, QPixmap, QPainter
 
-from app.core.base import BaseStep
+from app.core.base import BaseScreen
 from app.models.campaign import Campaign
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
+from app.shared.components.cards import EmptyStateCard
 
 
-class CampaignDefaultStep(BaseStep):
+class CampaignDefaultScreen(BaseScreen):
     """
     Default screen for campaign when no runs have been created yet.
     Displays campaign info, tabs, and empty state with call-to-action buttons.
@@ -28,7 +29,7 @@ class CampaignDefaultStep(BaseStep):
         super().__init__(wizard_data, parent)
         self.campaign: Campaign = self.wizard_data
 
-    def _setup_widget(self):
+    def _setup_screen(self):
         """Setup the default campaign screen UI."""
         main_layout = self._create_main_layout()
         
@@ -171,43 +172,16 @@ class CampaignDefaultStep(BaseStep):
             """)
         
         return button
+    
+    def _create_empty_state(self):
+        icon_pixmap = self._get_clock_icon_pixmap()
+        empty_state = EmptyStateCard(
+            primary_message="No runs yet",
+            secondary_message="Generate your first run to start experimenting",
+            icon_pixmap=icon_pixmap,
+        )
+        self.main_layout.addWidget(empty_state)
 
-    def _create_content_section(self) -> QWidget:
-        """Create the main content section with empty state."""
-        content_widget = QWidget()
-        layout = QVBoxLayout(content_widget)
-        layout.setContentsMargins(20, 40, 20, 40)
-        
-        # Add vertical spacer to center content
-        layout.addStretch()
-        
-        # Clock icon (using text for now, can be replaced with actual icon)
-        clock_label = QLabel("🕐")
-        clock_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        clock_font = QFont()
-        clock_font.setPointSize(48)
-        clock_label.setFont(clock_font)
-        
-        # "No runs yet" text
-        no_runs_label = QLabel("No runs yet")
-        no_runs_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        no_runs_font = QFont()
-        no_runs_font.setPointSize(20)
-        no_runs_font.setBold(True)
-        no_runs_label.setFont(no_runs_font)
-        no_runs_label.setStyleSheet("color: #333; margin: 20px 0 10px 0;")
-        
-        # Description text
-        description_label = QLabel("Generate your first run to start experimenting")
-        description_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        description_label.setStyleSheet("color: #666; font-size: 14px; margin-bottom: 40px;")
-        
-        layout.addWidget(clock_label)
-        layout.addWidget(no_runs_label)
-        layout.addWidget(description_label)
-        layout.addStretch()
-        
-        return content_widget
 
     def _create_buttons_section(self) -> QWidget:
         """Create the bottom buttons section."""
