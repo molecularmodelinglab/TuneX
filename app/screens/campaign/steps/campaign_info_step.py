@@ -156,14 +156,22 @@ class CampaignInfoStep(BaseStep):
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        scroll_area.setMaximumHeight(400)
+        scroll_area.setMinimumHeight(200)
+        scroll_area.setFrameShape(QScrollArea.NoFrame)
         scroll_area.setObjectName("TargetsScrollArea")
-
-        # scroll_area.setObjectName("FormInput")
 
         self.targets_container = QWidget()
         self.targets_layout = QVBoxLayout(self.targets_container)
-        self.targets_layout.setContentsMargins(0, 0, 0, 0)
+        self.targets_container.setObjectName("TargetsContainer") 
+        self.targets_container.setStyleSheet("""
+            QWidget#TargetsContainer {
+                background-color: white;
+                border: 1px solid #ddd;
+                border-radius: 0px;
+            }
+        """)
+        # self.targets_layout = QVBoxLayout(self.targets_container)
+        self.targets_layout.setContentsMargins(10, 10, 10, 10)
         self.targets_layout.setSpacing(5)
         
         scroll_area.setWidget(self.targets_container)
