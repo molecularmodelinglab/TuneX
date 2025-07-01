@@ -5,7 +5,7 @@ Main entry point showing welcome UI and navigation to other screens.
 
 from typing import List
 
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QSizePolicy,
@@ -31,9 +31,9 @@ class StartScreen(BaseScreen):
     """
 
     # Signals for navigation
-    new_campaign_requested = pyqtSignal()
-    browse_campaigns_requested = pyqtSignal()
-    back_requested = pyqtSignal()
+    new_campaign_requested = Signal()
+    browse_campaigns_requested = Signal()
+    back_requested = Signal()
 
     WINDOW_TITLE = "TuneX - Welcome"
     HEADER_TEXT = "TuneX"
