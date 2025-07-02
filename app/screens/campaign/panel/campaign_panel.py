@@ -1,60 +1,54 @@
 """
-Default screen for campaign when no runs have been created yet.
+Base panel screen for a campaign, managing different views via tabs.
 """
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QWidget, QLabel, 
-    QPushButton, QFrame, QSpacerItem, QSizePolicy
+    QPushButton, QStackedWidget
 )
-from PySide6.QtGui import QFont, QPixmap, QPainter
+from PySide6.QtGui import QFont
 
 from app.core.base import BaseScreen
 from app.models.campaign import Campaign
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
-from app.shared.components.cards import EmptyStateCard
+from app.screens.campaign.panel.parameters_panel import ParametersPanel
+from app.screens.campaign.panel.runs_panel import RunsPanel
+from app.screens.campaign.panel.settings_panel import SettingsPanel
 
 
-class CampaignDefaultScreen(BaseScreen):
+class CampaignPanelScreen(BaseScreen):
     """
-    Default screen for campaign when no runs have been created yet.
-    Displays campaign info, tabs, and empty state with call-to-action buttons.
+    Base screen for the campaign panel.
+    Manages navigation between Runs, Parameters, and Settings tabs.
     """
 
     # Signals
     home_requested = Signal()
     new_run_requested = Signal()
 
-    def __init__(self, wizard_data: Campaign, parent=None):
-        super().__init__(wizard_data, parent)
-        self.campaign: Campaign = self.wizard_data
+    def __init__(self, campaign: Campaign, parent=None):
+        super().__init__(parent)
+        self.campaign: Campaign = campaign
+        self.tabs = {}
+        self._setup_screen()
 
     def _setup_screen(self):
         """Setup the default campaign screen UI."""
-        main_layout = self._create_main_layout()
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Campaign header section
-        header_widget = self._create_header()
-        main_layout.addWidget(header_widget)
-        
-        # Tab navigation section
-        tab_widget = self._create_tab_section()
-        main_layout.addWidget(tab_widget)
-        
-        # Empty state content
-        content_widget = self._create_content_section()
-        main_layout.addWidget(content_widget)
-        
-        # Bottom buttons
-        buttons_widget = self._create_buttons_section()
-        main_layout.addWidget(buttons_widget)
+        main_layout.addWidget(self._create_header())
+        main_layout.addWidget(self._create_tab_section())
 
-    def _create_main_layout(self) -> QVBoxLayout:
-        """Create and configure the main layout."""
-        layout = QVBoxLayout(self)
-        layout.setSpacing(0)
-        layout.setContentsMargins(0, 0, 0, 0)
-        return layout
+        # Stacked widget for tab content
+        self.stacked_widget = QStackedWidget()
+        main_layout.addWidget(self.stacked_widget)
+        
+        self._create_panels()
+
+        main_layout.addWidget(self._create_home_buttons_section())
 
     def _create_header(self) -> QWidget:
         """Create the campaign header section."""
@@ -77,19 +71,6 @@ class CampaignDefaultScreen(BaseScreen):
         layout.addStretch()
         
         return header_widget
-    
-    def _get_clock_icon_pixmap(self) -> QPixmap:
-        """Get a clock icon pixmap."""
-        pixmap = QPixmap(48, 48)
-        pixmap.fill(Qt.GlobalColor.transparent)
-        
-        painter = QPainter(pixmap)
-        painter.setPen(Qt.GlobalColor.black)
-        painter.setFont(QFont("Arial", 48))
-        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "🕐")
-        painter.end()
-        
-        return pixmap
 
     def _create_tab_section(self) -> QWidget:
         """Create the tab navigation section."""
@@ -110,102 +91,83 @@ class CampaignDefaultScreen(BaseScreen):
         
         # Campaign metadata
         param_count = len(self.campaign.parameters) if self.campaign.parameters else "Nan"
-        target_info = f"Target(s): {self.campaign.target_parameter.name if self.campaign.target_parameter else 'Undefined Target'}"
-        metadata_text = f"Created on 25 April, 2025 • {param_count} Parameters • {target_info}"
+        target_names = ", ".join([t.name for t in self.campaign.targets]) or "None"
+        metadata_text = f"Created on 25 April, 2025 • {param_count} Parameters • Targets: {target_names}"
         
         metadata_label = QLabel(metadata_text)
         metadata_label.setObjectName("CampaignMetadata")
         metadata_label.setStyleSheet("color: #666; font-size: 12px;")
         
-        # Tab buttons
-        tab_container = QWidget()
-        tab_layout = QHBoxLayout(tab_container)
-        tab_layout.setContentsMargins(0, 10, 0, 0)
-        tab_layout.setSpacing(0)
-        
-        runs_tab = self._create_tab_button("Runs", active=True)
-        parameters_tab = self._create_tab_button("Parameters", active=False)
-        settings_tab = self._create_tab_button("Settings", active=False)
-        
-        tab_layout.addWidget(runs_tab)
-        tab_layout.addWidget(parameters_tab)
-        tab_layout.addWidget(settings_tab)
-        tab_layout.addStretch()
-        
+        tab_container = self._create_tab_buttons()
+
         layout.addWidget(campaign_name)
         layout.addWidget(metadata_label)
         layout.addWidget(tab_container)
         
         return tab_widget
+    
+    def _create_tab_buttons(self) -> QWidget:
+        """Create the interactive tab buttons."""
+        tab_container = QWidget()
+        tab_layout = QHBoxLayout(tab_container)
+        tab_layout.setContentsMargins(0, 10, 0, 0)
+        tab_layout.setSpacing(0)
+        
+        self.tabs["Runs"] = self._create_tab_button("Runs")
+        self.tabs["Parameters"] = self._create_tab_button("Parameters")
+        self.tabs["Settings"] = self._create_tab_button("Settings")
+        
+        for name, button in self.tabs.items():
+            button.clicked.connect(lambda checked, n=name: self.switch_tab(n))
+            tab_layout.addWidget(button)
+            
+        tab_layout.addStretch()
+        return tab_container
 
-    def _create_tab_button(self, text: str, active: bool = False) -> QPushButton:
-        """Create a tab button."""
+    def _create_tab_button(self, text: str) -> QPushButton:
+        """Helper to create a single tab button."""
         button = QPushButton(text)
-        button.setObjectName("ActiveTab" if active else "InactiveTab")
+        button.setCheckable(True)
         button.setFixedHeight(40)
         button.setFixedWidth(120)
         button.setFlat(True)
-        
-        if active:
-            button.setStyleSheet("""
-                QPushButton#ActiveTab {
-                    background-color: #007AFF;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    font-weight: bold;
-                    font-size: 14px;
-                }
-            """)
-        else:
-            button.setStyleSheet("""
-                QPushButton#InactiveTab {
-                    background-color: #F0F0F0;
-                    color: #666;
-                    border: none;
-                    border-radius: 6px;
-                    font-size: 14px;
-                }
-                QPushButton#InactiveTab:hover {
-                    background-color: #E0E0E0;
-                }
-            """)
-        
         return button
-    
-    def _create_empty_state(self):
-        icon_pixmap = self._get_clock_icon_pixmap()
-        empty_state = EmptyStateCard(
-            primary_message="No runs yet",
-            secondary_message="Generate your first run to start experimenting",
-            icon_pixmap=icon_pixmap,
-        )
-        self.main_layout.addWidget(empty_state)
 
+    def _create_panels(self):
+        """Create panels and connect their signals."""
+        self.runs_panel = RunsPanel()
+        self.parameters_panel = ParametersPanel()
+        self.settings_panel = SettingsPanel()
 
-    def _create_buttons_section(self) -> QWidget:
+        self.runs_panel.new_run_requested.connect(self.new_run_requested.emit)
+
+        self.stacked_widget.addWidget(self.runs_panel)
+        self.stacked_widget.addWidget(self.parameters_panel)
+        self.stacked_widget.addWidget(self.settings_panel)
+        
+        self.switch_tab("Runs")
+
+    def switch_tab(self, name: str):
+        """Switch the visible tab and update button styles."""
+        for tab_name, button in self.tabs.items():
+            is_active = (tab_name == name)
+            button.setChecked(is_active)
+            button.setObjectName("ActiveTab" if is_active else "InactiveTab")
+        
+        self.stacked_widget.setCurrentWidget(self.panels[name])
+        self.style().polish(self)
+
+    def _create_home_button_section(self) -> QWidget:
         """Create the bottom buttons section."""
         buttons_widget = QWidget()
         layout = QHBoxLayout(buttons_widget)
-        layout.setContentsMargins(20, 0, 20, 40)
+        layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
         
-        # Add horizontal spacer to right-align buttons
         layout.addStretch()
         
-        # Home button (secondary)
         home_button = SecondaryButton("Home")
-        home_button.setFixedHeight(40)
-        home_button.setFixedWidth(100)
         home_button.clicked.connect(self.home_requested.emit)
-        
-        # Generate New Run button (primary)
-        generate_button = PrimaryButton("Generate New Run")
-        generate_button.setFixedHeight(40)
-        generate_button.setFixedWidth(160)
-        generate_button.clicked.connect(self.new_run_requested.emit)
-        
         layout.addWidget(home_button)
-        layout.addWidget(generate_button)
         
         return buttons_widget
