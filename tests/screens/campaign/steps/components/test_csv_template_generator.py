@@ -31,7 +31,7 @@ class TestCSVTemplateGenerator(unittest.TestCase):
             Fixed("catalyst", value="Pt"),
             Substance("reagent", smiles=["CCO", "CCCCO"]),
         ]
-        self.campaign = Campaign(target=Target(name="yield"))
+        self.campaign = Campaign(targets=[Target(name="yield")])
 
     def tearDown(self):
         if os.path.exists(self.test_dir):

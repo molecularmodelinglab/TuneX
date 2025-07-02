@@ -1,5 +1,5 @@
 import unittest
-
+from typing import List
 from app.models.campaign import Campaign, Target
 from app.models.parameters.types import ContinuousNumerical, Fixed
 
@@ -10,7 +10,7 @@ class TestCampaignModel(unittest.TestCase):
         campaign = Campaign()
         self.assertEqual(campaign.name, "")
         self.assertEqual(campaign.description, "")
-        self.assertIsInstance(campaign.target, Target)
+        self.assertEqual(campaign.targets, [])
         self.assertEqual(campaign.parameters, [])
         self.assertEqual(campaign.initial_dataset, [])
 
@@ -34,7 +34,7 @@ class TestCampaignModel(unittest.TestCase):
         campaign_data = {
             "name": "Test Campaign",
             "description": "A test campaign.",
-            "target": {"name": "yield", "mode": "Max"},
+            "targets": [{"name": "yield", "mode": "Max"}],
             "parameters": [
                 {
                     "name": "temp",
@@ -50,7 +50,7 @@ class TestCampaignModel(unittest.TestCase):
 
         self.assertEqual(campaign.name, "Test Campaign")
         self.assertEqual(campaign.description, "A test campaign.")
-        self.assertEqual(campaign.target.name, "yield")
+        self.assertEqual(campaign.targets[0].name, "yield")
         self.assertEqual(len(campaign.parameters), 1)
         self.assertIsInstance(campaign.parameters[0], ContinuousNumerical)
         self.assertEqual(campaign.parameters[0].name, "temp")
