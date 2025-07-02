@@ -88,6 +88,7 @@ class CampaignInfoStep(BaseStep):
     TARGETS_LABEL = "Targets/Objectives:"
     FORM_INPUT_OBJECT_NAME = "FormInput"
     FORM_LABEL_OBJECT_NAME = "FormLabel"
+    ADD_TARGET_BUTTON_TEXT = "Add Another Target"
 
     MARGINS = (30, 30, 30, 30)
     MAIN_SPACING = 25
@@ -177,7 +178,7 @@ class CampaignInfoStep(BaseStep):
         scroll_area.setWidget(self.targets_container)
         targets_layout.addWidget(scroll_area)
 
-        self.add_target_btn = PrimaryButton("Add Another Target")
+        self.add_target_btn = PrimaryButton(self.ADD_TARGET_BUTTON_TEXT)
         self.add_target_btn.setObjectName("PrimaryButton")
         self.add_target_btn.setFixedWidth(250)
         self.add_target_btn.setToolTip("Add a new target to the campaign")
