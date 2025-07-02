@@ -112,9 +112,14 @@ class CSVTemplateGenerator:
                 example_value = self._generate_example_value(parameter)
                 row.append(str(example_value))
 
-            # Add target value
-            target_value = self.TARGET_EXAMPLE_VALUES[row_index % len(self.TARGET_EXAMPLE_VALUES)]
-            row.append(str(target_value))
+            # Add target values
+            if self.campaign and self.campaign.targets:
+                for _ in self.campaign.targets:
+                    target_value = self.TARGET_EXAMPLE_VALUES[row_index % len(self.TARGET_EXAMPLE_VALUES)]
+                    row.append(str(target_value))
+            else:
+                # If no targets, use default target value
+                row.append(str(self.TARGET_EXAMPLE_VALUES[row_index % len(self.TARGET_EXAMPLE_VALUES)]))
 
             rows.append(row)
 
