@@ -13,7 +13,7 @@ from app.models.parameters.types import (
     Fixed,
     Substance,
 )
-from app.screens.campaign.steps.components.csv_data_importer import (
+from app.screens.campaign.setup.components.csv_data_importer import (
     CSVDataImporter,
 )
 
