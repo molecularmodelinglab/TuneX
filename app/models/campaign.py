@@ -23,7 +23,7 @@ class Campaign:
 
     name: str = ""
     description: str = ""
-    target: Target = field(default_factory=Target)
+    targets: List[Target] = field(default_factory=list)
     parameters: List[BaseParameter] = field(default_factory=list)
     initial_dataset: List[Dict[str, Any]] = field(default_factory=list)
 
@@ -46,10 +46,13 @@ class Campaign:
         serializer = ParameterSerializer()
         parameters = serializer.deserialize_parameters(data.get("parameters", []))
 
+        targets_data = data.get("targets", [])
+        targets = [Target(**target_data) for target_data in targets_data]
+
         return cls(
             name=data.get("name", ""),
             description=data.get("description", ""),
-            target=Target(**data.get("target", {})),
+            targets=targets,
             parameters=parameters,
             initial_dataset=data.get("initial_dataset", []),
         )
@@ -60,10 +63,13 @@ class Campaign:
         return {
             "name": self.name,
             "description": self.description,
-            "target": {
-                "name": self.target.name,
-                "mode": self.target.mode,
-            },
+            "targets": [
+                {
+                    "name": target.name,
+                    "mode": target.mode,
+                }
+                for target in self.targets
+            ],
             "parameters": serializer.serialize_parameters(self.parameters),
             "initial_dataset": self.initial_dataset,
         }

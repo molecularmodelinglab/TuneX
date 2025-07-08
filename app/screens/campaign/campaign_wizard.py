@@ -7,7 +7,7 @@ import json
 import os
 from datetime import datetime
 
-from PySide6.QtCore import Signal as pyqtSignal
+from PySide6.QtCore import Signal as Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QStackedWidget,
@@ -33,8 +33,8 @@ class CampaignWizard(BaseScreen):
     """
 
     # Navigation signals
-    back_to_start_requested = pyqtSignal()
-    campaign_created = pyqtSignal(Campaign)  # Emits campaign data when created
+    back_to_start_requested = Signal()
+    campaign_created = Signal(Campaign)  # Emits campaign data when created
 
     WINDOW_TITLE = "TuneX - Create Campaign"
     BACK_BUTTON_TEXT = "← Back"

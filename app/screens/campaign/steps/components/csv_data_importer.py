@@ -218,7 +218,9 @@ class CSVDataImporter:
             result: Validation result object to update
         """
         expected_columns = set(param.name for param in self.parameters)
-        expected_columns.add(self.campaign.target.name or self.TARGET_COLUMN_NAME)
+        if self.campaign.targets:
+            for target in self.campaign.targets:
+                expected_columns.add(target.name)
         actual_columns = set(headers)
 
         missing = expected_columns - actual_columns
