@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QVBoxLayout, QLabel, QWidget, QHBoxLayout
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt,  Signal
 from PySide6.QtGui import QFont, QPixmap, QPainter
 from app.core.base import BaseWidget
 from app.shared.components.cards import EmptyStateCard
@@ -10,6 +10,8 @@ from app.shared.components.buttons import PrimaryButton
 
 class RunsPanel(BaseWidget):
     """Panel for the 'Runs' tab."""
+
+    new_run_requested = Signal()
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)

@@ -15,6 +15,7 @@ from app.shared.components.buttons import PrimaryButton, SecondaryButton
 from app.screens.campaign.panel.parameters_panel import ParametersPanel
 from app.screens.campaign.panel.runs_panel import RunsPanel
 from app.screens.campaign.panel.settings_panel import SettingsPanel
+from app.shared.styles.theme import get_widget_styles, get_navigation_styles, get_tab_styles
 
 
 class CampaignPanelScreen(BaseScreen):
@@ -28,14 +29,17 @@ class CampaignPanelScreen(BaseScreen):
     new_run_requested = Signal()
 
     def __init__(self, campaign: Campaign, parent=None):
-        super().__init__(parent)
-        self.campaign: Campaign = campaign
+        self.campaign = campaign
         self.tabs = {}
-        self._setup_screen()
+        self.panels = {}
+        super().__init__(parent)
 
     def _setup_screen(self):
         """Setup the default campaign screen UI."""
-        main_layout = QVBoxLayout(self)
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        main_layout = QVBoxLayout(central_widget)
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0, 0, 0, 0)
         
@@ -48,7 +52,7 @@ class CampaignPanelScreen(BaseScreen):
         
         self._create_panels()
 
-        main_layout.addWidget(self._create_home_buttons_section())
+        main_layout.addWidget(self._create_home_button_section())
 
     def _create_header(self) -> QWidget:
         """Create the campaign header section."""
@@ -80,7 +84,6 @@ class CampaignPanelScreen(BaseScreen):
         layout = QVBoxLayout(tab_widget)
         layout.setContentsMargins(20, 20, 20, 0)
         layout.setSpacing(15)
-        
         # Campaign name and metadata
         campaign_name = QLabel(self.campaign.name or "My Cool Campaign 1")
         campaign_name.setObjectName("CampaignName")
@@ -124,12 +127,12 @@ class CampaignPanelScreen(BaseScreen):
         tab_layout.addStretch()
         return tab_container
 
-    def _create_tab_button(self, text: str) -> QPushButton:
+    def _create_tab_button(self, text: str) -> PrimaryButton:
         """Helper to create a single tab button."""
-        button = QPushButton(text)
+        button = PrimaryButton(text)
         button.setCheckable(True)
-        button.setFixedHeight(40)
-        button.setFixedWidth(120)
+        # button.setFixedHeight(40)
+        # button.setFixedWidth(120)
         button.setFlat(True)
         return button
 
@@ -138,6 +141,12 @@ class CampaignPanelScreen(BaseScreen):
         self.runs_panel = RunsPanel()
         self.parameters_panel = ParametersPanel()
         self.settings_panel = SettingsPanel()
+
+        self.panels = {
+            "Runs": self.runs_panel,
+            "Parameters": self.parameters_panel,
+            "Settings": self.settings_panel,
+        }
 
         self.runs_panel.new_run_requested.connect(self.new_run_requested.emit)
 
@@ -166,8 +175,13 @@ class CampaignPanelScreen(BaseScreen):
         
         layout.addStretch()
         
-        home_button = SecondaryButton("Home")
+        home_button = PrimaryButton("Home")
         home_button.clicked.connect(self.home_requested.emit)
         layout.addWidget(home_button)
         
         return buttons_widget
+
+    def _apply_styles(self):
+        """Apply wizard-specific styles."""
+        styles = get_widget_styles() + get_navigation_styles() + get_tab_styles()
+        self.setStyleSheet(styles)

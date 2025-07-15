@@ -34,6 +34,7 @@ class StartScreen(BaseScreen):
     new_campaign_requested = Signal()
     browse_campaigns_requested = Signal()
     back_requested = Signal()
+    campaign_selected = Signal(Campaign)
 
     WINDOW_TITLE = "TuneX - Welcome"
     HEADER_TEXT = "TuneX"
@@ -128,6 +129,7 @@ class StartScreen(BaseScreen):
 
         # Create container for dynamic content
         self.recent_campaigns_widget = RecentCampaignsWidget()
+        self.recent_campaigns_widget.campaign_selected.connect(self.campaign_selected.emit)
         self.main_layout.addWidget(self.recent_campaigns_widget)
 
     def _update_campaigns_display(self):
