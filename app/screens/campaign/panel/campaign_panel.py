@@ -134,6 +134,7 @@ class CampaignPanelScreen(BaseScreen):
         # button.setFixedHeight(40)
         # button.setFixedWidth(120)
         button.setFlat(True)
+        button.setObjectName("InactiveTab")
         return button
 
     def _create_panels(self):
@@ -160,11 +161,13 @@ class CampaignPanelScreen(BaseScreen):
         """Switch the visible tab and update button styles."""
         for tab_name, button in self.tabs.items():
             is_active = (tab_name == name)
-            button.setChecked(is_active)
+            # button.setChecked(is_active)
             button.setObjectName("ActiveTab" if is_active else "InactiveTab")
+            self.style().unpolish(button)
+            self.style().polish(button)
         
         self.stacked_widget.setCurrentWidget(self.panels[name])
-        self.style().polish(self)
+        # self.style().polish(self)
 
     def _create_home_button_section(self) -> QWidget:
         """Create the bottom buttons section."""
@@ -175,7 +178,7 @@ class CampaignPanelScreen(BaseScreen):
         
         layout.addStretch()
         
-        home_button = PrimaryButton("Home")
+        home_button = SecondaryButton("Home")
         home_button.clicked.connect(self.home_requested.emit)
         layout.addWidget(home_button)
         
