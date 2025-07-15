@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel, QStyle, QVBoxLayout
 
@@ -10,6 +11,7 @@ class RecentCampaignsWidget(BaseWidget):
     """
     Widget to display a list of recent campaigns.
     """
+    campaign_selected = Signal(Campaign)
 
     NO_RECENT_CAMPAIGNS_TEXT = "No recent campaigns"
     NO_RECENT_CAMPAIGNS_SUBTEXT = "Browse or create a new one"
@@ -53,6 +55,7 @@ class RecentCampaignsWidget(BaseWidget):
     def _show_campaigns_list(self):
         for campaign in self.campaigns:
             label = QLabel(f"{campaign.name}")
+            label.mousePressEvent = lambda event, c=campaign: self.campaign_selected.emit(c)
             self.main_layout.addWidget(label)
 
     def _show_empty_state(self):
