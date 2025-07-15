@@ -12,24 +12,21 @@ class RunsPanel(BaseWidget):
     """Panel for the 'Runs' tab."""
 
     new_run_requested = Signal()
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    def _setup_widget(self):
+        """Setup the panel's UI by creating and arranging its components."""
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        # This can be replaced with a table of runs later
-        self.empty_state = EmptyStateCard(
-            primary_message="No runs yet",
-            secondary_message="Generate your first run to start experimenting",
-        )
-        layout.addWidget(self.empty_state)
-
-
-    def _create_buttons_section(self):
-        pass
+        # Create and add the empty state card
+        self._create_empty_state()
+        
+        # Create and add the action buttons
+        self.main_layout.addWidget(self._create_buttons_section())
 
     def _create_empty_state(self):
         icon_pixmap = self._get_clock_icon_pixmap()
+        print(icon_pixmap)
         empty_state = EmptyStateCard(
             primary_message="No runs yet",
             secondary_message="Generate your first run to start experimenting",
@@ -44,7 +41,7 @@ class RunsPanel(BaseWidget):
         
         painter = QPainter(pixmap)
         painter.setPen(Qt.GlobalColor.black)
-        painter.setFont(QFont("Arial", 48))
+        painter.setFont(QFont("Segoe UI Emoji", 25))
         painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "🕐")
         painter.end()
         
@@ -61,5 +58,6 @@ class RunsPanel(BaseWidget):
         generate_button = PrimaryButton("Generate New Run")
         generate_button.clicked.connect(self.new_run_requested.emit) # Emit its own signal
         layout.addWidget(generate_button)
+        layout.addStretch()
         
         return buttons_widget
