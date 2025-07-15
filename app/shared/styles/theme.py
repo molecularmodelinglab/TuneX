@@ -311,6 +311,7 @@ def get_widget_styles() -> str:
         + get_card_styles()
         + get_form_styles()
         + get_table_styles()
+        + get_tab_styles()
         + get_data_import_styles()
     )
 
@@ -614,6 +615,34 @@ def get_data_import_styles() -> str:
             font-weight: {FONTS["weight_bold"]};
             padding: {SPACING["base"]};
             border: 1px solid {COLORS["gray_200"]};
+        }}
+    """
+
+
+def get_tab_styles() -> str:
+    """Get tab component styles."""
+    return f"""
+        /* Tab Buttons */
+        QPushButton[objectName="InactiveTab"] {{
+            background-color: transparent;
+            color: {COLORS["text_secondary"]};
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-size: {FONTS["size_base"]};
+            font-weight: {FONTS["weight_bold"]};
+            padding: {SPACING["base"]} {SPACING["lg"]};
+        }}
+        QPushButton[objectName="InactiveTab"]:hover {{
+            color: {COLORS["text_primary"]};
+        }}
+        QPushButton[objectName="ActiveTab"] {{
+            background-color: transparent;
+            color: {COLORS["primary"]};
+            border: none;
+            border-bottom: 2px solid {COLORS["primary"]};
+            font-size: {FONTS["size_base"]};
+            font-weight: {FONTS["weight_bold"]};
+            padding: {SPACING["base"]} {SPACING["lg"]};
         }}
     """
 
