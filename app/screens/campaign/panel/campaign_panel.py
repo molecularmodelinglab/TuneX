@@ -38,7 +38,6 @@ class CampaignPanelScreen(BaseScreen):
     TAB_SECTION_MARGINS = (20, 20, 20, 0)
     TAB_LAYOUT_MARGINS = (0, 10, 0, 0)
     HOME_BUTTON_SECTION_MARGINS = (20, 20, 20, 20)
-    
 
     # Signals
     home_requested = Signal()
@@ -142,12 +141,14 @@ class CampaignPanelScreen(BaseScreen):
 
         tab_layout.addStretch()
         return tab_container
-    
+
     def _create_tab_button_handler(self, name: str):
         """Create a click handler for tab buttons."""
+
         def handler(checked: bool):
             if checked:
                 self.switch_tab(name)
+
         return handler
 
     def _create_tab_button(self, text: str) -> PrimaryButton:
