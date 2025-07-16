@@ -1,5 +1,5 @@
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QMouseEvent, QPixmap
 from PySide6.QtWidgets import QLabel, QStyle, QVBoxLayout
 
 from app.core.base import BaseWidget
@@ -11,6 +11,7 @@ class RecentCampaignsWidget(BaseWidget):
     """
     Widget to display a list of recent campaigns.
     """
+
     campaign_selected = Signal(Campaign)
 
     NO_RECENT_CAMPAIGNS_TEXT = "No recent campaigns"
@@ -55,8 +56,16 @@ class RecentCampaignsWidget(BaseWidget):
     def _show_campaigns_list(self):
         for campaign in self.campaigns:
             label = QLabel(f"{campaign.name}")
-            label.mousePressEvent = lambda event, c=campaign: self.campaign_selected.emit(c)
+            label.mousePressEvent = self._create_click_handler(campaign)
             self.main_layout.addWidget(label)
+
+    def _create_click_handler(self, campaign: Campaign):
+        """Creates a mouse press event handler for a given campaign."""
+
+        def handler(event: QMouseEvent):
+            self.campaign_selected.emit(campaign)
+
+        return handler
 
     def _show_empty_state(self):
         icon_pixmap = self._get_folder_icon_pixmap()
