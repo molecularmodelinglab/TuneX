@@ -180,14 +180,18 @@ class CampaignInfoStep(BaseStep):
         self.add_target_btn.setObjectName("PrimaryButton")
         self.add_target_btn.setFixedWidth(250)
         self.add_target_btn.setToolTip("Add a new target to the campaign")
-        self.add_target_btn.clicked.connect(lambda: self._add_target_row())
+        self.add_target_btn.clicked.connect(self._handle_add_target_click)
         targets_layout.addWidget(self.add_target_btn)
 
         targets_label = SectionHeader(self.TARGETS_LABEL)
         targets_label.setObjectName(self.FORM_LABEL_OBJECT_NAME)
         form_layout.addRow(targets_label, targets_widget)
 
-    def _add_target_row(self, target: Target):
+    def _handle_add_target_click(self):
+        """Slot for the 'Add Target' button. Calls _add_target_row with no target."""
+        self._add_target_row()
+
+    def _add_target_row(self, target: Target | None = None):
         """Add a new target row."""
         if target is None:
             target = Target()
