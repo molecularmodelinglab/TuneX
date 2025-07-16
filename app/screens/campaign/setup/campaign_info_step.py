@@ -2,72 +2,70 @@
 Campaign information step for campaign creation wizard.
 """
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
     QHBoxLayout,
     QLineEdit,
+    QScrollArea,
+    QSizePolicy,
     QTextEdit,
     QVBoxLayout,
-    QPushButton,
-    QScrollArea,
     QWidget,
 )
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QSizePolicy
 
 from app.core.base import BaseStep
-from app.models.campaign import Campaign
-from app.models.campaign import Target
+from app.models.campaign import Campaign, Target
 from app.models.enums import TargetMode
-from app.shared.components.buttons import PrimaryButton, DangerButton
+from app.shared.components.buttons import DangerButton, PrimaryButton
 from app.shared.components.headers import MainHeader, SectionHeader
 
 
 class TargetRow(QWidget):
     """Individual target row widget."""
-    
+
     def __init__(self, target: Target, on_remove_callback, parent=None):
         super().__init__(parent)
         self.target = target
         self.on_remove_callback = on_remove_callback
         self._setup_ui()
-    
+
     def _setup_ui(self):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        
+
         # Target name input
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("Enter target name")
         self.name_input.setObjectName("FormInput")
         self.name_input.setText(self.target.name)
         layout.addWidget(self.name_input)
-        
+
         # Target mode combo
         self.mode_combo = QComboBox()
         self.mode_combo.setObjectName("FormInput")
         for mode in TargetMode:
             self.mode_combo.addItem(mode.value)
-        
+
         # Set current mode
         index = self.mode_combo.findText(self.target.mode or TargetMode.MAX.value)
         if index >= 0:
             self.mode_combo.setCurrentIndex(index)
         layout.addWidget(self.mode_combo)
-        
+
         # Remove button
         self.remove_btn = DangerButton("Remove")
         self.remove_btn.setToolTip("Remove this target")
         self.remove_btn.clicked.connect(lambda: self.on_remove_callback(self))
         layout.addWidget(self.remove_btn)
-    
+
     def get_target_data(self) -> Target:
         """Get target data from this row."""
         self.target.name = self.name_input.text().strip()
         self.target.mode = self.mode_combo.currentText()
         return self.target
-    
+
     def is_valid(self) -> bool:
         """Check if this target row has valid data."""
         return bool(self.name_input.text().strip())
@@ -99,7 +97,7 @@ class CampaignInfoStep(BaseStep):
     def __init__(self, wizard_data: Campaign, parent=None):
         super().__init__(wizard_data, parent)
         self.campaign: Campaign = self.wizard_data
-        self.target_rows = []
+        self.target_rows: list[TargetRow] = []
 
     def _setup_widget(self):
         """Setup the campaign info step UI."""
@@ -163,7 +161,7 @@ class CampaignInfoStep(BaseStep):
 
         self.targets_container = QWidget()
         self.targets_layout = QVBoxLayout(self.targets_container)
-        self.targets_container.setObjectName("TargetsContainer") 
+        self.targets_container.setObjectName("TargetsContainer")
         self.targets_container.setStyleSheet("""
             QWidget#TargetsContainer {
                 background-color: white;
@@ -174,7 +172,7 @@ class CampaignInfoStep(BaseStep):
         # self.targets_layout = QVBoxLayout(self.targets_container)
         self.targets_layout.setContentsMargins(10, 10, 10, 10)
         self.targets_layout.setSpacing(5)
-        
+
         scroll_area.setWidget(self.targets_container)
         targets_layout.addWidget(scroll_area)
 
@@ -189,15 +187,15 @@ class CampaignInfoStep(BaseStep):
         targets_label.setObjectName(self.FORM_LABEL_OBJECT_NAME)
         form_layout.addRow(targets_label, targets_widget)
 
-    def _add_target_row(self, target: Target = None):
+    def _add_target_row(self, target: Target):
         """Add a new target row."""
         if target is None:
             target = Target()
-        
+
         target_row = TargetRow(target, self._remove_target_row)
         self.target_rows.append(target_row)
         self.targets_layout.addWidget(target_row)
-        
+
         # Update remove button visibility
         self._update_remove_buttons()
 
@@ -224,7 +222,7 @@ class CampaignInfoStep(BaseStep):
         if not self.target_rows:
             print("At least one target is required")  # TODO: Better error handling
             return False
-        
+
         valid_targets = [row for row in self.target_rows if row.is_valid()]
         if not valid_targets:
             print("At least one target must have a name")  # TODO: Better error handling
@@ -241,7 +239,6 @@ class CampaignInfoStep(BaseStep):
         for row in self.target_rows:
             if row.is_valid():
                 self.campaign.targets.append(row.get_target_data())
-
 
     def load_data(self):
         """Load data from shared data into form."""
