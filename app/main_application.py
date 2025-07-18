@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QMainWindow, QStackedWidget
 
 from app.models.campaign import Campaign
 from app.screens.campaign.campaign_wizard import CampaignWizard
+from app.screens.campaign.panel.campaign_panel import CampaignPanelScreen
 from app.screens.start.start_screen import StartScreen
 from app.screens.workspace.select_workspace import SelectWorkspaceScreen
 from app.shared.constants import ScreenName
@@ -53,6 +54,7 @@ class MainApplication(QMainWindow):
         self.start_screen = StartScreen()
         self.campaign_wizard = CampaignWizard()
         self.select_workspace = SelectWorkspaceScreen()
+        self.campaign_panel = None  # Placeholder for the campaign panel
 
         # Add screens to stack
         self.stacked_widget.addWidget(self.start_screen)
@@ -68,6 +70,7 @@ class MainApplication(QMainWindow):
         self.start_screen.new_campaign_requested.connect(self.show_campaign_wizard)
         self.start_screen.browse_campaigns_requested.connect(self.show_browse_campaigns)
         self.start_screen.back_requested.connect(self.show_select_workspace)
+        self.start_screen.campaign_selected.connect(self.show_campaign_panel)
 
         # Campaign wizard navigation
         self.campaign_wizard.back_to_start_requested.connect(self.show_start_screen)
@@ -91,6 +94,18 @@ class MainApplication(QMainWindow):
         self.campaign_wizard.workspace_path = self.current_workspace
         self.stacked_widget.setCurrentWidget(self.campaign_wizard)
         self.setWindowTitle(self.CREATE_CAMPAIGN_WINDOW_TITLE)
+
+    def show_campaign_panel(self, campaign: Campaign):
+        """Navigate to the campaign panel screen."""
+        if self.campaign_panel:
+            self.stacked_widget.removeWidget(self.campaign_panel)
+            self.campaign_panel.deleteLater()
+
+        self.campaign_panel = CampaignPanelScreen(campaign)
+        self.campaign_panel.home_requested.connect(self.show_start_screen)
+        self.stacked_widget.addWidget(self.campaign_panel)
+        self.stacked_widget.setCurrentWidget(self.campaign_panel)
+        self.setWindowTitle(f"TuneX - {campaign.name}")
 
     def show_browse_campaigns(self):
         """Navigate to browse campaigns screen."""

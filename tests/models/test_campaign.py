@@ -1,6 +1,6 @@
 import unittest
-from typing import List
-from app.models.campaign import Campaign, Target
+
+from app.models.campaign import Campaign
 from app.models.parameters.types import ContinuousNumerical, Fixed
 
 
