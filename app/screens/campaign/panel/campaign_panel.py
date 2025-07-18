@@ -145,10 +145,8 @@ class CampaignPanelScreen(BaseScreen):
     def _create_tab_button_handler(self, name: str):
         """Create a click handler for tab buttons."""
 
-        def handler(checked: bool):
-            if checked:
+        def handler():
                 self.switch_tab(name)
-
         return handler
 
     def _create_tab_button(self, text: str) -> PrimaryButton:
