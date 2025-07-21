@@ -7,6 +7,7 @@ from PySide6.QtWidgets import(
 
 from app.core.base import BaseWidget
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
+from app.screens.start.components.campaign_loader import CampaignLoader
 
 class SettingsPanel(BaseWidget):
     """Panel for the 'Settings' tab."""
@@ -38,8 +39,10 @@ class SettingsPanel(BaseWidget):
     BUTTON_SECTION_SPACING = 20
     DESCRIPTION_HEIGHT = 100
 
-    def __init__(self, campaign=None, parent=None):
+    def __init__(self, campaign=None, workspace_path=None, parent=None):
         self.campaign = campaign
+        self.workspace_path = workspace_path
+        self.campaign_loader = CampaignLoader(workspace_path) if workspace_path else None
         super().__init__(parent)
 
     def _setup_widget(self):
@@ -171,8 +174,16 @@ class SettingsPanel(BaseWidget):
             # Save and switch back to read-only mode
             new_name = self.name_input.text().strip()
             if new_name and self.campaign:
+                self.old_name = self.campaign.name
                 self.campaign.name = new_name
-                self.campaign_renamed.emit(new_name)
+                
+                if self._save_campaign_changes():
+                    self.campaign_renamed.emit(new_name)
+                    print(f"Campaign renamed from '{self.old_name}' to '{new_name}'")
+                else:
+                    self.campaign.name = self.old_name
+                    self.name_input.setText(self.old_name)
+                    print("Failed to save campaign name change")
             
             self.name_input.setReadOnly(True)
             self.rename_button.setText(self.RENAME_BUTTON_TEXT)
@@ -188,9 +199,16 @@ class SettingsPanel(BaseWidget):
             # Save and switch back to read-only mode
             new_description = self.description_input.toPlainText().strip()
             if self.campaign:
+                old_description = self.campaign.description
                 self.campaign.description = new_description
-                self.campaign_description_updated.emit(new_description)
-            
+                if self._save_campaign_changes():
+                    self.campaign_description_updated.emit(new_description)
+                    print(f"Campaign description updated")
+                else:
+                    self.campaign.description = old_description
+                    self.description_input.setPlainText(old_description)
+                    print("Failed to save campaign description change")
+
             self.description_input.setReadOnly(True)
             self.edit_button.setText(self.EDIT_BUTTON_TEXT)
 
@@ -205,6 +223,20 @@ class SettingsPanel(BaseWidget):
         # TODO: Add confirmation dialog
         self.campaign_deleted.emit()
 
+    def _save_campaign_changes(self) -> bool:
+        """Save campaign changes to JSON file. Returns True if successful."""
+        if not self.campaign_loader or not self.campaign:
+            return False
+        
+        print(self.campaign.name, self.old_name)
+        
+        try:
+            self.campaign_loader.update_campaign(self.campaign, old_name=self.old_name)
+            return True
+        except Exception as e:
+            print(f"Error saving campaign: {e}")
+            return False
+
     def update_campaign_data(self, campaign):
         """Update the panel with new campaign data."""
         self.campaign = campaign
@@ -214,3 +246,8 @@ class SettingsPanel(BaseWidget):
         """Set the campaign and update the form fields."""
         self.campaign = campaign
         self._load_campaign_data()
+    
+    def set_workspace_path(self, workspace_path: str):
+        """Set the workspace path and update the campaign loader."""
+        self.workspace_path = workspace_path
+        self.campaign_loader = CampaignLoader(workspace_path) if workspace_path else None
