@@ -38,13 +38,13 @@ class CampaignPanelScreen(BaseScreen):
     TAB_SECTION_MARGINS = (20, 20, 20, 0)
     TAB_LAYOUT_MARGINS = (0, 10, 0, 0)
     HOME_BUTTON_SECTION_MARGINS = (20, 20, 20, 20)
-
     # Signals
     home_requested = Signal()
     new_run_requested = Signal()
 
-    def __init__(self, campaign: Campaign, parent=None):
+    def __init__(self, campaign: Campaign, workspace_path: str, parent=None):
         self.campaign = campaign
+        self.workspace_path = workspace_path
         self.tabs: Dict[str, PrimaryButton] = {}
         self.panels: Dict[str, BaseWidget] = {}
         super().__init__(parent)
@@ -110,7 +110,10 @@ class CampaignPanelScreen(BaseScreen):
         # Campaign metadata
         param_count = len(self.campaign.parameters) if self.campaign.parameters else "Nan"
         target_names = ", ".join([t.name for t in self.campaign.targets]) or "None"
-        metadata_text = f"Created on 25 April, 2025 • {param_count} Parameters • Targets: {target_names}"
+        if self.campaign.created_at == self.campaign.updated_at:
+            metadata_text = f"Created on {self.campaign.created_at} • {param_count} Parameters • Targets: {target_names}"
+        else:
+            metadata_text = f"Updated on {self.campaign.updated_at} • {param_count} Parameters • Targets: {target_names}"
 
         metadata_label = QLabel(metadata_text)
         metadata_label.setObjectName("CampaignMetadata")
@@ -161,7 +164,7 @@ class CampaignPanelScreen(BaseScreen):
         """Create panels and connect their signals."""
         self.runs_panel = RunsPanel()
         self.parameters_panel = ParametersPanel()
-        self.settings_panel = SettingsPanel()
+        self.settings_panel = SettingsPanel(self.campaign, self.workspace_path)
 
         self.panels = {
             self.RUNS_TAB_TEXT: self.runs_panel,
@@ -170,6 +173,10 @@ class CampaignPanelScreen(BaseScreen):
         }
 
         self.runs_panel.new_run_requested.connect(self.new_run_requested.emit)
+        self.settings_panel.home_requested.connect(self.home_requested.emit)
+        self.settings_panel.campaign_renamed.connect(self._handle_campaign_renamed)
+        # self.settings_panel.campaign_description_updated.connect(self._handle_campaign_description_updated)
+
 
         self.stacked_widget.addWidget(self.runs_panel)
         self.stacked_widget.addWidget(self.parameters_panel)
@@ -201,7 +208,21 @@ class CampaignPanelScreen(BaseScreen):
         layout.addWidget(home_button)
 
         return buttons_widget
+    
+    def _handle_campaign_renamed(self, new_name: str):
+        """Handle campaign rename - update the UI display."""
+        # Update the campaign name display in the tab section
+        self._refresh_campaign_metadata()
 
+
+    def _refresh_campaign_metadata(self):
+        """Refresh the campaign metadata display in the tab section."""
+        # This would update the campaign name shown in the header
+        campaign_name = self.campaign.name or self.DEFAULT_CAMPAIGN_NAME
+        campaign_name_label = self.findChild(QLabel, "CampaignName")
+        if campaign_name_label:
+            campaign_name_label.setText(campaign_name)
+    
     def _apply_styles(self):
         """Apply wizard-specific styles."""
         styles = get_widget_styles() + get_navigation_styles() + get_tab_styles()
