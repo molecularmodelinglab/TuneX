@@ -111,9 +111,13 @@ class CampaignPanelScreen(BaseScreen):
         param_count = len(self.campaign.parameters) if self.campaign.parameters else "Nan"
         target_names = ", ".join([t.name for t in self.campaign.targets]) or "None"
         if self.campaign.created_at == self.campaign.updated_at:
-            metadata_text = f"Created on {self.campaign.created_at} • {param_count} Parameters • Targets: {target_names}"
+            metadata_text = (
+                f"Created on {self.campaign.created_at} • {param_count} Parameters • Targets: {target_names}"
+            )
         else:
-            metadata_text = f"Updated on {self.campaign.updated_at} • {param_count} Parameters • Targets: {target_names}"
+            metadata_text = (
+                f"Updated on {self.campaign.updated_at} • {param_count} Parameters • Targets: {target_names}"
+            )
 
         metadata_label = QLabel(metadata_text)
         metadata_label.setObjectName("CampaignMetadata")
@@ -149,7 +153,8 @@ class CampaignPanelScreen(BaseScreen):
         """Create a click handler for tab buttons."""
 
         def handler():
-                self.switch_tab(name)
+            self.switch_tab(name)
+
         return handler
 
     def _create_tab_button(self, text: str) -> PrimaryButton:
@@ -176,7 +181,6 @@ class CampaignPanelScreen(BaseScreen):
         self.settings_panel.home_requested.connect(self.home_requested.emit)
         self.settings_panel.campaign_renamed.connect(self._handle_campaign_renamed)
         # self.settings_panel.campaign_description_updated.connect(self._handle_campaign_description_updated)
-
 
         self.stacked_widget.addWidget(self.runs_panel)
         self.stacked_widget.addWidget(self.parameters_panel)
@@ -208,12 +212,11 @@ class CampaignPanelScreen(BaseScreen):
         layout.addWidget(home_button)
 
         return buttons_widget
-    
+
     def _handle_campaign_renamed(self, new_name: str):
         """Handle campaign rename - update the UI display."""
         # Update the campaign name display in the tab section
         self._refresh_campaign_metadata()
-
 
     def _refresh_campaign_metadata(self):
         """Refresh the campaign metadata display in the tab section."""
@@ -222,7 +225,7 @@ class CampaignPanelScreen(BaseScreen):
         campaign_name_label = self.findChild(QLabel, "CampaignName")
         if campaign_name_label:
             campaign_name_label.setText(campaign_name)
-    
+
     def _apply_styles(self):
         """Apply wizard-specific styles."""
         styles = get_widget_styles() + get_navigation_styles() + get_tab_styles()

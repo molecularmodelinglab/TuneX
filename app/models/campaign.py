@@ -1,8 +1,9 @@
 """
 Data models for the campaign.
 """
-from datetime import datetime
+
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, Dict, List
 
 from app.models.parameters import ParameterSerializer
@@ -51,14 +52,11 @@ class Campaign:
         parameters = serializer.deserialize_parameters(data.get("parameters", []))
 
         targets_data = data.get("targets", [])
-        targets = [
-            Target(name=target.get("name", ""), mode=target.get("mode", "Max"))
-            for target in targets_data
-        ]
+        targets = [Target(name=target.get("name", ""), mode=target.get("mode", "Max")) for target in targets_data]
 
         created_at = data.get("created_at", datetime.now())
         updated_at = data.get("updated_at", datetime.now())
-        
+
         if isinstance(created_at, str):
             created_at = datetime.fromisoformat(created_at)
         if isinstance(updated_at, str):

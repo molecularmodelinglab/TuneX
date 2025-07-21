@@ -1,13 +1,10 @@
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import(
-    QFormLayout, QHBoxLayout, QLabel, QLineEdit, 
-    QTextEdit, QVBoxLayout, QWidget
-)
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit, QVBoxLayout, QWidget
 
 from app.core.base import BaseWidget
-from app.shared.components.buttons import PrimaryButton, SecondaryButton
 from app.screens.start.components.campaign_loader import CampaignLoader
+from app.shared.components.buttons import PrimaryButton, SecondaryButton
+
 
 class SettingsPanel(BaseWidget):
     """Panel for the 'Settings' tab."""
@@ -19,7 +16,7 @@ class SettingsPanel(BaseWidget):
     campaign_description_updated = Signal(str)
     campaign_deleted = Signal()
     data_exported = Signal()
-    home_requested = Signal() 
+    home_requested = Signal()
 
     # UI Constants
     PANEL_TITLE = "Campaign Settings"
@@ -27,13 +24,13 @@ class SettingsPanel(BaseWidget):
     DESCRIPTION_LABEL = "Description"
     NAME_PLACEHOLDER = "Enter campaign name"
     DESCRIPTION_PLACEHOLDER = "Description of the Campaign"
-    
+
     RENAME_BUTTON_TEXT = "Rename"
     EDIT_BUTTON_TEXT = "Edit"
     DELETE_BUTTON_TEXT = "Delete Campaign"
     HOME_BUTTON_TEXT = "Home"
     EXPORT_BUTTON_TEXT = "Export Data"
-    
+
     MAIN_MARGINS = (30, 30, 30, 30)
     FORM_SPACING = 20
     BUTTON_SECTION_SPACING = 20
@@ -81,7 +78,7 @@ class SettingsPanel(BaseWidget):
         name_label.setObjectName("FormLabel")
         form_layout.addRow(name_label, name_section)
 
-        # Description section  
+        # Description section
         description_section = self._create_description_section()
         desc_label = QLabel(self.DESCRIPTION_LABEL)
         desc_label.setObjectName("FormLabel")
@@ -176,7 +173,7 @@ class SettingsPanel(BaseWidget):
             if new_name and self.campaign:
                 self.old_name = self.campaign.name
                 self.campaign.name = new_name
-                
+
                 if self._save_campaign_changes():
                     self.campaign_renamed.emit(new_name)
                     print(f"Campaign renamed from '{self.old_name}' to '{new_name}'")
@@ -184,7 +181,7 @@ class SettingsPanel(BaseWidget):
                     self.campaign.name = self.old_name
                     self.name_input.setText(self.old_name)
                     print("Failed to save campaign name change")
-            
+
             self.name_input.setReadOnly(True)
             self.rename_button.setText(self.RENAME_BUTTON_TEXT)
 
@@ -203,7 +200,7 @@ class SettingsPanel(BaseWidget):
                 self.campaign.description = new_description
                 if self._save_campaign_changes():
                     self.campaign_description_updated.emit(new_description)
-                    print(f"Campaign description updated")
+                    print("Campaign description updated")
                 else:
                     self.campaign.description = old_description
                     self.description_input.setPlainText(old_description)
@@ -227,9 +224,9 @@ class SettingsPanel(BaseWidget):
         """Save campaign changes to JSON file. Returns True if successful."""
         if not self.campaign_loader or not self.campaign:
             return False
-        
+
         print(self.campaign.name, self.old_name)
-        
+
         try:
             self.campaign_loader.update_campaign(self.campaign, old_name=self.old_name)
             return True
@@ -246,7 +243,7 @@ class SettingsPanel(BaseWidget):
         """Set the campaign and update the form fields."""
         self.campaign = campaign
         self._load_campaign_data()
-    
+
     def set_workspace_path(self, workspace_path: str):
         """Set the workspace path and update the campaign loader."""
         self.workspace_path = workspace_path
