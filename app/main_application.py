@@ -101,7 +101,7 @@ class MainApplication(QMainWindow):
             self.stacked_widget.removeWidget(self.campaign_panel)
             self.campaign_panel.deleteLater()
 
-        self.campaign_panel = CampaignPanelScreen(campaign)
+        self.campaign_panel = CampaignPanelScreen(campaign, self.current_workspace)
         self.campaign_panel.home_requested.connect(self.show_start_screen)
         self.stacked_widget.addWidget(self.campaign_panel)
         self.stacked_widget.setCurrentWidget(self.campaign_panel)
