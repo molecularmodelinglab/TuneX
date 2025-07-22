@@ -70,13 +70,12 @@ class CampaignLoader:
             print(f"Skipping invalid campaign in {item_name}: {e}")
             return None
 
-    def update_campaign(self, campaign: Campaign, old_name: str = None) -> None:
+    def update_campaign(self, campaign: Campaign) -> None:
         """
         Update an existing campaign in the workspace.
 
         Args:
             campaign: The Campaign object to update.
-            old_name: The previous name of the campaign (for renaming).
         """
         if not self.workspace_path or not campaign.name:
             return
@@ -87,59 +86,11 @@ class CampaignLoader:
 
         campaign.updated_at = datetime.now()
 
-        if old_name and old_name != campaign.name:
-            old_filename = self.campaign_filename_map.get(old_name)
-            if old_filename:
-                old_campaign_path = os.path.join(campaigns_dir, old_filename)
-
-                if os.path.exists(old_campaign_path):
-                    with open(old_campaign_path, "w") as f:
-                        json.dump(campaign.to_dict(), f, indent=4)
-
-                    self.campaign_filename_map[campaign.name] = old_filename
-                    del self.campaign_filename_map[old_name]
-
-                    print(f"Updated campaign '{old_name}' to '{campaign.name}' in file: {old_filename}")
-                else:
-                    print(f"Warning: Campaign file for '{old_name}' not found")
-                    self._create_new_campaign_file(campaign, campaigns_dir)
-            else:
-                print(f"Warning: No filename mapping found for campaign '{old_name}'")
-                self._create_new_campaign_file(campaign, campaigns_dir)
-        else:
-            existing_filename = self.campaign_filename_map.get(campaign.name)
-            if existing_filename:
-                campaign_path = os.path.join(campaigns_dir, existing_filename)
-                with open(campaign_path, "w") as f:
-                    json.dump(campaign.to_dict(), f, indent=4)
-                print(f"Campaign updated: {campaign_path}")
-            else:
-                self._create_new_campaign_file(campaign, campaigns_dir)
-
-    def _create_new_campaign_file(self, campaign: Campaign, campaigns_dir: str):
-        """Create a new campaign file with timestamp."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{campaign.name}_{timestamp}.json"
+        filename = f"{campaign.id}.json"
         campaign_path = os.path.join(campaigns_dir, filename)
 
+        # Save the updated campaign data
         with open(campaign_path, "w") as f:
             json.dump(campaign.to_dict(), f, indent=4)
-
-        self.campaign_filename_map[campaign.name] = filename
-        print(f"Created new campaign file: {campaign_path}")
-
-    def save_campaign(self, campaign: Campaign) -> None:
-        """
-        Save a campaign (for newly created campaigns).
-
-        Args:
-            campaign: The Campaign object to save.
-        """
-        if not self.workspace_path:
-            return
-
-        campaigns_dir = os.path.join(self.workspace_path, WorkspaceConstants.CAMPAIGNS_DIRNAME)
-        if not os.path.exists(campaigns_dir):
-            os.makedirs(campaigns_dir)
-
-        self._create_new_campaign_file(campaign, campaigns_dir)
+        
+        print(f"Campaign '{campaign.name}' updated: {campaign_path}")
