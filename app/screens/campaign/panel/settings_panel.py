@@ -171,15 +171,15 @@ class SettingsPanel(BaseWidget):
             # Save and switch back to read-only mode
             new_name = self.name_input.text().strip()
             if new_name and self.campaign:
-                self.old_name = self.campaign.name
+                old_name = self.campaign.name
                 self.campaign.name = new_name
 
                 if self._save_campaign_changes():
                     self.campaign_renamed.emit(new_name)
-                    print(f"Campaign renamed from '{self.old_name}' to '{new_name}'")
+                    print(f"Campaign renamed from '{old_name}' to '{new_name}'")
                 else:
-                    self.campaign.name = self.old_name
-                    self.name_input.setText(self.old_name)
+                    self.campaign.name = old_name
+                    self.name_input.setText(old_name)
                     print("Failed to save campaign name change")
 
             self.name_input.setReadOnly(True)
@@ -225,10 +225,8 @@ class SettingsPanel(BaseWidget):
         if not self.campaign_loader or not self.campaign:
             return False
 
-        print(self.campaign.name, self.old_name)
-
         try:
-            self.campaign_loader.update_campaign(self.campaign, old_name=self.old_name)
+            self.campaign_loader.update_campaign(self.campaign)
             return True
         except Exception as e:
             print(f"Error saving campaign: {e}")
