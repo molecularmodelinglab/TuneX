@@ -22,7 +22,7 @@ class CampaignLoader:
             workspace_path: The path to the current workspace.
         """
         self.workspace_path = workspace_path
-        self.campaign_filename_map = {}
+        self.campaign_filename_map: dict[str, str] = {}
 
     def load_campaigns(self) -> List[Campaign]:
         """
