@@ -92,5 +92,5 @@ class CampaignLoader:
         # Save the updated campaign data
         with open(campaign_path, "w") as f:
             json.dump(campaign.to_dict(), f, indent=4)
-        
+
         print(f"Campaign '{campaign.name}' updated: {campaign_path}")
