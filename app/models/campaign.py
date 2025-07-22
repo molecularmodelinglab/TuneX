@@ -1,7 +1,7 @@
 """
 Data models for the campaign.
 """
-
+from uuid import uuid4
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List
@@ -21,8 +21,9 @@ class Target:
 @dataclass
 class Campaign:
     """Data model for a campaign."""
-
+    
     name: str = ""
+    id: str = field(default_factory=lambda: str(uuid4()))
     description: str = ""
     targets: List[Target] = field(default_factory=list)
     parameters: List[BaseParameter] = field(default_factory=list)
@@ -32,6 +33,7 @@ class Campaign:
 
     def reset(self):
         """Reset all campaign data to its initial state."""
+        
         self.name = ""
         self.description = ""
         self.target = Target()
@@ -39,6 +41,7 @@ class Campaign:
         self.initial_dataset.clear()
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
+        self.id = str(uuid4())
 
     def get_parameter_data(self) -> List[Dict[str, Any]]:
         """Serialize parameters to a list of dictionaries."""
@@ -63,6 +66,7 @@ class Campaign:
             updated_at = datetime.fromisoformat(updated_at)
 
         return cls(
+            id=data.get("id", str(uuid4())),
             name=data.get("name", ""),
             description=data.get("description", ""),
             targets=targets,
@@ -76,6 +80,7 @@ class Campaign:
         """Convert Campaign instance to a dictionary."""
         serializer = ParameterSerializer()
         return {
+            "id": self.id,
             "name": self.name,
             "description": self.description,
             "targets": [
@@ -89,4 +94,4 @@ class Campaign:
             "initial_dataset": self.initial_dataset,
             "created_at": self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at,
             "updated_at": self.updated_at.isoformat() if isinstance(self.updated_at, datetime) else self.updated_at,
-        }
+        }   
