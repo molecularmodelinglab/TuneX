@@ -187,8 +187,7 @@ class CampaignWizard(BaseScreen):
 
         try:
             campaign_data = self.campaign.to_dict()
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{self.campaign.name}_{timestamp}.json"
+            filename = f"{campaign_data['id']}.json"
 
             # Correctly join paths to create the full file path
             campaigns_dir = os.path.join(self.workspace_path, "campaigns")
