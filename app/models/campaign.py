@@ -1,10 +1,11 @@
 """
 Data models for the campaign.
 """
-from uuid import uuid4
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List
+from uuid import uuid4
 
 from app.models.parameters import ParameterSerializer
 from app.models.parameters.base import BaseParameter
@@ -21,7 +22,7 @@ class Target:
 @dataclass
 class Campaign:
     """Data model for a campaign."""
-    
+
     name: str = ""
     id: str = field(default_factory=lambda: str(uuid4()))
     description: str = ""
@@ -33,7 +34,7 @@ class Campaign:
 
     def reset(self):
         """Reset all campaign data to its initial state."""
-        
+
         self.name = ""
         self.description = ""
         self.target = Target()
@@ -94,4 +95,4 @@ class Campaign:
             "initial_dataset": self.initial_dataset,
             "created_at": self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at,
             "updated_at": self.updated_at.isoformat() if isinstance(self.updated_at, datetime) else self.updated_at,
-        }   
+        }

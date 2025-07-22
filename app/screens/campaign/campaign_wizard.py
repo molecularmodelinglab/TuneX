@@ -5,7 +5,6 @@ Multi-step process for creating new campaigns.
 
 import json
 import os
-from datetime import datetime
 
 from PySide6.QtCore import Signal as Signal
 from PySide6.QtWidgets import (
