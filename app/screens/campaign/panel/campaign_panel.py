@@ -64,10 +64,11 @@ class CampaignPanelScreen(BaseScreen):
         # Stacked widget for tab content
         self.stacked_widget = QStackedWidget()
         main_layout.addWidget(self.stacked_widget)
+        
+        self.shared_buttons_section = self._create_shared_buttons_section()
+        main_layout.addWidget(self.shared_buttons_section)
 
         self._create_panels()
-
-        main_layout.addWidget(self._create_home_button_section())
 
     def _create_header(self) -> QWidget:
         """Create the campaign header section."""
@@ -178,10 +179,8 @@ class CampaignPanelScreen(BaseScreen):
         }
 
         self.runs_panel.new_run_requested.connect(self.new_run_requested.emit)
-        self.settings_panel.home_requested.connect(self.home_requested.emit)
         self.settings_panel.campaign_renamed.connect(self._handle_campaign_renamed)
-        # self.settings_panel.campaign_description_updated.connect(self._handle_campaign_description_updated)
-
+    
         self.stacked_widget.addWidget(self.runs_panel)
         self.stacked_widget.addWidget(self.parameters_panel)
         self.stacked_widget.addWidget(self.settings_panel)
@@ -198,20 +197,46 @@ class CampaignPanelScreen(BaseScreen):
 
         self.stacked_widget.setCurrentWidget(self.panels[name])
 
-    def _create_home_button_section(self) -> QWidget:
-        """Create the bottom buttons section."""
-        buttons_widget = QWidget()
-        layout = QHBoxLayout(buttons_widget)
-        layout.setContentsMargins(*self.HOME_BUTTON_SECTION_MARGINS)
-        layout.setSpacing(self.HOME_BUTTON_SECTION_SPACING)
+        active_panel = self.panels[name]
+        if hasattr(active_panel, 'get_panel_buttons'):
+            panel_buttons = active_panel.get_panel_buttons()
+            self._add_panel_buttons(panel_buttons)
+        else:
+            # Clear panel buttons if panel doesn't provide any
+            self._clear_panel_buttons()
 
-        layout.addStretch()
+    def _create_shared_buttons_section(self) -> QWidget:
+        """Create the bottom buttons section."""
+        self.buttons_widget = QWidget()
+        self.buttons_layout = QHBoxLayout(self.buttons_widget)
+        self.buttons_layout.setContentsMargins(*self.HOME_BUTTON_SECTION_MARGINS)
+        self.buttons_layout.setSpacing(self.HOME_BUTTON_SECTION_SPACING)
 
         home_button = SecondaryButton(self.HOME_BUTTON_TEXT)
         home_button.clicked.connect(self.home_requested.emit)
-        layout.addWidget(home_button)
+        self.buttons_layout.addWidget(home_button)
 
-        return buttons_widget
+        self.buttons_layout.addStretch()
+
+        return self.buttons_widget
+    
+    def _add_panel_buttons(self, buttons_list):
+        """Add panel-specific buttons to the shared button section."""
+        self._clear_panel_buttons()
+        
+        # Add new panel buttons
+        for button in buttons_list:
+            self.buttons_layout.addWidget(button)
+
+    def _clear_panel_buttons(self):
+        """Remove panel-specific buttons, keeping only home button and stretch."""
+        if not hasattr(self, 'buttons_layout'):
+            return
+            
+        while self.buttons_layout.count() > 2: 
+            item = self.buttons_layout.takeAt(self.buttons_layout.count() - 1)
+            if item.widget():
+                item.widget().setParent(None)
 
     def _handle_campaign_renamed(self, new_name: str):
         """Handle campaign rename - update the UI display."""
