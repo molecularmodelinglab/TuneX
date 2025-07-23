@@ -25,9 +25,6 @@ class RunsPanel(BaseWidget):
         # Create and add the empty state card
         self._create_empty_state()
 
-        # Create and add the action buttons
-        self.main_layout.addWidget(self._create_buttons_section())
-
     def _create_empty_state(self):
         icon_pixmap = self._get_clock_icon_pixmap()
         print(icon_pixmap)
@@ -37,6 +34,7 @@ class RunsPanel(BaseWidget):
             icon_pixmap=icon_pixmap,
         )
         self.main_layout.addWidget(empty_state)
+        self.main_layout.addStretch()
 
     def _get_clock_icon_pixmap(self) -> QPixmap:
         """Get a clock icon pixmap."""
@@ -51,17 +49,8 @@ class RunsPanel(BaseWidget):
 
         return pixmap
 
-    def _create_buttons_section(self) -> QWidget:
-        """Create buttons specific to the Runs panel."""
-        buttons_widget = QWidget()
-        layout = QHBoxLayout(buttons_widget)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
-        layout.addStretch()
-
+    def get_panel_buttons(self):
+        """Return buttons specific to this panel."""
         generate_button = PrimaryButton(self.NEW_RUNS_BUTTON_TEXT)
-        generate_button.clicked.connect(self.new_run_requested.emit)  # Emit its own signal
-        layout.addWidget(generate_button)
-        layout.addStretch()
-
-        return buttons_widget
+        generate_button.clicked.connect(self.new_run_requested.emit)
+        return [generate_button]
