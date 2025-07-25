@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QLabel,
@@ -11,6 +11,8 @@ from app.shared.components.buttons import PrimaryButton
 
 class ParametersPanel(BaseWidget):
     """Panel for the 'Parameters' tab."""
+
+    parameters_edited = Signal()
 
     def _setup_widget(self):
         """Setup the parameters panel UI."""
