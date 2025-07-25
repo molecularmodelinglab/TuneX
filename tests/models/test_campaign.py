@@ -59,7 +59,7 @@ class TestCampaignModel(unittest.TestCase):
         }
 
         campaign = Campaign.from_dict(campaign_data)
-        
+
         self.assertEqual(campaign.id, test_id)
         self.assertEqual(campaign.name, "Test Campaign")
         self.assertEqual(campaign.description, "A test campaign.")
@@ -78,7 +78,7 @@ class TestCampaignModel(unittest.TestCase):
         target = Target()
         self.assertEqual(target.name, "")
         self.assertEqual(target.mode, "Max")
-        
+
         # Test with values
         target = Target(name="yield", mode="Min")
         self.assertEqual(target.name, "yield")

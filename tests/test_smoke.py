@@ -57,19 +57,19 @@ def test_navigation_back_to_start_screen(qtbot):
 
 def test_campaign_panel_integration(qtbot):
     """Test integration of campaign panel with main application."""
-    from app.screens.campaign.panel.campaign_panel import CampaignPanelScreen
     from app.models.campaign import Campaign, Target
-    
+    from app.screens.campaign.panel.campaign_panel import CampaignPanelScreen
+
     # Create a sample campaign
     campaign = Campaign()
     campaign.name = "Integration Test Campaign"
     campaign.description = "Test campaign for integration testing"
     campaign.targets = [Target(name="Accuracy", mode="Max")]
-    
+
     # Create campaign panel
     panel = CampaignPanelScreen(campaign, workspace_path="test_workspace")
     qtbot.addWidget(panel)
-    
+
     # Verify initial state
     assert panel.campaign == campaign
     assert "Runs" in panel.tabs
@@ -79,19 +79,19 @@ def test_campaign_panel_integration(qtbot):
 
 def test_settings_panel_integration(qtbot):
     """Test settings panel integration with campaign data."""
-    from app.screens.campaign.panel.settings_panel import SettingsPanel
     from app.models.campaign import Campaign, Target
-    
+    from app.screens.campaign.panel.settings_panel import SettingsPanel
+
     # Create a sample campaign
     campaign = Campaign()
     campaign.name = "Settings Test Campaign"
     campaign.description = "Test campaign for settings"
     campaign.targets = [Target(name="Performance", mode="Max")]
-    
+
     # Create settings panel
     panel = SettingsPanel(campaign, workspace_path="test_workspace")
     qtbot.addWidget(panel)
-    
+
     # Verify campaign data is loaded
     assert panel.name_input.text() == campaign.name
     assert panel.description_input.toPlainText() == campaign.description
@@ -99,25 +99,25 @@ def test_settings_panel_integration(qtbot):
 
 def test_multiple_targets_workflow(qtbot):
     """Test the complete workflow with multiple targets."""
-    from app.screens.campaign.setup.campaign_info_step import CampaignInfoStep
     from app.models.campaign import Campaign, Target
-    
+    from app.screens.campaign.setup.campaign_info_step import CampaignInfoStep
+
     # Create campaign with multiple targets
     campaign = Campaign()
     campaign.name = "Multi-Target Campaign"
     campaign.targets = [
         Target(name="Accuracy", mode="Max"),
         Target(name="Speed", mode="Min"),
-        Target(name="Memory", mode="Min")
+        Target(name="Memory", mode="Min"),
     ]
-    
+
     # Create campaign info step
     step = CampaignInfoStep(campaign)
     qtbot.addWidget(step)
-    
+
     # Load the data
     step.load_data()
-    
+
     # Verify all targets are loaded
     assert len(step.target_rows) == 3
     assert step.target_rows[0].name_input.text() == "Accuracy"
