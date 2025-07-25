@@ -64,7 +64,7 @@ class CampaignPanelScreen(BaseScreen):
         # Stacked widget for tab content
         self.stacked_widget = QStackedWidget()
         main_layout.addWidget(self.stacked_widget)
-        
+
         self.shared_buttons_section = self._create_shared_buttons_section()
         main_layout.addWidget(self.shared_buttons_section)
 
@@ -180,7 +180,7 @@ class CampaignPanelScreen(BaseScreen):
 
         self.runs_panel.new_run_requested.connect(self.new_run_requested.emit)
         self.settings_panel.campaign_renamed.connect(self._handle_campaign_renamed)
-    
+
         self.stacked_widget.addWidget(self.runs_panel)
         self.stacked_widget.addWidget(self.parameters_panel)
         self.stacked_widget.addWidget(self.settings_panel)
@@ -198,7 +198,7 @@ class CampaignPanelScreen(BaseScreen):
         self.stacked_widget.setCurrentWidget(self.panels[name])
 
         active_panel = self.panels[name]
-        if hasattr(active_panel, 'get_panel_buttons'):
+        if hasattr(active_panel, "get_panel_buttons"):
             panel_buttons = active_panel.get_panel_buttons()
             self._add_panel_buttons(panel_buttons)
         else:
@@ -219,21 +219,21 @@ class CampaignPanelScreen(BaseScreen):
         self.buttons_layout.addStretch()
 
         return self.buttons_widget
-    
+
     def _add_panel_buttons(self, buttons_list):
         """Add panel-specific buttons to the shared button section."""
         self._clear_panel_buttons()
-        
+
         # Add new panel buttons
         for button in buttons_list:
             self.buttons_layout.addWidget(button)
 
     def _clear_panel_buttons(self):
         """Remove panel-specific buttons, keeping only home button and stretch."""
-        if not hasattr(self, 'buttons_layout'):
+        if not hasattr(self, "buttons_layout"):
             return
-            
-        while self.buttons_layout.count() > 2: 
+
+        while self.buttons_layout.count() > 2:
             item = self.buttons_layout.takeAt(self.buttons_layout.count() - 1)
             if item.widget():
                 item.widget().setParent(None)

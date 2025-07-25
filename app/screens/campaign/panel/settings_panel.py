@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QLineEdit, QText
 
 from app.core.base import BaseWidget
 from app.screens.start.components.campaign_loader import CampaignLoader
-from app.shared.components.buttons import PrimaryButton, SecondaryButton, DangerButton
+from app.shared.components.buttons import DangerButton, PrimaryButton
 
 
 class SettingsPanel(BaseWidget):
@@ -133,31 +133,6 @@ class SettingsPanel(BaseWidget):
 
         return desc_widget
 
-    # def _create_action_buttons(self) -> QWidget:
-    #     """Create the bottom action buttons section."""
-    #     buttons_widget = QWidget()
-    #     layout = QHBoxLayout(buttons_widget)
-    #     layout.setSpacing(self.BUTTON_SECTION_SPACING)
-
-    #     # Delete button (left side)
-    #     self.delete_button = SecondaryButton(self.DELETE_BUTTON_TEXT)
-    #     self.delete_button.setStyleSheet("color: #dc3545; border-color: #dc3545;")  # Red styling
-    #     self.delete_button.clicked.connect(self._handle_delete_click)
-    #     layout.addWidget(self.delete_button)
-
-    #     layout.addStretch()
-
-    #     # Home and Export buttons (right side)
-    #     self.home_button = SecondaryButton(self.HOME_BUTTON_TEXT)
-    #     self.home_button.clicked.connect(self.home_requested.emit)
-    #     layout.addWidget(self.home_button)
-
-    #     self.export_button = PrimaryButton(self.EXPORT_BUTTON_TEXT)
-    #     self.export_button.clicked.connect(self.data_exported.emit)
-    #     layout.addWidget(self.export_button)
-
-    #     return buttons_widget
-
     def _handle_rename_click(self):
         """Handle rename button click - toggle edit mode for name."""
         if self.name_input.isReadOnly():
@@ -230,19 +205,19 @@ class SettingsPanel(BaseWidget):
         except Exception as e:
             print(f"Error saving campaign: {e}")
             return False
-        
+
     def get_panel_buttons(self):
         """Return buttons specific to this panel."""
         buttons = []
-        
+
         delete_button = DangerButton(self.DELETE_BUTTON_TEXT)
         delete_button.clicked.connect(self._handle_delete_click)
         buttons.append(delete_button)
-        
+
         export_button = PrimaryButton(self.EXPORT_BUTTON_TEXT)
         export_button.clicked.connect(self.data_exported.emit)
         buttons.append(export_button)
-        
+
         return buttons
 
     def update_campaign_data(self, campaign):

@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QPainter, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QVBoxLayout
 
 from app.core.base import BaseWidget
 from app.shared.components.buttons import PrimaryButton
@@ -34,7 +34,6 @@ class RunsPanel(BaseWidget):
             icon_pixmap=icon_pixmap,
         )
         self.main_layout.addWidget(empty_state)
-        self.main_layout.addStretch()
 
     def _get_clock_icon_pixmap(self) -> QPixmap:
         """Get a clock icon pixmap."""

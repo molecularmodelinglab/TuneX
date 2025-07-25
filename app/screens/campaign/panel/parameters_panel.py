@@ -1,20 +1,12 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QHeaderView,
     QLabel,
-    QLineEdit,
-    QScrollArea,
-    QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
-    QWidget,
 )
 
 from app.core.base import BaseWidget
-from app.shared.components.buttons import DangerButton, PrimaryButton, SecondaryButton
+from app.shared.components.buttons import PrimaryButton
 
 
 class ParametersPanel(BaseWidget):
@@ -24,7 +16,7 @@ class ParametersPanel(BaseWidget):
         """Setup the parameters panel UI."""
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         # Placeholder content
         label = QLabel("Parameters View Content")
         font = QFont()
