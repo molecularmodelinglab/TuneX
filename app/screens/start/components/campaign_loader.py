@@ -40,14 +40,19 @@ class CampaignLoader:
 
         campaigns = []
         self.campaign_filename_map.clear()
-        for item_name in os.listdir(campaigns_dir):
-            campaign = self._load_single_campaign(campaigns_dir, item_name)
-            if campaign:
-                campaigns.append(campaign)
-                self.campaign_filename_map[campaign.name] = item_name
+        for campaign in os.listdir(campaigns_dir):
+            campaign_path = os.path.join(campaigns_dir, campaign)
+            if not os.path.isdir(campaign_path):
+                continue
+
+            full_campaign_path = os.path.join(campaign_path, f"{campaign}.json")
+            campaign_data = self._load_single_campaign(full_campaign_path)
+            if campaign_data:
+                campaigns.append(campaign_data)
+                self.campaign_filename_map[campaign_data.name] = campaign_data.name
         return campaigns
 
-    def _load_single_campaign(self, campaigns_dir: str, item_name: str) -> Campaign | None:
+    def _load_single_campaign(self, campaign_path: str) -> Campaign | None:
         """
         Load a single campaign from a directory.
 
@@ -58,7 +63,6 @@ class CampaignLoader:
         Returns:
             A Campaign object or None if loading fails.
         """
-        campaign_path = os.path.join(campaigns_dir, item_name)
         if not os.path.exists(campaign_path):
             print(f"Campaign path {campaign_path} does not exist")
             return None
@@ -67,7 +71,7 @@ class CampaignLoader:
                 campaign_data = json.load(f)
             return Campaign.from_dict(campaign_data)
         except (json.JSONDecodeError, KeyError, TypeError) as e:
-            print(f"Skipping invalid campaign in {item_name}: {e}")
+            print(f"Skipping invalid campaign in {campaign_path}: {e}")
             return None
 
     def update_campaign(self, campaign: Campaign) -> None:
@@ -87,10 +91,10 @@ class CampaignLoader:
         campaign.updated_at = datetime.now()
 
         filename = f"{campaign.id}.json"
-        campaign_path = os.path.join(campaigns_dir, filename)
+        campaign_path = os.path.join(campaigns_dir, campaign.id)
+        os.makedirs(campaign_path, exist_ok=True)
 
-        # Save the updated campaign data
-        with open(campaign_path, "w") as f:
+        with open(os.path.join(campaign_path, filename), "w") as f:
             json.dump(campaign.to_dict(), f, indent=4)
 
         print(f"Campaign '{campaign.name}' updated: {campaign_path}")
