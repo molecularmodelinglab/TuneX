@@ -20,6 +20,7 @@ from app.screens.campaign.setup.campaign_info_step import CampaignInfoStep
 from app.screens.campaign.setup.data_import_step import DataImportStep
 from app.screens.campaign.setup.parameters_step import ParametersStep
 from app.shared.components.buttons import NavigationButton
+from app.shared.constants import WorkspaceConstants
 from app.shared.styles.theme import get_navigation_styles, get_widget_styles
 
 
@@ -186,12 +187,16 @@ class CampaignWizard(BaseScreen):
 
         try:
             campaign_data = self.campaign.to_dict()
-            filename = f"{campaign_data['id']}.json"
+            campaign_id = campaign_data["id"]
+            filename = f"{campaign_id}.json"
 
             # Correctly join paths to create the full file path
-            campaigns_dir = os.path.join(self.workspace_path, "campaigns")
-            os.makedirs(campaigns_dir, exist_ok=True)
-            file_path = os.path.join(campaigns_dir, filename)
+            campaigns_dir = os.path.join(self.workspace_path, WorkspaceConstants.CAMPAIGNS_DIRNAME)
+            # os.makedirs(campaigns_dir, exist_ok=True)
+            campaign_path = os.path.join(campaigns_dir, str(campaign_id))
+            os.makedirs(campaign_path, exist_ok=True)
+
+            file_path = os.path.join(campaign_path, filename)
 
             with open(file_path, "w") as f:
                 json.dump(campaign_data, f, indent=4)
