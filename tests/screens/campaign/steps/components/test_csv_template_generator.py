@@ -14,7 +14,7 @@ from app.models.parameters.types import (
     Fixed,
     Substance,
 )
-from app.screens.campaign.steps.components.csv_template_generator import (
+from app.screens.campaign.setup.components.csv_template_generator import (
     CSVTemplateGenerator,
 )
 
