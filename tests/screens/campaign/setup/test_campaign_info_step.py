@@ -69,22 +69,30 @@ def test_remove_target_functionality(qtbot, campaign_info_step):
     assert len(campaign_info_step.target_rows) == initial_count - 1
 
 
-def test_remove_button_visibility(campaign_info_step):
+def test_remove_button_visibility(qtbot, campaign_info_step):
     """Test that remove buttons are only visible when there are multiple targets."""
     # With only one target, remove button should be hidden
-    campaign_info_step.target_rows.clear()
+    campaign_info_step.load_data()
+
+    for row in campaign_info_step.target_rows[:]:
+        campaign_info_step._remove_target_row(row)
+
     campaign_info_step._add_target_row()
 
-    if len(campaign_info_step.target_rows) == 1:
-        assert not campaign_info_step.target_rows[0].remove_btn.isVisible()
+    assert len(campaign_info_step.target_rows) == 1
+    assert not campaign_info_step.target_rows[0].remove_btn.isVisible()
 
-    # Add another target
     campaign_info_step._add_target_row()
+    campaign_info_step._update_remove_buttons()
 
-    # Now remove buttons should be visible
-    if len(campaign_info_step.target_rows) > 1:
-        for row in campaign_info_step.target_rows:
-            assert row.remove_btn.isVisible()
+    assert len(campaign_info_step.target_rows) == 2
+    for row in campaign_info_step.target_rows:
+        assert row.remove_btn.isEnabled()
+
+    campaign_info_step._remove_target_row(campaign_info_step.target_rows[0])
+    assert len(campaign_info_step.target_rows) == 1
+    assert not campaign_info_step.target_rows[0].remove_btn.isVisible()
+
 
 
 def test_load_existing_targets(campaign_info_step, sample_campaign):
