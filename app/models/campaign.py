@@ -37,7 +37,7 @@ class Campaign:
 
         self.name = ""
         self.description = ""
-        self.target = Target()
+        self.targets = []
         self.parameters.clear()
         self.initial_dataset.clear()
         self.created_at = datetime.now()
