@@ -3,7 +3,6 @@ Tests for the ParametersPanel functionality.
 """
 
 import pytest
-from PySide6.QtCore import Qt
 
 from app.screens.campaign.panel.parameters_panel import ParametersPanel
 

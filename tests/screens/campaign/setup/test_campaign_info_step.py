@@ -94,7 +94,6 @@ def test_remove_button_visibility(qtbot, campaign_info_step):
     assert not campaign_info_step.target_rows[0].remove_btn.isVisible()
 
 
-
 def test_load_existing_targets(campaign_info_step, sample_campaign):
     """Test loading existing targets from campaign data."""
     # Load the campaign data which has 2 targets

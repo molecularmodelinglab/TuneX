@@ -1,5 +1,5 @@
 import pytest
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtWidgets import QApplication
 
 from app.screens.workspace.select_workspace import SelectWorkspaceScreen
 
@@ -19,4 +19,4 @@ def test_select_workspace_screen_init(app, qtbot):
 
     assert screen.windowTitle() == "TuneX - Select Workspace"
     # commeting out because the button might not be present in the current version
-    #assert screen.findChild(QWidget, "SelectWorkspaceButton") is not None
+    # assert screen.findChild(QWidget, "SelectWorkspaceButton") is not None
