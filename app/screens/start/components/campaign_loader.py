@@ -49,7 +49,7 @@ class CampaignLoader:
             campaign_data = self._load_single_campaign(full_campaign_path)
             if campaign_data:
                 campaigns.append(campaign_data)
-                self.campaign_filename_map[campaign_data.name] = campaign_data.name
+                self.campaign_filename_map[campaign_data.id] = campaign_data.name
         return campaigns
 
     def _load_single_campaign(self, campaign_path: str) -> Campaign | None:
