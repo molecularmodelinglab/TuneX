@@ -169,7 +169,7 @@ class CampaignPanelScreen(BaseScreen):
     def _create_panels(self):
         """Create panels and connect their signals."""
         self.runs_panel = RunsPanel()
-        self.parameters_panel = ParametersPanel()
+        self.parameters_panel = ParametersPanel(self.campaign, self.workspace_path)
         self.settings_panel = SettingsPanel(self.campaign, self.workspace_path)
 
         self.panels = {
