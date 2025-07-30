@@ -56,10 +56,6 @@ class SettingsPanel(BaseWidget):
         form_widget = self._create_form_section()
         main_layout.addWidget(form_widget)
 
-        # # Action buttons section
-        # buttons_widget = self._create_action_buttons()
-        # main_layout.addWidget(buttons_widget)
-
         main_layout.addStretch()
         self._load_campaign_data()
 
