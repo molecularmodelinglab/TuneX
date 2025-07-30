@@ -128,6 +128,7 @@ class TestCampaignWizard(unittest.TestCase):
         # Set a workspace path
         self.wizard.workspace_path = self.temp_dir
         self.wizard.campaign.name = "Test Campaign"
+        campaign_id = self.wizard.campaign.id
 
         # Mock the final step validation
         self.mock_step3.validate.return_value = True
@@ -140,16 +141,20 @@ class TestCampaignWizard(unittest.TestCase):
         campaigns_dir = os.path.join(self.temp_dir, "campaigns")
         self.assertTrue(os.path.exists(campaigns_dir))
 
-        # Find the created file
-        saved_files = os.listdir(campaigns_dir)
-        self.assertEqual(len(saved_files), 1)
-        saved_file_path = os.path.join(campaigns_dir, saved_files[0])
+        campaign_path = os.path.join(campaigns_dir, campaign_id)
+        self.assertTrue(os.path.exists(campaign_path))
+
+        campaign_file = os.path.join(campaign_path, f"{campaign_id}.json")
+        self.assertTrue(os.path.exists(campaign_file))
 
         # Check the file content
-        with open(saved_file_path, "r") as f:
+        with open(campaign_file, "r") as f:
             saved_data = json.load(f)
 
         self.assertEqual(saved_data["name"], "Test Campaign")
+        self.assertEqual(saved_data["id"], campaign_id)
+        self.assertIn("created_at", saved_data)
+        self.assertIn("updated_at", saved_data)
 
 
 if __name__ == "__main__":

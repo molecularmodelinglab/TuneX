@@ -1,20 +1,35 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QLabel, QVBoxLayout
+from PySide6.QtWidgets import (
+    QLabel,
+    QVBoxLayout,
+)
 
 from app.core.base import BaseWidget
+from app.shared.components.buttons import PrimaryButton
 
 
 class ParametersPanel(BaseWidget):
     """Panel for the 'Parameters' tab."""
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label = QLabel("Parameters View Content")
-        label.setFont(QFont("Arial", 18))
-        layout.addWidget(label)
+    parameters_edited = Signal()
 
-    def _create_buttons_section(self):
-        pass
+    def _setup_widget(self):
+        """Setup the parameters panel UI."""
+        main_layout = QVBoxLayout(self)
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Placeholder content
+        label = QLabel("Parameters View Content")
+        font = QFont()
+        font.setPointSize(18)
+        font.setBold(True)
+        label.setFont(font)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(label)
+
+    def get_panel_buttons(self):
+        """Return buttons specific to this panel."""
+        edit_button = PrimaryButton("Edit Parameters")
+        # edit_button.clicked.connect(self.parameters_edited.emit)
+        return [edit_button]

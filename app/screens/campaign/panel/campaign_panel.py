@@ -38,13 +38,13 @@ class CampaignPanelScreen(BaseScreen):
     TAB_SECTION_MARGINS = (20, 20, 20, 0)
     TAB_LAYOUT_MARGINS = (0, 10, 0, 0)
     HOME_BUTTON_SECTION_MARGINS = (20, 20, 20, 20)
-
     # Signals
     home_requested = Signal()
     new_run_requested = Signal()
 
-    def __init__(self, campaign: Campaign, parent=None):
+    def __init__(self, campaign: Campaign, workspace_path: str, parent=None):
         self.campaign = campaign
+        self.workspace_path = workspace_path
         self.tabs: Dict[str, PrimaryButton] = {}
         self.panels: Dict[str, BaseWidget] = {}
         super().__init__(parent)
@@ -65,9 +65,10 @@ class CampaignPanelScreen(BaseScreen):
         self.stacked_widget = QStackedWidget()
         main_layout.addWidget(self.stacked_widget)
 
-        self._create_panels()
+        self.shared_buttons_section = self._create_shared_buttons_section()
+        main_layout.addWidget(self.shared_buttons_section)
 
-        main_layout.addWidget(self._create_home_button_section())
+        self._create_panels()
 
     def _create_header(self) -> QWidget:
         """Create the campaign header section."""
@@ -110,7 +111,14 @@ class CampaignPanelScreen(BaseScreen):
         # Campaign metadata
         param_count = len(self.campaign.parameters) if self.campaign.parameters else "Nan"
         target_names = ", ".join([t.name for t in self.campaign.targets]) or "None"
-        metadata_text = f"Created on 25 April, 2025 • {param_count} Parameters • Targets: {target_names}"
+        if self.campaign.created_at == self.campaign.updated_at:
+            metadata_text = (
+                f"Created on {self.campaign.created_at} • {param_count} Parameters • Targets: {target_names}"
+            )
+        else:
+            metadata_text = (
+                f"Updated on {self.campaign.updated_at} • {param_count} Parameters • Targets: {target_names}"
+            )
 
         metadata_label = QLabel(metadata_text)
         metadata_label.setObjectName("CampaignMetadata")
@@ -146,7 +154,8 @@ class CampaignPanelScreen(BaseScreen):
         """Create a click handler for tab buttons."""
 
         def handler():
-                self.switch_tab(name)
+            self.switch_tab(name)
+
         return handler
 
     def _create_tab_button(self, text: str) -> PrimaryButton:
@@ -161,7 +170,7 @@ class CampaignPanelScreen(BaseScreen):
         """Create panels and connect their signals."""
         self.runs_panel = RunsPanel()
         self.parameters_panel = ParametersPanel()
-        self.settings_panel = SettingsPanel()
+        self.settings_panel = SettingsPanel(self.campaign, self.workspace_path)
 
         self.panels = {
             self.RUNS_TAB_TEXT: self.runs_panel,
@@ -170,6 +179,7 @@ class CampaignPanelScreen(BaseScreen):
         }
 
         self.runs_panel.new_run_requested.connect(self.new_run_requested.emit)
+        self.settings_panel.campaign_renamed.connect(self._handle_campaign_renamed)
 
         self.stacked_widget.addWidget(self.runs_panel)
         self.stacked_widget.addWidget(self.parameters_panel)
@@ -187,20 +197,59 @@ class CampaignPanelScreen(BaseScreen):
 
         self.stacked_widget.setCurrentWidget(self.panels[name])
 
-    def _create_home_button_section(self) -> QWidget:
-        """Create the bottom buttons section."""
-        buttons_widget = QWidget()
-        layout = QHBoxLayout(buttons_widget)
-        layout.setContentsMargins(*self.HOME_BUTTON_SECTION_MARGINS)
-        layout.setSpacing(self.HOME_BUTTON_SECTION_SPACING)
+        active_panel = self.panels[name]
+        if hasattr(active_panel, "get_panel_buttons"):
+            panel_buttons = active_panel.get_panel_buttons()
+            self._add_panel_buttons(panel_buttons)
+        else:
+            # Clear panel buttons if panel doesn't provide any
+            self._clear_panel_buttons()
 
-        layout.addStretch()
+    def _create_shared_buttons_section(self) -> QWidget:
+        """Create the bottom buttons section."""
+        self.buttons_widget = QWidget()
+        self.buttons_layout = QHBoxLayout(self.buttons_widget)
+        self.buttons_layout.setContentsMargins(*self.HOME_BUTTON_SECTION_MARGINS)
+        self.buttons_layout.setSpacing(self.HOME_BUTTON_SECTION_SPACING)
 
         home_button = SecondaryButton(self.HOME_BUTTON_TEXT)
         home_button.clicked.connect(self.home_requested.emit)
-        layout.addWidget(home_button)
+        self.buttons_layout.addWidget(home_button)
 
-        return buttons_widget
+        self.buttons_layout.addStretch()
+
+        return self.buttons_widget
+
+    def _add_panel_buttons(self, buttons_list):
+        """Add panel-specific buttons to the shared button section."""
+        self._clear_panel_buttons()
+
+        # Add new panel buttons
+        for button in buttons_list:
+            self.buttons_layout.addWidget(button)
+
+    def _clear_panel_buttons(self):
+        """Remove panel-specific buttons, keeping only home button and stretch."""
+        if not hasattr(self, "buttons_layout"):
+            return
+
+        while self.buttons_layout.count() > 2:
+            item = self.buttons_layout.takeAt(self.buttons_layout.count() - 1)
+            if item.widget():
+                item.widget().setParent(None)
+
+    def _handle_campaign_renamed(self, new_name: str):
+        """Handle campaign rename - update the UI display."""
+        # Update the campaign name display in the tab section
+        self._refresh_campaign_metadata()
+
+    def _refresh_campaign_metadata(self):
+        """Refresh the campaign metadata display in the tab section."""
+        # This would update the campaign name shown in the header
+        campaign_name = self.campaign.name or self.DEFAULT_CAMPAIGN_NAME
+        campaign_name_label = self.findChild(QLabel, "CampaignName")
+        if campaign_name_label:
+            campaign_name_label.setText(campaign_name)
 
     def _apply_styles(self):
         """Apply wizard-specific styles."""
