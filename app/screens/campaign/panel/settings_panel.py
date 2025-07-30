@@ -7,8 +7,6 @@ from app.shared.components.buttons import DangerButton, PrimaryButton
 
 
 class SettingsPanel(BaseWidget):
-    """Panel for the 'Settings' tab."""
-
     """Panel for the 'Settings' tab with campaign settings form."""
 
     # Signals for various actions
