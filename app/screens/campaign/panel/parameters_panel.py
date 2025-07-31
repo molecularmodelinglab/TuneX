@@ -31,6 +31,8 @@ class ParametersPanel(BaseWidget):
     VALUES_HEADER = "Values"
     
     MAIN_MARGINS = (30, 30, 30, 30)
+    MAIN_LAYOUT_SPACING = 25
+    MIN_TABLE_HEIGHT = 300
     HEADER_FONT_SIZE = 18
 
     def __init__(self, campaign=None, workspace_path=None, parent=None):
@@ -44,7 +46,7 @@ class ParametersPanel(BaseWidget):
         """Setup the parameters panel UI."""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(*self.MAIN_MARGINS)
-        main_layout.setSpacing(25)
+        main_layout.setSpacing(self.MAIN_LAYOUT_SPACING)
 
         title_label = QLabel(self.PANEL_TITLE)
         title_label.setObjectName("PanelTitle")
@@ -75,15 +77,19 @@ class ParametersPanel(BaseWidget):
         
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        table.setSizeAdjustPolicy(QTableWidget.SizeAdjustPolicy.AdjustToContents)
         table.setAlternatingRowColors(True)
-        for row in range(table.rowCount()):
-            table.setRowHeight(row, 200)
+
 
         header = table.horizontalHeader()
         header.setStretchLastSection(True)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+
+        vertical_header = table.verticalHeader()
+        vertical_header.setVisible(True)
+        vertical_header.setDefaultSectionSize(40)
 
 
         table.setStyleSheet(f"""
@@ -164,8 +170,8 @@ class ParametersPanel(BaseWidget):
                 return "No values"
                 
             elif param_type == "continuous_numerical":
-                start = getattr(param, 'min', 'N/A')
-                end = getattr(param, 'max', 'N/A')
+                start = getattr(param, 'min_val', 'N/A')
+                end = getattr(param, 'max_val', 'N/A')
                 return f"start: {start} end: {end}"
             
             elif param_type == "fixed":
