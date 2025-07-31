@@ -207,11 +207,6 @@ class ParametersPanel(BaseWidget):
 
         return buttons
 
-    def update_campaign_data(self, campaign):
-        """Update the panel with new campaign data."""
-        self.campaign = campaign
-        self._load_parameters_data()
-
     def set_campaign(self, campaign):
         """Set the campaign and update the parameters display."""
         self.campaign = campaign
