@@ -1,20 +1,18 @@
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QHeaderView,
     QLabel,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
-    QHBoxLayout,
-    QWidget,
-    QAbstractItemView,
 )
 
 from app.core.base import BaseWidget
-from app.shared.components.buttons import PrimaryButton, SecondaryButton
-from app.screens.start.components.campaign_loader import CampaignLoader
 from app.models.enums import ParameterType
+from app.screens.start.components.campaign_loader import CampaignLoader
+from app.shared.components.buttons import PrimaryButton
+
 
 class ParametersPanel(BaseWidget):
     """Panel for the 'Parameters' tab."""
@@ -25,11 +23,11 @@ class ParametersPanel(BaseWidget):
     NO_PARAMETERS_MESSAGE = "No parameters defined for this campaign."
 
     EXPORT_DATA_BUTTON_TEXT = "Export Data"
-    
+
     PARAMETER_HEADER = "Parameter"
     TYPE_HEADER = "Type"
     VALUES_HEADER = "Values"
-    
+
     MAIN_MARGINS = (30, 30, 30, 30)
     MAIN_LAYOUT_SPACING = 25
     MIN_TABLE_HEIGHT = 300
@@ -63,23 +61,18 @@ class ParametersPanel(BaseWidget):
 
         main_layout.addStretch()
         self._load_parameters_data()
-    
+
     def _create_parameters_table(self) -> QTableWidget:
         """Create the parameters table widget."""
         table = QTableWidget()
         table.setObjectName("ParametersTable")
         table.setColumnCount(3)
-        table.setHorizontalHeaderLabels([
-            self.PARAMETER_HEADER,
-            self.TYPE_HEADER,
-            self.VALUES_HEADER
-        ])
-        
+        table.setHorizontalHeaderLabels([self.PARAMETER_HEADER, self.TYPE_HEADER, self.VALUES_HEADER])
+
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         table.setSizeAdjustPolicy(QTableWidget.SizeAdjustPolicy.AdjustToContents)
         table.setAlternatingRowColors(True)
-
 
         header = table.horizontalHeader()
         header.setStretchLastSection(True)
@@ -91,13 +84,12 @@ class ParametersPanel(BaseWidget):
         vertical_header.setVisible(True)
         vertical_header.setDefaultSectionSize(40)
 
-
-        table.setStyleSheet(f"""
-            QTableWidget::item:selected {{
+        table.setStyleSheet("""
+            QTableWidget::item:selected {
                 background-color: #e3f2fd;
-            }}
+            }
         """)
-        
+
         return table
 
     def _load_parameters_data(self):
@@ -105,23 +97,23 @@ class ParametersPanel(BaseWidget):
         if not self.campaign or not self.campaign.parameters:
             self._show_no_parameters_state()
             return
-            
+
         parameters = self.campaign.parameters
         self.parameters_table.setRowCount(len(parameters))
-        
+
         param_count = len(parameters)
         self.info_label.setText(f"Parameters ({param_count})")
-        
+
         for row, param in enumerate(parameters):
             name_item = QTableWidgetItem(param.name or "")
             name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.parameters_table.setItem(row, 0, name_item)
-            
+
             type_text = self._format_parameter_type(param)
             type_item = QTableWidgetItem(type_text)
             type_item.setFlags(type_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.parameters_table.setItem(row, 1, type_item)
-            
+
             values_text = self._format_parameter_values(param)
             values_item = QTableWidgetItem(values_text)
             values_item.setFlags(values_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -129,7 +121,7 @@ class ParametersPanel(BaseWidget):
 
     def _format_parameter_type(self, param) -> str:
         """Format parameter type for display."""
-        if not hasattr(param, 'parameter_type') or not param.parameter_type:
+        if not hasattr(param, "parameter_type") or not param.parameter_type:
             return "Unknown"
 
         param_type = param.parameter_type
@@ -151,51 +143,51 @@ class ParametersPanel(BaseWidget):
 
     def _format_parameter_values(self, param) -> str:
         """Format parameter values for display."""
-        if not hasattr(param, 'parameter_type') or not param.parameter_type:
+        if not hasattr(param, "parameter_type") or not param.parameter_type:
             return "No values defined"
-            
+
         param_type = param.parameter_type.value
-        
+
         try:
             if param_type == "discrete_numerical_regular":
-                start = getattr(param, 'min_val', 'N/A')
-                stop = getattr(param, 'max_val', 'N/A')
-                step = getattr(param, 'step', 'N/A')
+                start = getattr(param, "min_val", "N/A")
+                stop = getattr(param, "max_val", "N/A")
+                step = getattr(param, "step", "N/A")
                 return f"start: {start} stop: {stop} step: {step}"
-                
+
             elif param_type == "discrete_numerical_irregular":
-                values = getattr(param, 'values', [])
+                values = getattr(param, "values", [])
                 if isinstance(values, list) and values:
                     return ", ".join(map(str, values))
                 return "No values"
-                
+
             elif param_type == "continuous_numerical":
-                start = getattr(param, 'min_val', 'N/A')
-                end = getattr(param, 'max_val', 'N/A')
+                start = getattr(param, "min_val", "N/A")
+                end = getattr(param, "max_val", "N/A")
                 return f"start: {start} end: {end}"
-            
+
             elif param_type == "fixed":
-                value = getattr(param, 'value', 'N/A')
+                value = getattr(param, "value", "N/A")
                 return f"Value: {value}"
-                
+
             elif param_type == "categorical":
-                values = getattr(param, 'values', [])
+                values = getattr(param, "values", [])
                 if isinstance(values, list) and values:
                     return ", ".join(map(str, values))
                 return "No values"
-            
+
             elif param_type == "substance":
-                smiles = getattr(param, 'smiles', 'N/A')
+                smiles = getattr(param, "smiles", "N/A")
                 return f"SMILES: {smiles}"
-                
+
             else:
                 # Try to get any values attribute
-                if hasattr(param, 'values'):
+                if hasattr(param, "values"):
                     values = param.values
                     if isinstance(values, list) and values:
                         return ", ".join(map(str, values))
                 return "No values defined"
-                
+
         except Exception as e:
             print(f"Error formatting parameter values: {e}")
             return "Error displaying values"
@@ -204,7 +196,6 @@ class ParametersPanel(BaseWidget):
         """Show state when no parameters are defined."""
         self.parameters_table.setRowCount(0)
         self.info_label.setText(self.NO_PARAMETERS_MESSAGE)
-
 
     def get_panel_buttons(self):
         """Return buttons specific to this panel."""
@@ -215,7 +206,7 @@ class ParametersPanel(BaseWidget):
         buttons.append(export_button)
 
         return buttons
-    
+
     def update_campaign_data(self, campaign):
         """Update the panel with new campaign data."""
         self.campaign = campaign
