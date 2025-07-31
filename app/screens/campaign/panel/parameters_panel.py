@@ -139,7 +139,7 @@ class ParametersPanel(BaseWidget):
         elif param_type == ParameterType.SUBSTANCE:
             return "Substance"
         else:
-            return param_type.replace("_", " ").title()
+            return param_type.name.replace("_", " ").title()
 
     def _format_parameter_values(self, param) -> str:
         """Format parameter values for display."""
