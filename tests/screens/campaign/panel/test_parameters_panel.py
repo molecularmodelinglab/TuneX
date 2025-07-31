@@ -157,7 +157,7 @@ def test_update_campaign_data(parameters_panel, mock_campaign):
 
     assert panel.parameters_table.rowCount() == 0
 
-    panel.update_campaign_data(mock_campaign)
+    panel.set_campaign(mock_campaign)
 
     assert panel.parameters_table.rowCount() == 2
     assert "Parameters (2)" in panel.info_label.text()
