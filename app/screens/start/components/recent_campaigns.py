@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QLabel, QStyle, QVBoxLayout
 from app.core.base import BaseWidget
 from app.models.campaign import Campaign
 from app.shared.components.cards import EmptyStateCard
+from app.shared.components.campaign_card import CampaignCard
 
 
 class RecentCampaignsWidget(BaseWidget):
@@ -17,6 +18,7 @@ class RecentCampaignsWidget(BaseWidget):
     NO_RECENT_CAMPAIGNS_TEXT = "No recent campaigns"
     NO_RECENT_CAMPAIGNS_SUBTEXT = "Browse or create a new one"
     CAMPAIGN_LABEL_STYLESHEET = "padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin: 2px;"
+    CARD_SPACING = 8
     LAYOUT_MARGINS = (0, 0, 0, 0)
 
     def __init__(self, parent=None):
@@ -26,14 +28,8 @@ class RecentCampaignsWidget(BaseWidget):
     def _setup_widget(self):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(*self.LAYOUT_MARGINS)
+        self.main_layout.setSpacing(self.CARD_SPACING)
         self.setLayout(self.main_layout)
-
-    def _apply_styles(self):
-        """Apply styles to the campaign labels."""
-        for i in range(self.main_layout.count()):
-            widget = self.main_layout.itemAt(i).widget()
-            if isinstance(widget, QLabel):
-                widget.setStyleSheet(self.CAMPAIGN_LABEL_STYLESHEET)
 
     def update_campaigns(self, campaigns: list[Campaign]):
         self.campaigns = campaigns
@@ -54,18 +50,12 @@ class RecentCampaignsWidget(BaseWidget):
                 child.widget().deleteLater()
 
     def _show_campaigns_list(self):
-        for campaign in self.campaigns:
-            label = QLabel(f"{campaign.name}")
-            label.mousePressEvent = self._create_click_handler(campaign)
-            self.main_layout.addWidget(label)
-
-    def _create_click_handler(self, campaign: Campaign):
-        """Creates a mouse press event handler for a given campaign."""
-
-        def handler(event: QMouseEvent):
-            self.campaign_selected.emit(campaign)
-
-        return handler
+        recent_campaigns = self.campaigns[:5]
+        
+        for campaign in recent_campaigns:
+            card = CampaignCard(campaign)
+            card.campaign_selected.connect(self.campaign_selected.emit)
+            self.main_layout.addWidget(card)
 
     def _show_empty_state(self):
         icon_pixmap = self._get_folder_icon_pixmap()
