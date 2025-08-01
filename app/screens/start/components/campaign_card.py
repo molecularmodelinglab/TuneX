@@ -17,7 +17,6 @@ class CampaignCard(QFrame):
     CAMPAIGN_DATE_OBJECT = "CampaignDate"
     CAMPAIGN_CARD_OBJECT = "CampaignCard"
 
-
     campaign_selected = Signal(Campaign)
 
     def __init__(self, campaign: Campaign, parent=None):
