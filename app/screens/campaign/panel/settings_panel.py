@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QLineEdit, QText
 from app.core.base import BaseWidget
 from app.screens.start.components.campaign_loader import CampaignLoader
 from app.shared.components.buttons import DangerButton, PrimaryButton
+from app.shared.utils.export_campaign import CampaignExporter
 
 
 class SettingsPanel(BaseWidget):
@@ -183,6 +184,10 @@ class SettingsPanel(BaseWidget):
             self.name_input.setText(self.campaign.name or "")
             self.description_input.setPlainText(self.campaign.description or "")
 
+    def _handle_export_click(self):
+        """Handle export button click - export campaign data to CSV."""
+        CampaignExporter.export_campaign_to_csv(self.campaign, self)
+
     def _handle_delete_click(self):
         """Handle delete campaign button click."""
         # TODO: Add confirmation dialog
@@ -209,7 +214,7 @@ class SettingsPanel(BaseWidget):
         buttons.append(delete_button)
 
         export_button = PrimaryButton(self.EXPORT_BUTTON_TEXT)
-        export_button.clicked.connect(self.data_exported.emit)
+        export_button.clicked.connect(self._handle_export_click)
         buttons.append(export_button)
 
         return buttons
