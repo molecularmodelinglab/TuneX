@@ -60,7 +60,7 @@ class CampaignExporter:
             
             if hasattr(campaign, 'parameters') and campaign.parameters:
                 writer.writerow(["Parameters"])
-                writer.writerow(["Parameter Name", "Type", "Values/Configuration"])
+                writer.writerow(["Parameter Name", "Type", "Values"])
                 
                 for param in campaign.parameters:
                     param_name = param.name or ""
