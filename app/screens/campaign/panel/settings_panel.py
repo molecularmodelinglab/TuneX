@@ -1,5 +1,8 @@
+import os
+import shutil
+
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QTextEdit, QVBoxLayout, QWidget
 
 from app.core.base import BaseWidget
 from app.screens.start.components.campaign_loader import CampaignLoader
@@ -190,8 +193,83 @@ class SettingsPanel(BaseWidget):
 
     def _handle_delete_click(self):
         """Handle delete campaign button click."""
-        # TODO: Add confirmation dialog
-        self.campaign_deleted.emit()
+        if not self.campaign:
+            QMessageBox.warning(self, "Delete Error", "No campaign to delete.")
+            return
+
+        campaign_name = self.campaign.name or "Unnamed Campaign"
+
+        reply = QMessageBox.question(
+            self,
+            "Confirm Delete Campaign",
+            f"Are you sure you want to delete the campaign '{campaign_name}'?\n\n"
+            "This action will permanently delete:\n"
+            "• Campaign data file\n"
+            "• Campaign folder and all contents\n"
+            "• All experiment results\n\n"
+            "This action cannot be undone.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,  # Default to No for safety
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                if self._delete_campaign_files():
+                    QMessageBox.information(
+                        self, "Campaign Deleted", f"Campaign '{campaign_name}' has been successfully deleted."
+                    )
+                    # Emit signal to return to home screen
+                    self.campaign_deleted.emit()
+                else:
+                    QMessageBox.critical(
+                        self,
+                        "Delete Error",
+                        f"Failed to delete campaign '{campaign_name}'. Some files may still exist.",
+                    )
+            except Exception as e:
+                QMessageBox.critical(self, "Delete Error", f"An error occurred while deleting the campaign:\n{str(e)}")
+
+    def _delete_campaign_files(self) -> bool:
+        """Delete campaign files and folders. Returns True if successful."""
+        if not self.campaign or not self.workspace_path:
+            return False
+
+        try:
+            success = True
+            campaign_name = self.campaign.name or "unnamed_campaign"
+
+            json_filename = f"{campaign_name}.json"
+            json_path = os.path.join(self.workspace_path, json_filename)
+
+            if os.path.exists(json_path):
+                try:
+                    os.remove(json_path)
+                    print(f"Deleted campaign file: {json_path}")
+                except Exception as e:
+                    print(f"Failed to delete campaign file {json_path}: {e}")
+                    success = False
+
+            campaign_folder = os.path.join(self.workspace_path, campaign_name)
+
+            if os.path.exists(campaign_folder) and os.path.isdir(campaign_folder):
+                try:
+                    shutil.rmtree(campaign_folder)
+                    print(f"Deleted campaign folder: {campaign_folder}")
+                except Exception as e:
+                    print(f"Failed to delete campaign folder {campaign_folder}: {e}")
+                    success = False
+
+            if self.campaign_loader:
+                try:
+                    self.campaign_loader.delete_campaign(self.campaign)
+                except Exception as e:
+                    print(f"Failed to remove campaign from loader: {e}")
+                    # Don't set success to False here as the files might still be deleted
+            return success
+
+        except Exception as e:
+            print(f"Error during campaign deletion: {e}")
+            return False
 
     def _save_campaign_changes(self) -> bool:
         """Save campaign changes to JSON file. Returns True if successful."""
