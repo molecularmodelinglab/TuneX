@@ -180,6 +180,7 @@ class CampaignPanelScreen(BaseScreen):
 
         self.runs_panel.new_run_requested.connect(self.new_run_requested.emit)
         self.settings_panel.campaign_renamed.connect(self._handle_campaign_renamed)
+        self.settings_panel.campaign_deleted.connect(self._handle_campaign_deleted)
 
         self.stacked_widget.addWidget(self.runs_panel)
         self.stacked_widget.addWidget(self.parameters_panel)
@@ -243,9 +244,12 @@ class CampaignPanelScreen(BaseScreen):
         # Update the campaign name display in the tab section
         self._refresh_campaign_metadata()
 
+    def _handle_campaign_deleted(self):
+        """Handle campaign deletion - navigate back to home."""
+        self.home_requested.emit()
+
     def _refresh_campaign_metadata(self):
         """Refresh the campaign metadata display in the tab section."""
-        # This would update the campaign name shown in the header
         campaign_name = self.campaign.name or self.DEFAULT_CAMPAIGN_NAME
         campaign_name_label = self.findChild(QLabel, "CampaignName")
         if campaign_name_label:
