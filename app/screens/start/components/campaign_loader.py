@@ -98,3 +98,8 @@ class CampaignLoader:
             json.dump(campaign.to_dict(), f, indent=4)
 
         print(f"Campaign '{campaign.name}' updated: {campaign_path}")
+
+    def delete_campaign(self, campaign):
+        """Delete a campaign from the loader's internal tracking."""
+        if hasattr(self, "campaigns") and campaign in self.campaigns:
+            self.campaigns.remove(campaign)
