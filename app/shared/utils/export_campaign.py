@@ -1,5 +1,7 @@
 import csv
+
 from PySide6.QtWidgets import QFileDialog, QMessageBox
+
 from app.models.enums import ParameterType
 
 
@@ -14,16 +16,12 @@ class CampaignExporter:
                 QMessageBox.warning(parent_widget, "Export Error", "No campaign data to export.")
             return False
 
-    
         campaign_name = campaign.name or "campaign"
-        safe_name = "".join(c for c in campaign_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        safe_name = "".join(c for c in campaign_name if c.isalnum() or c in (" ", "-", "_")).rstrip()
         default_filename = f"{safe_name}.csv"
 
         filename, _ = QFileDialog.getSaveFileName(
-            parent_widget,
-            "Export Campaign Data",
-            default_filename,
-            "CSV Files (*.csv);;All Files (*)"
+            parent_widget, "Export Campaign Data", default_filename, "CSV Files (*.csv);;All Files (*)"
         )
 
         if filename:
@@ -31,53 +29,47 @@ class CampaignExporter:
                 CampaignExporter._write_campaign_csv(campaign, filename)
                 if parent_widget:
                     QMessageBox.information(
-                        parent_widget, 
-                        "Export Successful", 
-                        f"Campaign data exported to:\n{filename}"
+                        parent_widget, "Export Successful", f"Campaign data exported to:\n{filename}"
                     )
                 return True
             except Exception as e:
                 if parent_widget:
-                    QMessageBox.critical(
-                        parent_widget, 
-                        "Export Error", 
-                        f"Failed to export campaign data:\n{str(e)}"
-                    )
+                    QMessageBox.critical(parent_widget, "Export Error", f"Failed to export campaign data:\n{str(e)}")
                 return False
-        
+
         return False
 
     @staticmethod
     def _write_campaign_csv(campaign, filename: str):
         """Write campaign data to CSV file."""
-        with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+        with open(filename, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
-            
+
             writer.writerow(["Campaign Information"])
             writer.writerow(["Name", campaign.name or ""])
             writer.writerow(["Description", campaign.description or ""])
             writer.writerow([])
-            
-            if hasattr(campaign, 'parameters') and campaign.parameters:
+
+            if hasattr(campaign, "parameters") and campaign.parameters:
                 writer.writerow(["Parameters"])
                 writer.writerow(["Parameter Name", "Type", "Values"])
-                
+
                 for param in campaign.parameters:
                     param_name = param.name or ""
                     param_type = CampaignExporter._format_parameter_type(param)
                     param_values = CampaignExporter._format_parameter_values(param)
                     writer.writerow([param_name, param_type, param_values])
-                
+
                 writer.writerow([])
-            
-            if hasattr(campaign, 'experiments') and campaign.experiments:
+
+            if hasattr(campaign, "experiments") and campaign.experiments:
                 writer.writerow(["Experiments"])
                 writer.writerow(["Experiment ID", "Status", "Results"])
-                
+
                 for exp in campaign.experiments:
-                    exp_id = getattr(exp, 'id', 'N/A')
-                    exp_status = getattr(exp, 'status', 'N/A')
-                    exp_results = getattr(exp, 'results', 'N/A')
+                    exp_id = getattr(exp, "id", "N/A")
+                    exp_status = getattr(exp, "status", "N/A")
+                    exp_results = getattr(exp, "results", "N/A")
                     writer.writerow([exp_id, exp_status, exp_results])
 
     @staticmethod
@@ -85,9 +77,9 @@ class CampaignExporter:
         """Format parameter type for display."""
         if not hasattr(param, "parameter_type") or not param.parameter_type:
             return "Unknown"
-        
+
         param_type = param.parameter_type
-        
+
         if param_type == ParameterType.DISCRETE_NUMERICAL_REGULAR:
             return "Discrete Numerical Regular"
         elif param_type == ParameterType.DISCRETE_NUMERICAL_IRREGULAR:
