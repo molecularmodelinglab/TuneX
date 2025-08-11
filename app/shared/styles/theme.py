@@ -746,7 +746,7 @@ def get_info_dialog_styles() -> str:
 def get_error_dialog_styles() -> str:
     """Get error dialog styles."""
     return f"""
-        QDialog#InfoDialog  {{
+        QDialog#InfoDialog {{
             background-color: {COLORS["white"]};
             border: 1px solid {COLORS["gray_200"]};
             border-radius: {RADIUS["base"]};
