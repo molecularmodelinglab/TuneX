@@ -101,5 +101,7 @@ class CampaignLoader:
 
     def delete_campaign(self, campaign):
         """Delete a campaign from the loader's internal tracking."""
-        if hasattr(self, "campaigns") and campaign in self.campaigns:
-            self.campaigns.remove(campaign)
+        if hasattr(self, "campaign_filename_map") and campaign.id in self.campaign_filename_map:
+            del self.campaign_filename_map[campaign.id]
+
+        print(f"Campaign {campaign.name} (ID: {campaign.id}) removed from loader tracking")
