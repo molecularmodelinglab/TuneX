@@ -1,9 +1,15 @@
+import os
+import shutil
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QLineEdit, QTextEdit, QVBoxLayout, QWidget
 
 from app.core.base import BaseWidget
 from app.screens.start.components.campaign_loader import CampaignLoader
 from app.shared.components.buttons import DangerButton, PrimaryButton
+from app.shared.components.dialogs import ConfirmationDialog, ErrorDialog, InfoDialog
+from app.shared.constants import WorkspaceConstants
+from app.shared.utils.export_campaign import CampaignExporter
 
 
 class SettingsPanel(BaseWidget):
@@ -183,10 +189,86 @@ class SettingsPanel(BaseWidget):
             self.name_input.setText(self.campaign.name or "")
             self.description_input.setPlainText(self.campaign.description or "")
 
+    def _handle_export_click(self):
+        """Handle export button click - export campaign data to CSV."""
+        success = CampaignExporter.export_campaign_to_csv(self.campaign, self)
+        if success:
+            self.data_exported.emit()
+
     def _handle_delete_click(self):
         """Handle delete campaign button click."""
-        # TODO: Add confirmation dialog
-        self.campaign_deleted.emit()
+        if not self.campaign:
+            ErrorDialog.show_error("Delete Error", "No campaign to delete.", parent=self)
+            return
+
+        campaign_name = self.campaign.name or "Unnamed Campaign"
+
+        confirmed = ConfirmationDialog.show_confirmation(
+            "Confirm Delete Campaign",
+            f"Are you sure you want to delete the campaign '{campaign_name}'?\n\n"
+            "This action will permanently delete:\n"
+            "• Campaign data file\n"
+            "• Campaign folder and all contents\n"
+            "• All experiment results\n\n"
+            "This action cannot be undone.",
+            confirm_text="Delete",
+            cancel_text="Cancel",
+            parent=self,
+        )
+
+        if confirmed:
+            try:
+                if self._delete_campaign_files():
+                    InfoDialog.show_info(
+                        "Campaign Deleted", f"Campaign '{campaign_name}' has been successfully deleted.", parent=self
+                    )
+                    # Emit signal to return to home screen
+                    self.campaign_deleted.emit()
+                else:
+                    ErrorDialog.show_error(
+                        "Delete Error",
+                        f"Failed to delete campaign '{campaign_name}'. Some files may still exist.",
+                        parent=self,
+                    )
+            except Exception as e:
+                ErrorDialog.show_error(
+                    "Delete Error", f"An error occurred while deleting the campaign:\n{str(e)}", parent=self
+                )
+
+    def _delete_campaign_files(self) -> bool:
+        """Delete campaign files and folders. Returns True if successful."""
+        if not self.campaign or not self.workspace_path:
+            return False
+
+        try:
+            success = True
+            campaign_id = self.campaign.id
+
+            campaigns_dir = os.path.join(self.workspace_path, WorkspaceConstants.CAMPAIGNS_DIRNAME)
+            campaign_folder = os.path.join(campaigns_dir, campaign_id)
+
+            if os.path.exists(campaign_folder) and os.path.isdir(campaign_folder):
+                try:
+                    shutil.rmtree(campaign_folder)
+                    print(f"Deleted campaign folder: {campaign_folder}")
+                except Exception as e:
+                    print(f"Failed to delete campaign folder {campaign_folder}: {e}")
+                    success = False
+            else:
+                print(f"Campaign folder not found: {campaign_folder}")
+                success = False
+
+            if self.campaign_loader:
+                try:
+                    self.campaign_loader.delete_campaign(self.campaign)
+                except Exception as e:
+                    print(f"Failed to remove campaign from loader: {e}")
+                    # Don't set success to False here as the files might still be deleted
+            return success
+
+        except Exception as e:
+            print(f"Error during campaign deletion: {e}")
+            return False
 
     def _save_campaign_changes(self) -> bool:
         """Save campaign changes to JSON file. Returns True if successful."""
@@ -209,7 +291,7 @@ class SettingsPanel(BaseWidget):
         buttons.append(delete_button)
 
         export_button = PrimaryButton(self.EXPORT_BUTTON_TEXT)
-        export_button.clicked.connect(self.data_exported.emit)
+        export_button.clicked.connect(self._handle_export_click)
         buttons.append(export_button)
 
         return buttons

@@ -9,9 +9,9 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.base import BaseWidget
-from app.models.enums import ParameterType
 from app.screens.start.components.campaign_loader import CampaignLoader
 from app.shared.components.buttons import PrimaryButton
+from app.shared.utils.export_campaign import CampaignExporter, ParameterFormatter
 
 
 class ParametersPanel(BaseWidget):
@@ -121,76 +121,15 @@ class ParametersPanel(BaseWidget):
 
     def _format_parameter_type(self, param) -> str:
         """Format parameter type for display."""
-        if not hasattr(param, "parameter_type") or not param.parameter_type:
-            return "Unknown"
-
-        param_type = param.parameter_type
-
-        if param_type == ParameterType.DISCRETE_NUMERICAL_REGULAR:
-            return "Discrete Numerical Regular"
-        elif param_type == ParameterType.DISCRETE_NUMERICAL_IRREGULAR:
-            return "Discrete Numerical Irregular"
-        elif param_type == ParameterType.CONTINUOUS_NUMERICAL:
-            return "Continuous Numerical"
-        elif param_type == ParameterType.CATEGORICAL:
-            return "Categorical"
-        elif param_type == ParameterType.FIXED:
-            return "Fixed"
-        elif param_type == ParameterType.SUBSTANCE:
-            return "Substance"
-        else:
-            return param_type.name.replace("_", " ").title()
+        return ParameterFormatter.format_parameter_type(param)
 
     def _format_parameter_values(self, param) -> str:
         """Format parameter values for display."""
-        if not hasattr(param, "parameter_type") or not param.parameter_type:
-            return "No values defined"
+        return ParameterFormatter.format_parameter_values(param)
 
-        param_type = param.parameter_type.value
-
-        try:
-            if param_type == "discrete_numerical_regular":
-                start = getattr(param, "min_val", "N/A")
-                stop = getattr(param, "max_val", "N/A")
-                step = getattr(param, "step", "N/A")
-                return f"start: {start} stop: {stop} step: {step}"
-
-            elif param_type == "discrete_numerical_irregular":
-                values = getattr(param, "values", [])
-                if isinstance(values, list) and values:
-                    return ", ".join(map(str, values))
-                return "No values"
-
-            elif param_type == "continuous_numerical":
-                start = getattr(param, "min_val", "N/A")
-                end = getattr(param, "max_val", "N/A")
-                return f"start: {start} end: {end}"
-
-            elif param_type == "fixed":
-                value = getattr(param, "value", "N/A")
-                return f"Value: {value}"
-
-            elif param_type == "categorical":
-                values = getattr(param, "values", [])
-                if isinstance(values, list) and values:
-                    return ", ".join(map(str, values))
-                return "No values"
-
-            elif param_type == "substance":
-                smiles = getattr(param, "smiles", "N/A")
-                return f"SMILES: {smiles}"
-
-            else:
-                # Try to get any values attribute
-                if hasattr(param, "values"):
-                    values = param.values
-                    if isinstance(values, list) and values:
-                        return ", ".join(map(str, values))
-                return "No values defined"
-
-        except Exception as e:
-            print(f"Error formatting parameter values: {e}")
-            return "Error displaying values"
+    def _handle_export_click(self):
+        """Handle export button click - export campaign data to CSV."""
+        CampaignExporter.export_campaign_to_csv(self.campaign, self)
 
     def _show_no_parameters_state(self):
         """Show state when no parameters are defined."""
@@ -202,7 +141,7 @@ class ParametersPanel(BaseWidget):
         buttons = []
 
         export_button = PrimaryButton(self.EXPORT_DATA_BUTTON_TEXT)
-        export_button.clicked.connect(self.data_exported.emit)
+        export_button.clicked.connect(self._handle_export_click)
         buttons.append(export_button)
 
         return buttons

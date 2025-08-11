@@ -689,3 +689,81 @@ def get_navigation_styles() -> str:
             background-color: {COLORS["primary_dark"]};
         }}
     """
+
+
+def get_confirmation_dialog_styles() -> str:
+    """Get confirmation dialog styles."""
+    return f"""
+        QDialog#ConfirmationDialog {{
+            background-color: {COLORS["white"]};
+            border: 1px solid {COLORS["gray_200"]};
+            border-radius: {RADIUS["base"]};
+        }}
+        QLabel#ConfirmationDialogTitle {{
+            font-size: {FONTS["size_lg"]};
+            font-weight: {FONTS["weight_bold"]};
+            color: {COLORS["text_primary"]};
+            margin: {SPACING["base"]} 0;
+        }}
+        QLabel#ConfirmationDialogMessage {{
+            font-size: {FONTS["size_sm"]};
+            color: {COLORS["text_secondary"]};
+            line-height: 1.4;
+        }}
+        QFrame#ConfirmationDialogSeparator {{
+            background-color: {COLORS["gray_200"]};
+            border: none;
+        }}
+    """
+
+
+def get_info_dialog_styles() -> str:
+    """Get info dialog styles."""
+    return f"""
+        QDialog#InfoDialog {{
+            background-color: {COLORS["white"]};
+            border: 1px solid {COLORS["gray_200"]};
+            border-radius: {RADIUS["base"]};
+        }}
+        QLabel#DialogTitle {{
+            font-size: {FONTS["size_lg"]};
+            font-weight: {FONTS["weight_bold"]};
+            color: {COLORS["text_primary"]};
+            margin: {SPACING["base"]} 0;
+        }}
+        QLabel#DialogMessage {{
+            font-size: {FONTS["size_sm"]};
+            color: {COLORS["text_secondary"]};
+            line-height: 1.4;
+        }}
+        QFrame#DialogSeparator {{
+            background-color: {COLORS["gray_200"]};
+            border: none;
+        }}
+    """
+
+
+def get_error_dialog_styles() -> str:
+    """Get error dialog styles."""
+    return f"""
+        QDialog#InfoDialog {{
+            background-color: {COLORS["white"]};
+            border: 1px solid {COLORS["gray_200"]};
+            border-radius: {RADIUS["base"]};
+        }}
+        QLabel#InfoDialogTitle {{
+            font-size: {FONTS["size_lg"]};
+            font-weight: {FONTS["weight_bold"]};
+            color: #d32f2f;
+            margin: {SPACING["base"]} 0;
+        }}
+        QLabel#DialogMessage {{
+            font-size: {FONTS["size_sm"]};
+            color: {COLORS["text_secondary"]};
+            line-height: 1.4;
+        }}
+        QFrame#DialogSeparator {{
+            background-color: #e57373;
+            border: none;
+        }}
+    """
