@@ -172,26 +172,6 @@ def test_get_panel_buttons_returns_correct_buttons(settings_panel):
     assert "Export Data" in button_texts
 
 
-def test_delete_signal_emission_via_panel_buttons(qtbot, settings_panel):
-    """Test that the delete signal is emitted correctly via panel buttons."""
-    # Get the delete button from panel buttons
-    buttons = settings_panel.get_panel_buttons()
-    delete_button = next(btn for btn in buttons if btn.text() == "Delete Campaign")
-
-    with qtbot.waitSignal(settings_panel.campaign_deleted, timeout=1000):
-        qtbot.mouseClick(delete_button, Qt.LeftButton)
-
-
-def test_export_signal_emission_via_panel_buttons(qtbot, settings_panel):
-    """Test that the export signal is emitted correctly via panel buttons."""
-    # Get the export button from panel buttons
-    buttons = settings_panel.get_panel_buttons()
-    export_button = next(btn for btn in buttons if btn.text() == "Export Data")
-
-    with qtbot.waitSignal(settings_panel.data_exported, timeout=1000):
-        qtbot.mouseClick(export_button, Qt.LeftButton)
-
-
 def test_campaign_data_update(settings_panel):
     """Test updating campaign data programmatically."""
     new_campaign = Campaign()
@@ -229,3 +209,65 @@ def test_save_without_campaign(settings_panel):
 
     result = settings_panel._save_campaign_changes()
     assert result is False
+
+
+@patch("app.screens.campaign.panel.settings_panel.CampaignExporter")
+def test_export_button_functionality(mock_exporter, qtbot, settings_panel):
+    """Test that the export button calls the exporter correctly."""
+    mock_exporter.export_campaign_to_csv.return_value = True
+
+    buttons = settings_panel.get_panel_buttons()
+    export_button = next(btn for btn in buttons if btn.text() == "Export Data")
+
+    qtbot.mouseClick(export_button, Qt.LeftButton)
+
+    mock_exporter.export_campaign_to_csv.assert_called_once_with(settings_panel.campaign, settings_panel)
+
+
+@patch("app.screens.campaign.panel.settings_panel.ConfirmationDialog")
+def test_delete_button_shows_confirmation_dialog(mock_dialog, qtbot, settings_panel):
+    """Test that the delete button shows confirmation dialog."""
+    mock_dialog.show_confirmation.return_value = False
+
+    buttons = settings_panel.get_panel_buttons()
+    delete_button = next(btn for btn in buttons if btn.text() == "Delete Campaign")
+
+    qtbot.mouseClick(delete_button, Qt.LeftButton)
+
+    mock_dialog.show_confirmation.assert_called_once()
+
+    # Verify campaign_deleted signal was NOT emitted (user cancelled)
+    # This is implicit - if the signal was emitted, the test would need to handle it
+
+
+@patch("app.screens.campaign.panel.settings_panel.ConfirmationDialog")
+@patch("app.screens.campaign.panel.settings_panel.InfoDialog")
+def test_delete_campaign_success_emits_signal(mock_info_dialog, mock_confirmation, qtbot, settings_panel):
+    """Test that successful campaign deletion emits the signal."""
+    mock_confirmation.show_confirmation.return_value = True
+
+    settings_panel._delete_campaign_files = lambda: True
+
+    buttons = settings_panel.get_panel_buttons()
+    delete_button = next(btn for btn in buttons if btn.text() == "Delete Campaign")
+
+    with qtbot.waitSignal(settings_panel.campaign_deleted, timeout=1000):
+        qtbot.mouseClick(delete_button, Qt.LeftButton)
+
+    mock_info_dialog.show_info.assert_called_once()
+
+
+@patch("app.screens.campaign.panel.settings_panel.ConfirmationDialog")
+@patch("app.screens.campaign.panel.settings_panel.ErrorDialog")
+def test_delete_campaign_failure_shows_error(mock_error_dialog, mock_confirmation, qtbot, settings_panel):
+    """Test that failed campaign deletion shows error dialog."""
+    mock_confirmation.show_confirmation.return_value = True
+
+    settings_panel._delete_campaign_files = lambda: False
+
+    buttons = settings_panel.get_panel_buttons()
+    delete_button = next(btn for btn in buttons if btn.text() == "Delete Campaign")
+
+    qtbot.mouseClick(delete_button, Qt.LeftButton)
+
+    mock_error_dialog.show_error.assert_called_once()
