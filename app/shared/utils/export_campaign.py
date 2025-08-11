@@ -1,8 +1,9 @@
 import csv
 
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog
 
 from app.models.enums import ParameterType
+from app.shared.components.dialogs import ErrorDialog, InfoDialog
 
 
 class CampaignExporter:
@@ -13,7 +14,7 @@ class CampaignExporter:
         """Export campaign data to CSV file with file dialog."""
         if not campaign:
             if parent_widget:
-                QMessageBox.warning(parent_widget, "Export Error", "No campaign data to export.")
+                ErrorDialog.show_error("Export Error", "No campaign data to export.", parent=parent_widget)
             return False
 
         campaign_name = campaign.name or "campaign"
@@ -28,13 +29,15 @@ class CampaignExporter:
             try:
                 CampaignExporter._write_campaign_csv(campaign, filename)
                 if parent_widget:
-                    QMessageBox.information(
-                        parent_widget, "Export Successful", f"Campaign data exported to:\n{filename}"
+                    InfoDialog.show_info(
+                        "Export Successful", f"Campaign data exported to:\n{filename}", parent=parent_widget
                     )
                 return True
             except Exception as e:
                 if parent_widget:
-                    QMessageBox.critical(parent_widget, "Export Error", f"Failed to export campaign data:\n{str(e)}")
+                    ErrorDialog.show_error(
+                        "Export Error", f"Failed to export campaign data:\n{str(e)}", parent=parent_widget
+                    )
                 return False
 
         return False
