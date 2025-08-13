@@ -22,7 +22,6 @@ class SettingsPanel(BaseWidget):
     data_exported = Signal()
     home_requested = Signal()
 
-    # UI Constants
     PANEL_TITLE = "Campaign Settings"
     NAME_LABEL = "Campaign name"
     DESCRIPTION_LABEL = "Description"
