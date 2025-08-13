@@ -787,7 +787,7 @@ def get_dialog_form_styles() -> str:
         QSpinBox[objectName="DialogSpinBox"]:focus {{
             border-color: {COLORS["primary"]};
         }}
-        
+
         /* Dialog Label */
         QLabel[objectName="DialogLabel"] {{
             font-size: {FONTS["size_sm"]};
@@ -812,7 +812,7 @@ def get_progress_styles() -> str:
             background-color: {COLORS["primary"]};
             border-radius: {RADIUS["base"]};
         }}
-        
+
         /* Status Labels */
         QLabel[objectName="GenerationTitle"] {{
             color: {COLORS["text_primary"]};
