@@ -313,6 +313,8 @@ def get_widget_styles() -> str:
         + get_table_styles()
         + get_tab_styles()
         + get_data_import_styles()
+        + get_progress_styles()
+        + get_dialog_form_styles()
     )
 
 
@@ -694,27 +696,27 @@ def get_navigation_styles() -> str:
 def get_confirmation_dialog_styles() -> str:
     """Get confirmation dialog styles."""
     return f"""
-        QDialog#ConfirmationDialog {{
+        QDialog#ConfirmationDialog, QDialog#GenerateExperimentsDialog {{
             background-color: {COLORS["white"]};
             border: 1px solid {COLORS["gray_200"]};
             border-radius: {RADIUS["base"]};
         }}
-        QLabel#ConfirmationDialogTitle {{
+        QLabel#ConfirmationDialogTitle, QLabel#DialogTitle {{
             font-size: {FONTS["size_lg"]};
             font-weight: {FONTS["weight_bold"]};
             color: {COLORS["text_primary"]};
             margin: {SPACING["base"]} 0;
         }}
-        QLabel#ConfirmationDialogMessage {{
+        QLabel#ConfirmationDialogMessage, QLabel#DialogMessage {{
             font-size: {FONTS["size_sm"]};
             color: {COLORS["text_secondary"]};
             line-height: 1.4;
         }}
-        QFrame#ConfirmationDialogSeparator {{
+        QFrame#ConfirmationDialogSeparator, QFrame#DialogSeparator {{
             background-color: {COLORS["gray_200"]};
             border: none;
         }}
-    """
+    """ + get_dialog_form_styles()
 
 
 def get_info_dialog_styles() -> str:
@@ -765,5 +767,65 @@ def get_error_dialog_styles() -> str:
         QFrame#DialogSeparator {{
             background-color: #e57373;
             border: none;
+        }}
+    """
+
+
+def get_dialog_form_styles() -> str:
+    """Get styles for form elements in dialogs."""
+    return f"""
+        /* Dialog Spin Box */
+        QSpinBox[objectName="DialogSpinBox"] {{
+            padding: {SPACING["base"]};
+            border: 1px solid {COLORS["gray_300"]};
+            border-radius: {RADIUS["base"]};
+            font-size: {FONTS["size_sm"]};
+            background-color: {COLORS["white"]};
+            color: {COLORS["text_primary"]};
+            min-width: 80px;
+        }}
+        QSpinBox[objectName="DialogSpinBox"]:focus {{
+            border-color: {COLORS["primary"]};
+        }}
+        
+        /* Dialog Label */
+        QLabel[objectName="DialogLabel"] {{
+            font-size: {FONTS["size_sm"]};
+            color: {COLORS["text_primary"]};
+            font-weight: {FONTS["weight_normal"]};
+        }}
+    """
+
+
+def get_progress_styles() -> str:
+    """Get styles for progress indicators."""
+    return f"""
+        /* Progress Bar */
+        QProgressBar[objectName="GenerationProgress"] {{
+            border: 1px solid {COLORS["gray_300"]};
+            border-radius: {RADIUS["base"]};
+            background-color: {COLORS["gray_100"]};
+            height: 20px;
+            text-align: center;
+        }}
+        QProgressBar[objectName="GenerationProgress"]::chunk {{
+            background-color: {COLORS["primary"]};
+            border-radius: {RADIUS["base"]};
+        }}
+        
+        /* Status Labels */
+        QLabel[objectName="GenerationTitle"] {{
+            color: {COLORS["text_primary"]};
+            font-weight: {FONTS["weight_bold"]};
+        }}
+        QLabel[objectName="GenerationSubtitle"] {{
+            color: {COLORS["text_secondary"]};
+        }}
+        QLabel[objectName="GenerationStatus"] {{
+            color: {COLORS["text_primary"]};
+        }}
+        QLabel[objectName="LastUpdateLabel"] {{
+            color: {COLORS["text_secondary"]};
+            font-style: italic;
         }}
     """
