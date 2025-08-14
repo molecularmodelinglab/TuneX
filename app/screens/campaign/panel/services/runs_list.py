@@ -131,6 +131,16 @@ class RunsListScreen(BaseWidget):
     GENERATE_NEW_RUN_TEXT = "Generate New Run"
     EMPTY_MESSAGE = "No runs yet"
     EMPTY_SECONDARY = "Generate your first run to start experimenting"
+    RUNS_LIST_STYLE = """QScrollArea {
+                        background: transparent;
+                        border: none;
+                    }
+                    QScrollArea > QWidget > QWidget {
+                        background: transparent;
+                    }"""
+    RUNS_SCREEN_STYLE = """#RunsListScreen {
+        background-color: #f8f9fb;
+    }"""
 
     run_selected = Signal(int)
     new_run_requested = Signal()
@@ -144,6 +154,9 @@ class RunsListScreen(BaseWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(20)
+
+        self.setObjectName("RunsListScreen")
+        self.setStyleSheet(self.RUNS_SCREEN_STYLE)
 
         header_widget = self._create_header()
         main_layout.addWidget(header_widget)
@@ -191,6 +204,8 @@ class RunsListScreen(BaseWidget):
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        scroll_area.setStyleSheet(self.RUNS_LIST_STYLE)
 
         container = QWidget()
         container_layout = QVBoxLayout(container)
