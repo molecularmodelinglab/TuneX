@@ -104,7 +104,6 @@ class RunsPanel(BaseWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Create stacked widget for different states
         self.stacked_widget = QStackedWidget()
         self.main_layout.addWidget(self.stacked_widget)
 
@@ -205,7 +204,6 @@ class RunsPanel(BaseWidget):
             # Check if this is the first run
             is_first_run = self.runs_manager.get_run_count() == 0
 
-            # Switch to generation progress
             self._switch_to_generation_progress_state(count, is_first_run)
 
             # Start generation in background
@@ -335,6 +333,8 @@ class RunsPanel(BaseWidget):
             return self.generation_progress_widget.get_panel_buttons()
 
         elif self.current_state == self.EXPERIMENTS_TABLE_STATE and self.experiments_table_widget:
-            return self.experiments_table_widget.get_panel_buttons()
+            generate_button = PrimaryButton(self.NEW_RUNS_BUTTON_TEXT)
+            generate_button.clicked.connect(self._handle_generate_new_run)
+            return [generate_button]
 
         return []
