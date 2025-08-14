@@ -55,6 +55,7 @@ class ExperimentsTableScreen(BaseWidget):
     BACK_TO_RUNS_TEXT = "Back to Runs"
     SAVE_RESULTS_TEXT = "Save Results"
     GENERATE_NEW_RUN_TEXT = "Generate New Run"
+    DEFAULT_INSTRUCTION_TEXT = "💡 Fill in target values for each experiment before saving."
     
     back_to_runs_requested = Signal()
     save_results_requested = Signal(list)
@@ -110,11 +111,11 @@ class ExperimentsTableScreen(BaseWidget):
         self.table = QTableWidget()
         self._setup_table()
         layout.addWidget(self.table)
-        
-        instructions = QLabel("💡 Fill in the target values after conducting your experiments")
-        instructions.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
-        layout.addWidget(instructions)
-        
+
+        self.instructions_label = QLabel(self.DEFAULT_INSTRUCTION_TEXT)
+        self.instructions_label.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
+        layout.addWidget(self.instructions_label)
+
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
         separator.setStyleSheet("color: #ddd;")
@@ -222,8 +223,27 @@ class ExperimentsTableScreen(BaseWidget):
                     experiment[target.name] = None
             
             updated_experiments.append(experiment)
+
+        self.experiments = updated_experiments
         
         self.save_results_requested.emit(updated_experiments)
+        self._show_save_confirmation()
+
+    def _show_save_confirmation(self):
+        """Show visual feedback that results were saved."""
+        if hasattr(self, 'instructions_label'):
+            original_text = self.instructions_label.text()
+            self.instructions_label.setText("✅ Results saved successfully!")
+            self.instructions_label.setStyleSheet("color: #28a745; font-size: 12px; padding: 10px; font-weight: bold;")
+
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(2000, lambda: self._reset_instructions_text(original_text))
+
+    def _reset_instructions_text(self, original_text):
+        """Reset instructions text back to original."""
+        if hasattr(self, 'instructions_label'):
+            self.instructions_label.setText(original_text)
+            self.instructions_label.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
 
     def has_unsaved_changes(self) -> bool:
         """Check if there are unsaved changes in the table."""
