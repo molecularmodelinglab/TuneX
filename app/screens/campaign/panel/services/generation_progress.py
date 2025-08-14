@@ -3,14 +3,10 @@ Screen showing experiment generation progress.
 """
 
 from datetime import datetime, timedelta
-from typing import Optional
 
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QFont, QPainter, QPixmap
-from PySide6.QtWidgets import (
-    QVBoxLayout, QHBoxLayout, QLabel, QWidget,
-    QProgressBar, QFrame
-)
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QProgressBar, QVBoxLayout, QWidget
 
 from app.core.base import BaseWidget
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
@@ -27,7 +23,7 @@ class GenerationProgressScreen(BaseWidget):
     BACK_TO_RUNS_TEXT = "Back to Runs"
     CANCEL_RUN_TEXT = "Cancel Run"
     LAST_UPDATE_TEXT = "Last update: {time}"
-    
+
     back_to_runs_requested = Signal()
     cancel_run_requested = Signal()
     generation_completed = Signal(list)
@@ -37,11 +33,11 @@ class GenerationProgressScreen(BaseWidget):
         self.is_first_run = is_first_run
         self.start_time = datetime.now()
         self.last_update_time = datetime.now()
-        
+
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self._update_last_update_display)
         self.update_timer.start(60000)
-        
+
         super().__init__(parent)
 
     def _setup_widget(self):
@@ -49,7 +45,7 @@ class GenerationProgressScreen(BaseWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.setSpacing(30)
-        
+
         self.progress_card = self._create_progress_card()
         main_layout.addWidget(self.progress_card)
 
@@ -57,7 +53,7 @@ class GenerationProgressScreen(BaseWidget):
         """Create the main progress display card."""
         card = Card()
         card.setMinimumSize(600, 400)
-        
+
         layout = QVBoxLayout(card)
         layout.setContentsMargins(40, 40, 40, 40)
         layout.setSpacing(20)
@@ -144,7 +140,7 @@ class GenerationProgressScreen(BaseWidget):
     def _update_last_update_display(self):
         """Update the last update time display."""
         elapsed = datetime.now() - self.last_update_time
-        
+
         if elapsed < timedelta(minutes=1):
             time_text = "Just now"
         elif elapsed < timedelta(hours=1):
@@ -153,7 +149,7 @@ class GenerationProgressScreen(BaseWidget):
         else:
             hours = int(elapsed.total_seconds() // 3600)
             time_text = f"{hours} hour{'s' if hours > 1 else ''} ago"
-            
+
         self.last_update_label.setText(self.LAST_UPDATE_TEXT.format(time=time_text))
 
     def _handle_back_to_runs(self):
@@ -168,9 +164,9 @@ class GenerationProgressScreen(BaseWidget):
             f"Are you sure you want to cancel the generation of {self.experiment_count} experiments?",
             "Yes, Cancel",
             "No, Continue",
-            self
+            self,
         )
-        
+
         if confirmed:
             self.cancel_run_requested.emit()
 
