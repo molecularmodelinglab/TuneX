@@ -2,24 +2,32 @@
 Screen for displaying and editing experiment results in a table format.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QVBoxLayout, QHBoxLayout, QLabel, QWidget,
-    QTableWidget, QTableWidgetItem, QHeaderView,
-    QFrame, QLineEdit, QStyledItemDelegate
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QStyledItemDelegate,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
 
 from app.core.base import BaseWidget
+from app.models.campaign import Campaign
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
 from app.shared.components.cards import Card
-from app.models.campaign import Campaign
+
 
 class LargeInputDelegate(QStyledItemDelegate):
     """Custom delegate for larger input fields in table cells."""
-    
+
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
         editor.setPlaceholderText("Enter value...")
@@ -37,15 +45,16 @@ class LargeInputDelegate(QStyledItemDelegate):
             }
         """)
         return editor
-    
+
     def setEditorData(self, editor, index):
         value = index.model().data(index, Qt.ItemDataRole.EditRole)
         if value is not None:
             editor.setText(str(value))
-    
+
     def setModelData(self, editor, model, index):
         value = editor.text()
         model.setData(index, value, Qt.ItemDataRole.EditRole)
+
 
 class ExperimentsTableScreen(BaseWidget):
     """Screen for displaying experiment results in an editable table."""
@@ -56,7 +65,7 @@ class ExperimentsTableScreen(BaseWidget):
     SAVE_RESULTS_TEXT = "Save Results"
     GENERATE_NEW_RUN_TEXT = "Generate New Run"
     DEFAULT_INSTRUCTION_TEXT = "💡 Fill in target values for each experiment before saving."
-    
+
     back_to_runs_requested = Signal()
     save_results_requested = Signal(list)
     new_run_requested = Signal()
@@ -66,7 +75,7 @@ class ExperimentsTableScreen(BaseWidget):
         self.campaign = campaign
         self.run_number = run_number
         self.original_experiments = experiments.copy()
-        
+
         super().__init__(parent)
 
     def _setup_widget(self):
@@ -74,10 +83,10 @@ class ExperimentsTableScreen(BaseWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(20)
-        
+
         header_widget = self._create_header()
         main_layout.addWidget(header_widget)
-        
+
         table_card = self._create_table_card()
         main_layout.addWidget(table_card)
 
@@ -86,19 +95,19 @@ class ExperimentsTableScreen(BaseWidget):
         header_widget = QWidget()
         layout = QVBoxLayout(header_widget)
         layout.setSpacing(5)
-        
+
         title_label = QLabel(f"{self.TITLE_TEXT} - Run {self.run_number}")
         title_font = QFont()
         title_font.setPointSize(18)
         title_font.setBold(True)
         title_label.setFont(title_font)
         layout.addWidget(title_label)
-        
+
         subtitle_text = f"{self.SUBTITLE_TEXT} ({len(self.experiments)} experiments)"
         subtitle_label = QLabel(subtitle_text)
         subtitle_label.setStyleSheet("color: #666; font-size: 14px;")
         layout.addWidget(subtitle_label)
-        
+
         return header_widget
 
     def _create_table_card(self) -> QWidget:
@@ -107,7 +116,7 @@ class ExperimentsTableScreen(BaseWidget):
         layout = QVBoxLayout(card)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
-        
+
         self.table = QTableWidget()
         self._setup_table()
         layout.addWidget(self.table)
@@ -120,33 +129,33 @@ class ExperimentsTableScreen(BaseWidget):
         separator.setFrameShape(QFrame.Shape.HLine)
         separator.setStyleSheet("color: #ddd;")
         layout.addWidget(separator)
-        
+
         button_layout = QHBoxLayout()
         button_layout.setSpacing(15)
-        
+
         back_button = SecondaryButton(self.BACK_TO_RUNS_TEXT)
         back_button.clicked.connect(self.back_to_runs_requested.emit)
         button_layout.addWidget(back_button)
-        
+
         button_layout.addStretch()
-        
+
         save_button = PrimaryButton(self.SAVE_RESULTS_TEXT)
         save_button.clicked.connect(self._handle_save_results)
         button_layout.addWidget(save_button)
-        
+
         new_run_button = PrimaryButton(self.GENERATE_NEW_RUN_TEXT)
         new_run_button.clicked.connect(self.new_run_requested.emit)
         button_layout.addWidget(new_run_button)
-        
+
         layout.addLayout(button_layout)
-        
+
         return card
 
     def _setup_table(self):
         """Setup the experiments table."""
         if not self.experiments:
             return
-        
+
         all_experiment_keys = set()
         for experiment in self.experiments:
             all_experiment_keys.update(experiment.keys())
@@ -166,11 +175,11 @@ class ExperimentsTableScreen(BaseWidget):
                 target_columns.append(target.name)
 
         all_columns = param_columns + target_columns
-        
+
         self.table.setRowCount(len(self.experiments))
         self.table.setColumnCount(len(all_columns))
         self.table.setHorizontalHeaderLabels(all_columns)
-        
+
         for row, experiment in enumerate(self.experiments):
             for col, param_name in enumerate(param_columns):
                 value = experiment.get(param_name, "")
@@ -178,7 +187,7 @@ class ExperimentsTableScreen(BaseWidget):
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)  # Read-only
                 item.setBackground(Qt.GlobalColor.lightGray)
                 self.table.setItem(row, col, item)
-        
+
         large_input_delegate = LargeInputDelegate()
         for row in range(len(self.experiments)):
             for col_idx, target in enumerate(self.campaign.targets):
@@ -206,10 +215,10 @@ class ExperimentsTableScreen(BaseWidget):
         # Extract target values from table
         param_columns = list(self.experiments[0].keys()) if self.experiments else []
         updated_experiments = []
-        
+
         for row in range(self.table.rowCount()):
             experiment = self.experiments[row].copy()
-            
+
             for col_idx, target in enumerate(self.campaign.targets):
                 col = len(param_columns) + col_idx
                 item = self.table.item(row, col)
@@ -221,27 +230,28 @@ class ExperimentsTableScreen(BaseWidget):
                         experiment[target.name] = item.text().strip()
                 else:
                     experiment[target.name] = None
-            
+
             updated_experiments.append(experiment)
 
         self.experiments = updated_experiments
-        
+
         self.save_results_requested.emit(updated_experiments)
         self._show_save_confirmation()
 
     def _show_save_confirmation(self):
         """Show visual feedback that results were saved."""
-        if hasattr(self, 'instructions_label'):
+        if hasattr(self, "instructions_label"):
             original_text = self.instructions_label.text()
             self.instructions_label.setText("✅ Results saved successfully!")
             self.instructions_label.setStyleSheet("color: #28a745; font-size: 12px; padding: 10px; font-weight: bold;")
 
             from PySide6.QtCore import QTimer
+
             QTimer.singleShot(2000, lambda: self._reset_instructions_text(original_text))
 
     def _reset_instructions_text(self, original_text):
         """Reset instructions text back to original."""
-        if hasattr(self, 'instructions_label'):
+        if hasattr(self, "instructions_label"):
             self.instructions_label.setText(original_text)
             self.instructions_label.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
 
@@ -249,9 +259,9 @@ class ExperimentsTableScreen(BaseWidget):
         """Check if there are unsaved changes in the table."""
         if not self.experiments:
             return False
-            
+
         param_columns = list(self.experiments[0].keys())
-        
+
         for row in range(self.table.rowCount()):
             for col_idx, target in enumerate(self.campaign.targets):
                 col = len(param_columns) + col_idx
