@@ -303,13 +303,11 @@ class RunsPanel(BaseWidget):
             run_number = len(runs_data) if runs_data else 1
 
         # Save the updated experiments
-        self.runs_manager.update_run_experiments(run_number, experiments)
+        self.runs_manager.update_run_experiments(self.current_run_number, experiments)
 
         from app.shared.components.dialogs import InfoDialog
 
         InfoDialog.show_info("Results Saved", "Experiment results have been saved successfully.", parent=self)
-
-        self._handle_back_to_runs()
 
     def _get_clock_icon_pixmap(self) -> QPixmap:
         """Get a clock icon pixmap."""
