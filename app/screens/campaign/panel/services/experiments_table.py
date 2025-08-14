@@ -68,7 +68,6 @@ class ExperimentsTableScreen(BaseWidget):
 
     back_to_runs_requested = Signal()
     save_results_requested = Signal(list)
-    new_run_requested = Signal()
 
     def __init__(self, experiments: List[Dict[str, Any]], campaign: Campaign, run_number: int = 1, parent=None):
         self.experiments = experiments.copy()
@@ -142,10 +141,6 @@ class ExperimentsTableScreen(BaseWidget):
         save_button = PrimaryButton(self.SAVE_RESULTS_TEXT)
         save_button.clicked.connect(self._handle_save_results)
         button_layout.addWidget(save_button)
-
-        new_run_button = PrimaryButton(self.GENERATE_NEW_RUN_TEXT)
-        new_run_button.clicked.connect(self.new_run_requested.emit)
-        button_layout.addWidget(new_run_button)
 
         layout.addLayout(button_layout)
 

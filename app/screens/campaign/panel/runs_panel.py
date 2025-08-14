@@ -192,7 +192,6 @@ class RunsPanel(BaseWidget):
         self.experiments_table_widget = ExperimentsTableScreen(experiments, self.campaign, run_number)
         self.experiments_table_widget.back_to_runs_requested.connect(self._handle_back_to_runs)
         self.experiments_table_widget.save_results_requested.connect(self._handle_save_results)
-        self.experiments_table_widget.new_run_requested.connect(self._handle_generate_new_run)
 
         self.stacked_widget.addWidget(self.experiments_table_widget)
         self.stacked_widget.setCurrentWidget(self.experiments_table_widget)
