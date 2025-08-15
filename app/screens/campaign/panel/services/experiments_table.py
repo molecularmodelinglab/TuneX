@@ -73,6 +73,8 @@ class ExperimentsTableScreen(BaseWidget):
         self.experiments = experiments.copy()
         self.campaign = campaign
         self.run_number = run_number
+        self._param_columns: List[str] = []
+        self._target_columns: List[str] = []
         self.original_experiments = experiments.copy()
 
         super().__init__(parent)
@@ -156,8 +158,8 @@ class ExperimentsTableScreen(BaseWidget):
             all_experiment_keys.update(experiment.keys())
 
         campaign_target_names = {target.name for target in self.campaign.targets}
-        param_columns = []
-        target_columns = []
+        param_columns: List[str] = []
+        target_columns: List[str] = []
 
         for key in all_experiment_keys:
             if key in campaign_target_names:
@@ -169,14 +171,17 @@ class ExperimentsTableScreen(BaseWidget):
             if target.name not in target_columns:
                 target_columns.append(target.name)
 
-        all_columns = param_columns + target_columns
+        self._param_columns = param_columns
+        self._target_columns = target_columns
+
+        all_columns = self._param_columns + self._target_columns
 
         self.table.setRowCount(len(self.experiments))
         self.table.setColumnCount(len(all_columns))
         self.table.setHorizontalHeaderLabels(all_columns)
 
         for row, experiment in enumerate(self.experiments):
-            for col, param_name in enumerate(param_columns):
+            for col, param_name in enumerate(self._param_columns):
                 value = experiment.get(param_name, "")
                 item = QTableWidgetItem(str(value))
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)  # Read-only
@@ -184,14 +189,17 @@ class ExperimentsTableScreen(BaseWidget):
                 self.table.setItem(row, col, item)
 
         large_input_delegate = LargeInputDelegate()
-        for row in range(len(self.experiments)):
-            for col_idx, target in enumerate(self.campaign.targets):
-                col = len(param_columns) + col_idx
+        for target_idx, target in enumerate(self.campaign.targets):
+            col = len(self._param_columns) + target_idx
+            self.table.setItemDelegateForColumn(col, large_input_delegate)
+
+        for row, experiment in enumerate(self.experiments):
+            for target_idx, target in enumerate(self.campaign.targets):
+                col = len(self._param_columns) + target_idx
                 existing_value = experiment.get(target.name, "")
                 item = QTableWidgetItem(str(existing_value) if existing_value is not None else "")
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
                 self.table.setItem(row, col, item)
-                self.table.setItemDelegateForColumn(col, large_input_delegate)
 
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setAlternatingRowColors(True)
@@ -200,35 +208,37 @@ class ExperimentsTableScreen(BaseWidget):
         self.table.verticalHeader().setVisible(True)
         self.table.verticalHeader().setDefaultSectionSize(50)
 
-        # Style the headers to differentiate parameter vs target columns
-        # header = self.table.horizontalHeader()
-        # for i in range(len(param_columns)):
-        #     header.setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
-
     def _handle_save_results(self):
         """Handle saving the results with target values."""
         # Extract target values from table
-        param_columns = list(self.experiments[0].keys()) if self.experiments else []
-        updated_experiments = []
+        if not self.experiments:
+            return
+        
+        updated_experiments: List[Dict[str, Any]] = []
 
         for row in range(self.table.rowCount()):
-            experiment = self.experiments[row].copy()
+            original = self.original_experiments[row].copy()
+            experiment = original
 
-            for col_idx, target in enumerate(self.campaign.targets):
-                col = len(param_columns) + col_idx
+            for target_idx, target in enumerate(self.campaign.targets):
+                col = len(self._param_columns) + target_idx
                 item = self.table.item(row, col)
-                if item and item.text().strip():
-                    try:
-                        value = float(item.text().strip())
-                        experiment[target.name] = value
-                    except ValueError:
-                        experiment[target.name] = item.text().strip()
-                else:
+                if not item:
                     experiment[target.name] = None
+                    continue
+                text = item.text().strip()
+                if not text:
+                    experiment[target.name] = None
+                    continue
+                try:
+                    experiment[target.name] = float(text)
+                except ValueError:
+                    experiment[target.name] = text
 
             updated_experiments.append(experiment)
 
         self.experiments = updated_experiments
+        self.original_experiments = updated_experiments.copy()
 
         self.save_results_requested.emit(updated_experiments)
         self._show_save_confirmation()
@@ -255,14 +265,19 @@ class ExperimentsTableScreen(BaseWidget):
         if not self.experiments:
             return False
 
-        param_columns = list(self.experiments[0].keys())
-
         for row in range(self.table.rowCount()):
-            for col_idx, target in enumerate(self.campaign.targets):
-                col = len(param_columns) + col_idx
+            original = self.original_experiments[row]
+            for target_idx, target in enumerate(self.campaign.targets):
+                col = len(self._param_columns) + target_idx
                 item = self.table.item(row, col)
-                if item and item.text().strip():
-                    return True
+                current_text = (item.text().strip() if item else "")
+                original_value = original.get(target.name, None)
+                if original_value is None:
+                    if current_text != "":
+                        return True
+                else:
+                    if str(original_value) != current_text:
+                        return True
         return False
 
     def get_panel_buttons(self):
