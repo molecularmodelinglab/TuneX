@@ -17,6 +17,10 @@ from app.shared.components.cards import Card, EmptyStateCard
 class RunCard(Card):
     """Card representing a single run in the runs list."""
 
+    CARD_MARGIN = (10, 5, 10, 5)
+    CARD_SPACING = 6
+    RUN_NUM_FONT_SIZE = 12
+
     run_clicked = Signal(int)
 
     def __init__(self, run_data: Dict[str, Any], run_number: int, parent=None):
@@ -27,19 +31,19 @@ class RunCard(Card):
 
     def _setup_card(self):
         """Setup the run card UI."""
-        self.setMinimumHeight(120)
+        self.setMinimumHeight(110)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 15, 20, 15)
-        layout.setSpacing(8)
+        layout.setContentsMargins(*self.CARD_MARGIN)
+        layout.setSpacing(self.CARD_SPACING)
 
         header_layout = QHBoxLayout()
         header_layout.setSpacing(10)
 
         run_title = QLabel(f"Run {self.run_number}")
         run_font = QFont()
-        run_font.setPointSize(14)
+        run_font.setPointSize(self.RUN_NUM_FONT_SIZE)
         run_font.setBold(True)
         run_title.setFont(run_font)
         header_layout.addWidget(run_title)
@@ -107,7 +111,7 @@ class RunCard(Card):
 
     def _get_status_style(self, status: str) -> str:
         """Get styling for status badge."""
-        common = "padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;"
+        common = "padding: 2px 4px; border-radius: 4px; font-size: 10px; font-weight: bold;"
         status_styles = {
             "completed": f"background-color: #d4edda; color: #155724; {common}",
             "running": f"background-color: #fff3cd; color: #856404; {common}",
@@ -141,6 +145,8 @@ class RunsListScreen(BaseWidget):
     RUNS_SCREEN_STYLE = """#RunsListScreen {
         background-color: #f8f9fb;
     }"""
+    LAYOUT_MARGIN = (20, 20, 20, 20)
+    LAYOUT_SPACING = 20
 
     run_selected = Signal(int)
     new_run_requested = Signal()
@@ -152,8 +158,8 @@ class RunsListScreen(BaseWidget):
     def _setup_widget(self):
         """Setup the runs list screen UI."""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(*self.LAYOUT_MARGIN)
+        main_layout.setSpacing(self.LAYOUT_SPACING)
 
         self.setObjectName("RunsListScreen")
         self.setStyleSheet(self.RUNS_SCREEN_STYLE)
