@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from app.models.campaign import Campaign, Target
-from app.models.parameters.types import ContinuousNumerical, Categorical
+from app.models.parameters.types import Categorical, ContinuousNumerical
 from app.screens.campaign.panel.services.runs_data_manager import RunsDataManager
 
 
@@ -21,17 +21,17 @@ def sample_campaign():
     campaign.id = "test_campaign_123"
     campaign.name = "Test Campaign"
     campaign.description = "A test campaign"
-    
+
     param1 = ContinuousNumerical("temperature", 20.0, 100.0)
     param2 = Categorical("solvent", ["water", "ethanol", "methanol"])
 
     campaign.parameters = [param1, param2]
-    
+
     target = Target()
     target.name = "yield"
     target.mode = "MAX"
     campaign.targets = [target]
-    
+
     return campaign
 
 
@@ -82,10 +82,10 @@ class TestRunsDataManager:
                 "completed_count": 1,
             }
         ]
-        
+
         runs_manager.save_runs(sample_runs)
         loaded_runs = runs_manager.load_runs()
-        
+
         assert len(loaded_runs) == 1
         assert loaded_runs[0]["run_id"] == "test_run_1"
         assert loaded_runs[0]["run_number"] == 1
@@ -95,13 +95,13 @@ class TestRunsDataManager:
         """Test adding a new run."""
         experiments = [
             {"temperature": 25.0, "solvent": "water", "yield": None},
-            {"temperature": 50.0, "solvent": "ethanol", "yield": None}
+            {"temperature": 50.0, "solvent": "ethanol", "yield": None},
         ]
-        
+
         run_number = runs_manager.add_run(experiments, sample_campaign)
-        
+
         assert run_number == 1
-        
+
         runs = runs_manager.load_runs()
         assert len(runs) == 1
         assert runs[0]["run_number"] == 1
@@ -113,13 +113,13 @@ class TestRunsDataManager:
         """Test adding multiple runs."""
         experiments1 = [{"temperature": 25.0, "solvent": "water"}]
         experiments2 = [{"temperature": 50.0, "solvent": "ethanol"}]
-        
+
         run_number1 = runs_manager.add_run(experiments1, sample_campaign)
         run_number2 = runs_manager.add_run(experiments2, sample_campaign)
-        
+
         assert run_number1 == 1
         assert run_number2 == 2
-        
+
         runs = runs_manager.load_runs()
         assert len(runs) == 2
 
@@ -127,19 +127,19 @@ class TestRunsDataManager:
         """Test updating experiments for a run."""
         experiments = [
             {"temperature": 25.0, "solvent": "water", "yield": None},
-            {"temperature": 50.0, "solvent": "ethanol", "yield": None}
+            {"temperature": 50.0, "solvent": "ethanol", "yield": None},
         ]
-        
+
         run_number = runs_manager.add_run(experiments, sample_campaign)
-        
+
         # Update experiments with target values
         updated_experiments = [
             {"temperature": 25.0, "solvent": "water", "yield": 0.8},
-            {"temperature": 50.0, "solvent": "ethanol", "yield": 0.9}
+            {"temperature": 50.0, "solvent": "ethanol", "yield": 0.9},
         ]
-        
+
         runs_manager.update_run_experiments(run_number, updated_experiments)
-        
+
         runs = runs_manager.load_runs()
         assert len(runs) == 1
         assert runs[0]["completed_count"] == 2  # Both experiments now have target values
@@ -149,9 +149,9 @@ class TestRunsDataManager:
         """Test getting a specific run."""
         experiments = [{"temperature": 25.0, "solvent": "water"}]
         run_number = runs_manager.add_run(experiments, sample_campaign)
-        
+
         retrieved_run = runs_manager.get_run(run_number)
-        
+
         assert retrieved_run is not None
         assert retrieved_run["run_number"] == run_number
 
@@ -165,14 +165,14 @@ class TestRunsDataManager:
         experiments1 = [{"temperature": 25.0, "solvent": "water"}]
         experiments2 = [{"temperature": 50.0, "solvent": "ethanol"}]
         experiments3 = [{"temperature": 75.0, "solvent": "methanol"}]
-        
+
         runs_manager.add_run(experiments1, sample_campaign)
         runs_manager.add_run(experiments2, sample_campaign)
         runs_manager.add_run(experiments3, sample_campaign)
-        
+
         # Delete the middle run
         runs_manager.delete_run(2)
-        
+
         runs = runs_manager.load_runs()
         assert len(runs) == 2
         # Run numbers should be renumbered
@@ -182,28 +182,28 @@ class TestRunsDataManager:
     def test_get_run_count(self, runs_manager, sample_campaign):
         """Test getting the run count."""
         assert runs_manager.get_run_count() == 0
-        
+
         experiments = [{"temperature": 25.0, "solvent": "water"}]
         runs_manager.add_run(experiments, sample_campaign)
-        
+
         assert runs_manager.get_run_count() == 1
 
     def test_has_previous_data_false(self, runs_manager, sample_campaign):
         """Test has_previous_data returns False when no completed runs."""
         experiments = [{"temperature": 25.0, "solvent": "water", "yield": None}]
         runs_manager.add_run(experiments, sample_campaign)
-        
+
         assert runs_manager.has_previous_data() is False
 
     def test_has_previous_data_true(self, runs_manager, sample_campaign):
         """Test has_previous_data returns True when completed runs exist."""
         experiments = [{"temperature": 25.0, "solvent": "water", "yield": None}]
         run_number = runs_manager.add_run(experiments, sample_campaign)
-        
+
         # Update with target values
         updated_experiments = [{"temperature": 25.0, "solvent": "water", "yield": 0.8}]
         runs_manager.update_run_experiments(run_number, updated_experiments)
-        
+
         assert runs_manager.has_previous_data() is True
 
     def test_load_runs_with_corrupted_json(self, runs_manager):
@@ -212,22 +212,19 @@ class TestRunsDataManager:
         runs_manager.runs_file.parent.mkdir(exist_ok=True)
         with open(runs_manager.runs_file, "w") as f:
             f.write("invalid json content")
-        
+
         runs = runs_manager.load_runs()
         assert runs == []
 
-    def test_datetime_serialization_deserialization(self, runs_manager, sample_campaign):
+    def test_datetime_serialization_deserialization(self, runs_manager):
         """Test that datetime objects are properly serialized and deserialized."""
-        experiments = [{"temperature": 25.0, "solvent": "water"}]
-        run_number = runs_manager.add_run(experiments, sample_campaign)
-        
         # Load the raw JSON to verify datetime serialization
         with open(runs_manager.runs_file, "r") as f:
             raw_data = json.load(f)
-        
+
         # Datetime should be serialized as ISO format string
         assert isinstance(raw_data[0]["created_at"], str)
-        
+
         # Load through manager should convert back to datetime
         runs = runs_manager.load_runs()
         assert isinstance(runs[0]["created_at"], datetime)
@@ -240,20 +237,20 @@ class TestRunsDataManager:
             {"temperature": 50.0, "solvent": "ethanol", "yield": 0.8},
             {"temperature": 75.0, "solvent": "methanol", "yield": None},
         ]
-        
+
         run_number = runs_manager.add_run(experiments, sample_campaign)
-        
+
         runs = runs_manager.load_runs()
         assert runs[0]["completed_count"] == 1  # Only one experiment has target value
-        
+
         # Update to add more target values
         updated_experiments = [
             {"temperature": 25.0, "solvent": "water", "yield": 0.9},  # Now has target
             {"temperature": 50.0, "solvent": "ethanol", "yield": 0.8},
             {"temperature": 75.0, "solvent": "methanol", "yield": None},
         ]
-        
+
         runs_manager.update_run_experiments(run_number, updated_experiments)
-        
+
         runs = runs_manager.load_runs()
         assert runs[0]["completed_count"] == 2  # Two experiments now have target values

@@ -7,7 +7,7 @@ from datetime import datetime
 import pytest
 from PySide6.QtCore import Qt
 
-from app.screens.campaign.panel.services.runs_list import RunsListScreen, RunCard
+from app.screens.campaign.panel.services.runs_list import RunCard, RunsListScreen
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def sample_runs_data():
             "status": "completed",
             "experiments": [
                 {"temperature": 25.0, "solvent": "water", "yield": 0.8},
-                {"temperature": 50.0, "solvent": "ethanol", "yield": 0.9}
+                {"temperature": 50.0, "solvent": "ethanol", "yield": 0.9},
             ],
             "targets": [{"name": "yield", "mode": "MAX"}],
             "created_at": datetime(2024, 1, 15, 10, 30),
@@ -36,14 +36,14 @@ def sample_runs_data():
             "status": "in_progress",
             "experiments": [
                 {"temperature": 75.0, "solvent": "methanol", "yield": None},
-                {"temperature": 100.0, "solvent": "water", "yield": 0.7}
+                {"temperature": 100.0, "solvent": "water", "yield": 0.7},
             ],
             "targets": [{"name": "yield", "mode": "MAX"}],
             "created_at": datetime(2024, 1, 16, 14, 15),
             "updated_at": datetime(2024, 1, 16, 14, 45),
             "experiment_count": 2,
             "completed_count": 1,
-        }
+        },
     ]
 
 
@@ -61,8 +61,8 @@ class TestRunsListScreen:
     def test_initialization(self, runs_list_screen, sample_runs_data):
         """Test that the screen initializes correctly."""
         assert runs_list_screen.runs_data == sample_runs_data
-        assert hasattr(runs_list_screen, 'run_selected')
-        assert hasattr(runs_list_screen, 'new_run_requested')
+        assert hasattr(runs_list_screen, "run_selected")
+        assert hasattr(runs_list_screen, "new_run_requested")
 
     def test_screen_has_header(self, runs_list_screen):
         """Test that the screen has a proper header."""
@@ -78,7 +78,7 @@ class TestRunsListScreen:
     def test_get_panel_buttons(self, runs_list_screen):
         """Test that the screen returns appropriate panel buttons."""
         buttons = runs_list_screen.get_panel_buttons()
-        
+
         assert len(buttons) == 1
         assert buttons[0].text() == "Generate New Run"
 
@@ -86,7 +86,7 @@ class TestRunsListScreen:
         """Test that clicking Generate New Run button emits signal."""
         buttons = runs_list_screen.get_panel_buttons()
         generate_button = buttons[0]
-        
+
         with qtbot.waitSignal(runs_list_screen.new_run_requested, timeout=1000):
             qtbot.mouseClick(generate_button, Qt.LeftButton)
 
@@ -94,7 +94,7 @@ class TestRunsListScreen:
         """Test screen behavior with empty runs data."""
         screen = RunsListScreen([])
         qtbot.addWidget(screen)
-        
+
         # Should still work with empty data
         buttons = screen.get_panel_buttons()
         assert len(buttons) == 1
@@ -114,7 +114,7 @@ class TestRunCard:
             "status": "completed",
             "experiments": [
                 {"temperature": 25.0, "solvent": "water", "yield": 0.8},
-                {"temperature": 50.0, "solvent": "ethanol", "yield": 0.9}
+                {"temperature": 50.0, "solvent": "ethanol", "yield": 0.9},
             ],
             "targets": [{"name": "yield", "mode": "MAX"}],
             "created_at": datetime(2024, 1, 15, 10, 30),
@@ -134,7 +134,7 @@ class TestRunCard:
         """Test that the run card is created correctly."""
         assert run_card.run_data == sample_run_data
         assert run_card.run_number == 1
-        assert hasattr(run_card, 'run_clicked')
+        assert hasattr(run_card, "run_clicked")
 
     def test_card_click_signal(self, qtbot, run_card):
         """Test that clicking the card emits the signal."""
@@ -150,15 +150,15 @@ class TestRunCard:
             "targets": [],
             "created_at": datetime.now(),
         }
-        
+
         in_progress_data = {
             "run_number": 2,
-            "status": "in_progress", 
+            "status": "in_progress",
             "experiments": [],
             "targets": [],
             "created_at": datetime.now(),
         }
-        
+
         failed_data = {
             "run_number": 3,
             "status": "failed",
@@ -170,11 +170,11 @@ class TestRunCard:
         completed_card = RunCard(completed_data, 1)
         in_progress_card = RunCard(in_progress_data, 2)
         failed_card = RunCard(failed_data, 3)
-        
+
         qtbot.addWidget(completed_card)
         qtbot.addWidget(in_progress_card)
         qtbot.addWidget(failed_card)
-        
+
         # Test that different status styles are applied
         assert completed_card._get_status_style("completed") != ""
         assert in_progress_card._get_status_style("in_progress") != ""
@@ -194,10 +194,10 @@ class TestRunCard:
             "targets": [{"name": "yield", "mode": "MAX"}],
             "created_at": datetime.now(),
         }
-        
+
         card = RunCard(partial_data, 1)
         qtbot.addWidget(card)
-        
+
         # Should have 3 experiments, 2 completed
         # This verifies the card processes the data correctly
 
@@ -211,22 +211,22 @@ class TestRunCard:
             "targets": [],
             "created_at": datetime(2024, 1, 15, 10, 30),
         }
-        
+
         # Test with string date
         string_data = {
             "run_number": 2,
-            "status": "completed", 
+            "status": "completed",
             "experiments": [],
             "targets": [],
             "created_at": "Jan 15, 2024 at 10:30",
         }
-        
+
         datetime_card = RunCard(datetime_data, 1)
         string_card = RunCard(string_data, 2)
-        
+
         qtbot.addWidget(datetime_card)
         qtbot.addWidget(string_card)
-        
+
         # Both should handle date formatting without errors
 
     def test_card_target_display(self, qtbot):
@@ -239,25 +239,22 @@ class TestRunCard:
             "targets": ["yield", "purity"],
             "created_at": datetime.now(),
         }
-        
+
         # Test with dict targets
         dict_targets_data = {
             "run_number": 2,
             "status": "completed",
             "experiments": [],
-            "targets": [
-                {"name": "yield", "mode": "MAX"},
-                {"name": "purity", "mode": "MAX"}
-            ],
+            "targets": [{"name": "yield", "mode": "MAX"}, {"name": "purity", "mode": "MAX"}],
             "created_at": datetime.now(),
         }
-        
+
         string_card = RunCard(string_targets_data, 1)
         dict_card = RunCard(dict_targets_data, 2)
-        
+
         qtbot.addWidget(string_card)
         qtbot.addWidget(dict_card)
-        
+
         # Both should handle target formatting without errors
 
     def test_card_no_experiments(self, qtbot):
@@ -269,10 +266,10 @@ class TestRunCard:
             "targets": [],
             "created_at": datetime.now(),
         }
-        
+
         card = RunCard(empty_data, 1)
         qtbot.addWidget(card)
-        
+
         # Should handle empty experiments list gracefully
 
     def test_card_cursor_style(self, run_card):
