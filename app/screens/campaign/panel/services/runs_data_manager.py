@@ -23,7 +23,7 @@ class RunsDataManager:
         self.campaign_folder = self.workspace_path / WorkspaceConstants.CAMPAIGNS_DIRNAME / f"{self.campaign_id}"
         self.runs_file = self.campaign_folder / self.RUNS_FOLDERNAME / f"runs_{campaign_id}.json"
 
-        self.runs_file.parent.mkdir(exist_ok=True)
+        self.runs_file.parent.mkdir(parents=True, exist_ok=True)
 
     def load_runs(self) -> List[Dict[str, Any]]:
         """Load all runs for the campaign."""
@@ -70,6 +70,13 @@ class RunsDataManager:
 
         # Create new run
         run_number = len(runs_data) + 1
+
+        # Calculate completed count
+        target_names = [target.name for target in campaign.targets]
+        completed_count = sum(
+            1 for exp in experiments if any(exp.get(target_name) is not None for target_name in target_names)
+        )
+
         new_run = {
             "run_id": str(uuid4()),
             "run_number": run_number,
@@ -80,7 +87,7 @@ class RunsDataManager:
             "created_at": datetime.now(),
             "updated_at": datetime.now(),
             "experiment_count": len(experiments),
-            "completed_count": 0,
+            "completed_count": completed_count,
         }
 
         runs_data.append(new_run)
