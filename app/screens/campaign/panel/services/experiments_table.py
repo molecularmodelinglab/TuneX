@@ -213,7 +213,7 @@ class ExperimentsTableScreen(BaseWidget):
         # Extract target values from table
         if not self.experiments:
             return
-        
+
         updated_experiments: List[Dict[str, Any]] = []
 
         for row in range(self.table.rowCount()):
@@ -270,7 +270,7 @@ class ExperimentsTableScreen(BaseWidget):
             for target_idx, target in enumerate(self.campaign.targets):
                 col = len(self._param_columns) + target_idx
                 item = self.table.item(row, col)
-                current_text = (item.text().strip() if item else "")
+                current_text = item.text().strip() if item else ""
                 original_value = original.get(target.name, None)
                 if original_value is None:
                     if current_text != "":
