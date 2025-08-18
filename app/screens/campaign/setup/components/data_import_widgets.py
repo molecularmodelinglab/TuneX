@@ -30,6 +30,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.shared.components.dialogs import ErrorDialog
+
 from .csv_data_importer import CSVValidationResult
 
 
@@ -172,7 +174,7 @@ class DragDropArea(QFrame):
                     event.accept()
                     return
                 else:
-                    print(error_msg)
+                    ErrorDialog.show_error("Import Error", error_msg, parent=self)
 
         print("Invalid file dropped")
         event.ignore()
@@ -238,7 +240,7 @@ class UploadSectionWidget(QWidget):
                 print(f"Valid CSV file selected: {file_path}")
                 self.file_selected.emit(file_path)
             else:
-                print(f"Invalid file selected: {error_msg}")
+                ErrorDialog.show_error("Import Error", "Invalid file selected: {error_msg}", parent=self)
         else:
             print("File selection cancelled by user")
 

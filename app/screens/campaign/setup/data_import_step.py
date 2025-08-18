@@ -10,6 +10,7 @@ from app.core.base import BaseStep
 from app.models.campaign import Campaign
 from app.models.parameters import ParameterSerializer
 from app.models.parameters.base import BaseParameter
+from app.shared.components.dialogs import ErrorDialog
 from app.shared.components.headers import MainHeader, SectionHeader
 
 from .components.csv_data_importer import CSVDataImporter, CSVValidationResult
@@ -120,8 +121,9 @@ class DataImportStep(BaseStep):
             file_path: Path to the CSV file to import
         """
         if not self.parameters:
-            print("No parameters configured - cannot validate CSV data")
-            print("Please configure parameters in Step 2 before importing data")
+            ErrorDialog.show_error(
+                "Configure Error", "Please configure parameters in Step 2 before importing data.", parent=self
+            )
             return
 
         try:
@@ -130,13 +132,15 @@ class DataImportStep(BaseStep):
             self._update_preview()
 
         except Exception as e:
-            print(f"Error importing CSV file: {e}")
+            ErrorDialog.show_error("Import Error", f"Error importing CSV file: {e}", parent=self)
             # Note: DataPreviewWidget doesn't have display_error method
 
     def _on_template_requested(self) -> None:
         """Handle template download request."""
         if not self.parameters:
-            print("No parameters configured - cannot generate template")
+            ErrorDialog.show_error(
+                "Configuration Error", "No parameters configured - cannot generate template", parent=self
+            )
             return
 
         # Show file save dialog
@@ -156,7 +160,7 @@ class DataImportStep(BaseStep):
                 # Template saved successfully (no UI update method available)
 
             except Exception as e:
-                print(f"Error generating template: {e}")
+                ErrorDialog.show_error("Error", f"Error generating template: {e}", parent=self)
                 # Error occurred (no UI update method available)
 
     def validate(self) -> bool:
@@ -174,7 +178,9 @@ class DataImportStep(BaseStep):
             return True
 
         if self.validation_result and not self.validation_result.is_valid:
-            print(f"Imported data is invalid: {self.validation_result.get_summary()}")
+            ErrorDialog.show_error(
+                "Validation Error", f"Imported data is invalid: {self.validation_result.get_summary()}", parent=self
+            )
             return False
 
         print(f"Data import validation passed - {len(self.imported_data)} rows imported")
@@ -188,7 +194,7 @@ class DataImportStep(BaseStep):
 
             print(f"Successfully saved import data - {len(self.imported_data)} rows")
         except Exception as e:
-            print(f"Error saving import data: {e}")
+            ErrorDialog.show_error("Validation Error", f"Error saving import data: {e}", parent=self)
 
     def load_data(self) -> None:
         """Load previously imported data from the campaign model."""
@@ -202,7 +208,7 @@ class DataImportStep(BaseStep):
                 print(f"Loaded and re-validated {len(self.imported_data)} rows of data")
 
         except Exception as e:
-            print(f"Error loading import data: {e}")
+            ErrorDialog.show_error("Import Error", f"Error loading import data: {e}", parent=self)
 
     def _validate_data(self) -> None:
         """Re-validate the current self.imported_data."""

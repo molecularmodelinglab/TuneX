@@ -153,7 +153,9 @@ class SettingsPanel(BaseWidget):
                 else:
                     self.campaign.name = old_name
                     self.name_input.setText(old_name)
-                    print("Failed to save campaign name change")
+                    ErrorDialog.show_error(
+                        "Save Failed", "Could not save the campaign name change. Please try again.", parent=self
+                    )
 
             self.name_input.setReadOnly(True)
             self.rename_button.setText(self.RENAME_BUTTON_TEXT)
@@ -177,7 +179,9 @@ class SettingsPanel(BaseWidget):
                 else:
                     self.campaign.description = old_description
                     self.description_input.setPlainText(old_description)
-                    print("Failed to save campaign description change")
+                    ErrorDialog.show_error(
+                        "Save Failed", "Could not save the description change. Please try again.", parent=self
+                    )
 
             self.description_input.setReadOnly(True)
             self.edit_button.setText(self.EDIT_BUTTON_TEXT)

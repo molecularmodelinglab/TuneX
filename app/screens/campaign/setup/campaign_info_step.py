@@ -19,6 +19,7 @@ from app.core.base import BaseStep
 from app.models.campaign import Campaign, Target
 from app.models.enums import TargetMode
 from app.shared.components.buttons import DangerButton, PrimaryButton
+from app.shared.components.dialogs import ErrorDialog
 from app.shared.components.headers import MainHeader, SectionHeader
 
 
@@ -220,16 +221,16 @@ class CampaignInfoStep(BaseStep):
     def validate(self) -> bool:
         """Validate form data."""
         if not self.name_input.text().strip():
-            print("Campaign name is required")  # TODO: Better error handling
+            ErrorDialog.show_error("Validation Error", "Campaign name is required.", parent=self)
             return False
 
         if not self.target_rows:
-            print("At least one target is required")  # TODO: Better error handling
+            ErrorDialog.show_error("Validation Error", "At least one target is required.", parent=self)
             return False
 
         valid_targets = [row for row in self.target_rows if row.is_valid()]
         if not valid_targets:
-            print("At least one target must have a name")  # TODO: Better error handling
+            ErrorDialog.show_error("Validation Error", "At least one target must have a name", parent=self)
             return False
 
         return True

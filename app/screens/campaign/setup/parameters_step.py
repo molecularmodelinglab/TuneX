@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout
 from app.core.base import BaseStep
 from app.models.campaign import Campaign
 from app.models.parameters.base import BaseParameter
+from app.shared.components.dialogs import ErrorDialog
 from app.shared.components.headers import MainHeader, SectionHeader
 
 from .components.parameter_managers import ParameterRowManager
@@ -124,8 +125,7 @@ class ParametersStep(BaseStep):
         is_valid, error_message = self.row_manager.validate_all_widgets()
 
         if not is_valid:
-            # TODO: Implement user-friendly error display (dialog/status bar instead of print)
-            print(f"Parameter validation failed: {error_message}")
+            ErrorDialog.show_error("Validation Error", f"Parameter validation failed: {error_message}.", parent=self)
         else:
             print(f"Successfully validated {len(self.parameters)} parameters")
 
