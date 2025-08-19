@@ -207,34 +207,23 @@ class ParameterRowManager:
         if not self.constraint_widgets:
             return False, "No parameters configured"
 
-        # Check that all parameters have been created (no None values)
-        none_indices = []
-        for i, widget in enumerate(self.constraint_widgets):
-            if widget is None:
-                none_indices.append(i + 1)
-
-        if none_indices:
-            indices_string = ", ".join(str(i) for i in none_indices)
-            return False, f"Parameters {indices_string}: missing type or name"
-
-        # Validate each widget (which validates its parameter)
+        # Check for incomplete parameters (missing type or name)
         for i, constraint_widget in enumerate(self.constraint_widgets):
             if constraint_widget is None:
-                continue
+                return False, f"Parameter {i + 1} must have a type"
 
             self._sync_parameter_name(i)
+
             is_valid, error_message = constraint_widget.validate()
-            param = self.parameters[i]
-
             if not is_valid:
-                name = param.name if param else f"Parameter {i + 1}"
-                return False, f"'{name}': {error_message}"
+                return False, f"Parameter {i + 1}: {error_message}"
 
+            param = self.parameters[i]
             if not param or not param.name:
-                return False, f"Parameter {i + 1} needs a name and a type"
+                return False, f"Parameter {i + 1} must have a name"
 
         # Check for duplicate parameter names
-        names = [param.name for param in self.parameters if param is not None]
+        names = [param.name for param in self.parameters if param is not None and param.name]
         if len(names) != len(set(names)):
             return False, "Parameter names must be unique"
 
@@ -410,13 +399,8 @@ class ParameterRowManager:
     def _on_name_changed(self, row: int) -> None:
         """Handle parameter name change - recreate parameter if type is selected."""
         parameter_type = self._get_parameter_type_from_ui(row)
-        parameter_name = self._get_parameter_name_from_ui(row)
-        # Recreate parameter if we have both name and type
-        if parameter_type and parameter_name:
-            try:
-                self.update_parameter_type(row, parameter_type)
-            except Exception as e:
-                print(f"Error updating parameter on name change: {e}")
+        if parameter_type:
+            self.update_parameter_type(row, parameter_type)
 
     def _remove_by_button(self, button: QPushButton) -> None:
         """Find row by button and remove it."""
