@@ -39,12 +39,28 @@ class DataImportStep(BaseStep):
     - load_data(): Load previously imported data (if any)
     """
 
+    # UI Text Constants
     TITLE = "Data Import"
     DESCRIPTION = "Import historical data to help optimize your campaign parameters."
     SAVE_TEMPLATE_DIALOG_TITLE = "Save CSV Template"
     DEFAULT_TEMPLATE_FILENAME = "campaign_data_template.csv"
     CSV_FILE_FILTER = "CSV Files (*.csv);;All Files (*)"
 
+    # Error Dialog Constants
+    CONFIGURE_ERROR_TITLE = "Configure Error"
+    CONFIGURE_PARAMETERS_MESSAGE = "Please configure parameters in Step 2 before importing data."
+    IMPORT_ERROR_TITLE = "Import Error"
+    IMPORT_ERROR_MESSAGE = "Error importing CSV file: {0}"
+    CONFIGURATION_ERROR_TITLE = "Configuration Error"
+    NO_PARAMETERS_MESSAGE = "No parameters configured - cannot generate template"
+    TEMPLATE_ERROR_TITLE = "Error"
+    TEMPLATE_ERROR_MESSAGE = "Error generating template: {0}"
+    VALIDATION_ERROR_TITLE = "Validation Error"
+    DATA_INVALID_MESSAGE = "Imported data is invalid: {0}"
+    SAVE_ERROR_MESSAGE = "Error saving import data: {0}"
+    LOAD_ERROR_MESSAGE = "Error loading import data: {0}"
+
+    # Layout Constants
     MAIN_LAYOUT_SPACING = 30
     MAIN_LAYOUT_MARGINS = (40, 40, 40, 40)
 
@@ -121,9 +137,7 @@ class DataImportStep(BaseStep):
             file_path: Path to the CSV file to import
         """
         if not self.parameters:
-            ErrorDialog.show_error(
-                "Configure Error", "Please configure parameters in Step 2 before importing data.", parent=self
-            )
+            ErrorDialog.show_error(self.CONFIGURE_ERROR_TITLE, self.CONFIGURE_PARAMETERS_MESSAGE, parent=self)
             return
 
         try:
@@ -132,15 +146,13 @@ class DataImportStep(BaseStep):
             self._update_preview()
 
         except Exception as e:
-            ErrorDialog.show_error("Import Error", f"Error importing CSV file: {e}", parent=self)
+            ErrorDialog.show_error(self.IMPORT_ERROR_TITLE, self.IMPORT_ERROR_MESSAGE.format(e), parent=self)
             # Note: DataPreviewWidget doesn't have display_error method
 
     def _on_template_requested(self) -> None:
         """Handle template download request."""
         if not self.parameters:
-            ErrorDialog.show_error(
-                "Configuration Error", "No parameters configured - cannot generate template", parent=self
-            )
+            ErrorDialog.show_error(self.CONFIGURATION_ERROR_TITLE, self.NO_PARAMETERS_MESSAGE, parent=self)
             return
 
         # Show file save dialog
@@ -160,7 +172,7 @@ class DataImportStep(BaseStep):
                 # Template saved successfully (no UI update method available)
 
             except Exception as e:
-                ErrorDialog.show_error("Error", f"Error generating template: {e}", parent=self)
+                ErrorDialog.show_error(self.TEMPLATE_ERROR_TITLE, self.TEMPLATE_ERROR_MESSAGE.format(e), parent=self)
                 # Error occurred (no UI update method available)
 
     def validate(self) -> bool:
@@ -179,7 +191,9 @@ class DataImportStep(BaseStep):
 
         if self.validation_result and not self.validation_result.is_valid:
             ErrorDialog.show_error(
-                "Validation Error", f"Imported data is invalid: {self.validation_result.get_summary()}", parent=self
+                self.VALIDATION_ERROR_TITLE,
+                self.DATA_INVALID_MESSAGE.format(self.validation_result.get_summary()),
+                parent=self,
             )
             return False
 
@@ -194,7 +208,7 @@ class DataImportStep(BaseStep):
 
             print(f"Successfully saved import data - {len(self.imported_data)} rows")
         except Exception as e:
-            ErrorDialog.show_error("Validation Error", f"Error saving import data: {e}", parent=self)
+            ErrorDialog.show_error(self.VALIDATION_ERROR_TITLE, self.SAVE_ERROR_MESSAGE.format(e), parent=self)
 
     def load_data(self) -> None:
         """Load previously imported data from the campaign model."""
@@ -208,7 +222,7 @@ class DataImportStep(BaseStep):
                 print(f"Loaded and re-validated {len(self.imported_data)} rows of data")
 
         except Exception as e:
-            ErrorDialog.show_error("Import Error", f"Error loading import data: {e}", parent=self)
+            ErrorDialog.show_error(self.IMPORT_ERROR_TITLE, self.LOAD_ERROR_MESSAGE.format(e), parent=self)
 
     def _validate_data(self) -> None:
         """Re-validate the current self.imported_data."""

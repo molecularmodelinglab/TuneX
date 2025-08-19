@@ -69,6 +69,13 @@ class PageHeaderWidget(QWidget):
 class FileValidator:
     """Handles file validation logic for CSV uploads."""
 
+    # Error Messages
+    FILE_NOT_EXIST_MESSAGE = "File does not exist: {0}"
+    NOT_A_FILE_MESSAGE = "Path is not a file: {0}"
+    NOT_CSV_MESSAGE = "File is not a CSV: {0}"
+    CANNOT_READ_MESSAGE = "Cannot read file: {0}"
+    VALIDATION_ERROR_MESSAGE = "Error validating file: {0}"
+
     @staticmethod
     def validate_file(file_path: str) -> tuple[bool, str]:
         """
@@ -84,24 +91,24 @@ class FileValidator:
             path = Path(file_path)
 
             if not path.exists():
-                return False, f"File does not exist: {file_path}"
+                return False, FileValidator.FILE_NOT_EXIST_MESSAGE.format(file_path)
 
             if not path.is_file():
-                return False, f"Path is not a file: {file_path}"
+                return False, FileValidator.NOT_A_FILE_MESSAGE.format(file_path)
 
             if path.suffix.lower() != ".csv":
-                return False, f"File is not a CSV: {file_path}"
+                return False, FileValidator.NOT_CSV_MESSAGE.format(file_path)
 
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     f.readline()
             except (PermissionError, UnicodeDecodeError) as e:
-                return False, f"Cannot read file: {e}"
+                return False, FileValidator.CANNOT_READ_MESSAGE.format(e)
 
             return True, ""
 
         except Exception as e:
-            return False, f"Error validating file: {e}"
+            return False, FileValidator.VALIDATION_ERROR_MESSAGE.format(e)
 
 
 class DragDropArea(QFrame):
@@ -110,12 +117,17 @@ class DragDropArea(QFrame):
     # Signals
     file_dropped = Signal(str)  # Emitted when valid file is dropped
 
+    # UI Text Constants
+    DROP_AREA_TEXT = "Drop CSV file here or"
+    BROWSE_BUTTON_TEXT = "Browse CSV file"
+
+    # Error Dialog Constants
+    IMPORT_ERROR_TITLE = "Import Error"
+
+    # Layout Constants
     MIN_HEIGHT = 120
     LAYOUT_SPACING = 10
     NO_MARGINS = (0, 0, 0, 0)
-
-    DROP_AREA_TEXT = "Drop CSV file here or"
-    BROWSE_BUTTON_TEXT = "Browse CSV file"
 
     def __init__(self) -> None:
         super().__init__()
@@ -174,7 +186,7 @@ class DragDropArea(QFrame):
                     event.accept()
                     return
                 else:
-                    ErrorDialog.show_error("Import Error", error_msg, parent=self)
+                    ErrorDialog.show_error(self.IMPORT_ERROR_TITLE, error_msg, parent=self)
 
         print("Invalid file dropped")
         event.ignore()
@@ -198,10 +210,16 @@ class UploadSectionWidget(QWidget):
 
     file_selected = Signal(str)  # Emitted when user selects a file
 
+    # UI Text Constants
     SECTION_TITLE = "Upload experimental data"
     DIALOG_TITLE = "Select CSV File"
     FILE_FILTER = "CSV files (*.csv);;All files (*.*)"
 
+    # Error Dialog Constants
+    IMPORT_ERROR_TITLE = "Import Error"
+    INVALID_FILE_MESSAGE = "Invalid file selected: {0}"
+
+    # Layout Constants
     NO_MARGINS = (0, 0, 0, 0)
 
     def __init__(self) -> None:
@@ -240,7 +258,9 @@ class UploadSectionWidget(QWidget):
                 print(f"Valid CSV file selected: {file_path}")
                 self.file_selected.emit(file_path)
             else:
-                ErrorDialog.show_error("Import Error", "Invalid file selected: {error_msg}", parent=self)
+                ErrorDialog.show_error(
+                    self.IMPORT_ERROR_TITLE, self.INVALID_FILE_MESSAGE.format(error_msg), parent=self
+                )
         else:
             print("File selection cancelled by user")
 
@@ -254,9 +274,11 @@ class TemplateSectionWidget(QWidget):
 
     template_requested = Signal(str)  # Emitted with format type (csv, xlsx)
 
+    # UI Text Constants
     SECTION_TITLE = "Generate a template"
     DOWNLOAD_CSV_BUTTON_TEXT = "Download CSV"
 
+    # Layout Constants
     NO_MARGINS = (0, 0, 0, 0)
 
     def __init__(self) -> None:
@@ -294,9 +316,18 @@ class DataPreviewWidget(QWidget):
     and provides visual feedback about the import process.
     """
 
+    # UI Text Constants
     SECTION_TITLE = "Data Preview"
     NO_DATA_TEXT = "No data imported yet"
     EMPTY_DATA_TEXT = "No valid data to display"
+    STATUS_HEADER = "Status"
+    ERROR_HEADER = "Error"
+
+    # Status Messages
+    NO_DATA_DISPLAYED = "No data displayed"
+    ROWS_DISPLAYED_FORMAT = "Displaying {0} rows"
+    ROWS_WITH_ERRORS_FORMAT = "Displaying {0} valid rows ({1} rows with errors hidden)"
+    ALL_ROWS_FORMAT = "Displaying all {0} rows (no errors)"
 
     # Layout constants
     NO_MARGINS = (0, 0, 0, 0)
@@ -393,7 +424,7 @@ class DataPreviewWidget(QWidget):
         """Show message when no data has been imported."""
         self.table.setRowCount(1)
         self.table.setColumnCount(1)
-        self.table.setHorizontalHeaderLabels(["Status"])
+        self.table.setHorizontalHeaderLabels([self.STATUS_HEADER])
 
         item = QTableWidgetItem(self.NO_DATA_TEXT)
         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -404,7 +435,7 @@ class DataPreviewWidget(QWidget):
         """Show message when no valid data to display."""
         self.table.setRowCount(1)
         self.table.setColumnCount(1)
-        self.table.setHorizontalHeaderLabels(["Status"])
+        self.table.setHorizontalHeaderLabels([self.STATUS_HEADER])
 
         item = QTableWidgetItem(self.EMPTY_DATA_TEXT)
         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -425,19 +456,19 @@ class DataPreviewWidget(QWidget):
             String summary of what's currently displayed
         """
         if not self.imported_data:
-            return "No data displayed"
+            return self.NO_DATA_DISPLAYED
 
         if not self.validation_result:
-            return f"Displaying {len(self.imported_data)} rows"
+            return self.ROWS_DISPLAYED_FORMAT.format(len(self.imported_data))
 
         total_rows = self.validation_result.total_rows
         valid_rows = len(self.imported_data)
         error_rows = total_rows - valid_rows
 
         if error_rows > 0:
-            return f"Displaying {valid_rows} valid rows ({error_rows} rows with errors hidden)"
+            return self.ROWS_WITH_ERRORS_FORMAT.format(valid_rows, error_rows)
         else:
-            return f"Displaying all {valid_rows} rows (no errors)"
+            return self.ALL_ROWS_FORMAT.format(valid_rows)
 
     def display_validation_errors(self) -> None:
         """
@@ -450,9 +481,9 @@ class DataPreviewWidget(QWidget):
             return
 
         # Add error column if it doesn't exist
-        if "Error" not in self.table.horizontalHeaderLabels():
+        if self.ERROR_HEADER not in self.table.horizontalHeaderLabels():
             self.table.insertColumn(self.table.columnCount())
-            self.table.setHorizontalHeaderItem(self.table.columnCount() - 1, QTableWidgetItem("Error"))
+            self.table.setHorizontalHeaderItem(self.table.columnCount() - 1, QTableWidgetItem(self.ERROR_HEADER))
 
         # Populate error messages
         for row_index, row_data in enumerate(self.imported_data):

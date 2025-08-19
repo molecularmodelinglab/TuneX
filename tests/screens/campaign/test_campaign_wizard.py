@@ -100,6 +100,7 @@ class TestCampaignWizard(unittest.TestCase):
     def test_create_campaign(self):
         # Go to the final step
         self.wizard.current_step = self.wizard.total_steps - 1
+        self.wizard.workspace_path = self.temp_dir
         self.wizard._update_step_display()
         self.assertEqual(self.wizard.next_button.text(), "Create Campaign")
 

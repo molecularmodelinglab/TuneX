@@ -18,48 +18,56 @@ from .components.parameter_managers import ParameterRowManager
 class ParametersStep(BaseStep):
     """
     Second step of campaign creation wizard.
-
     This step coordinates the parameter configuration UI by delegating
     specific responsibilities to specialized managers:
-
     - ParameterRowManager: Handles table rows and UI widgets
     - ParameterSerializer: Handles save/load operations
     - Constraint widgets: Handle individual parameter editing and validation
-
     The class itself focuses on the overall workflow and user interactions.
     """
 
-    # UI constants
+    # UI Text Constants
+    TITLE = "Parameter Configuration"
+    DESCRIPTION = "Configure the parameters you want to optimize in your campaign."
     ADD_BUTTON_TEXT = "+ Add Parameter"
+    ADD_BUTTON_TOOLTIP = "Add a new parameter to the campaign"
+
+    # Object Name Constants
+    PRIMARY_BUTTON_OBJECT_NAME = "PrimaryButton"
+
+    # Error Messages
+    VALIDATION_ERROR_TITLE = "Validation Error"
+    VALIDATION_ERROR_MESSAGE = "Parameter validation failed: {0}."
+
+    # Layout Constants
+    MAIN_MARGINS = (30, 30, 30, 30)
+    MAIN_SPACING = 25
 
     def __init__(self, wizard_data: Campaign, parent=None):
         """
         Initialize the parameters configuration step.
-
         Args:
             wizard_data: The campaign data model
         """
         # Initialize parameters list before calling super()
         self.parameters: List[Optional[BaseParameter]] = []
-
         super().__init__(wizard_data, parent)
         self.campaign: Campaign = self.wizard_data
-
         # Connect UI signals
         self._connect_signals()
 
     def _setup_widget(self):
         """Setup the parameters step UI."""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(30, 30, 30, 30)
-        main_layout.setSpacing(25)
+        main_layout.setContentsMargins(*self.MAIN_MARGINS)
+        main_layout.setSpacing(self.MAIN_SPACING)
 
         # Title
-        title = MainHeader("Parameter Configuration")
+        title = MainHeader(self.TITLE)
         main_layout.addWidget(title)
 
         # Description
-        description = SectionHeader("Configure the parameters you want to optimize in your campaign.")
+        description = SectionHeader(self.DESCRIPTION)
         main_layout.addWidget(description)
 
         # Setup managers
@@ -81,10 +89,9 @@ class ParametersStep(BaseStep):
         layout = QHBoxLayout()
 
         self._add_button = QPushButton(self.ADD_BUTTON_TEXT)
-        self._add_button.setObjectName("PrimaryButton")
-        self._add_button.setToolTip("Add a new parameter to the campaign")
+        self._add_button.setObjectName(self.PRIMARY_BUTTON_OBJECT_NAME)
+        self._add_button.setToolTip(self.ADD_BUTTON_TOOLTIP)
         layout.addWidget(self._add_button)
-
         layout.addStretch()
 
         return layout
@@ -102,7 +109,6 @@ class ParametersStep(BaseStep):
     def _on_add_parameter(self) -> None:
         """
         Handle the 'Add Parameter' button click.
-
         Delegates the actual row creation to the row manager.
         """
         self.row_manager.add_new_parameter_row()
@@ -110,22 +116,20 @@ class ParametersStep(BaseStep):
     def validate(self) -> bool:
         """
         Validate all configured parameters.
-
         This method delegates validation to the row manager, which in turn
         asks each constraint widget to validate itself. Each widget handles
         both UI-to-parameter synchronization and parameter validation.
-
         Returns:
             bool: True if all parameters are valid, False otherwise
-
         Note:
             Validation errors are handled by the row manager and displayed
             to the user appropriately.
         """
         is_valid, error_message = self.row_manager.validate_all_widgets()
-
         if not is_valid:
-            ErrorDialog.show_error("Validation Error", f"Parameter validation failed: {error_message}.", parent=self)
+            ErrorDialog.show_error(
+                self.VALIDATION_ERROR_TITLE, self.VALIDATION_ERROR_MESSAGE.format(error_message), parent=self
+            )
         else:
             print(f"Successfully validated {len(self.parameters)} parameters")
 
@@ -134,7 +138,6 @@ class ParametersStep(BaseStep):
     def save_data(self) -> None:
         """
         Save the current parameter configuration to shared data.
-
         This method ensures UI data is synchronized to parameter objects,
         then serializes the parameters for storage in the campaign data.
         """
@@ -159,7 +162,6 @@ class ParametersStep(BaseStep):
     def load_data(self) -> None:
         """
         Load parameter configuration from shared data.
-
         This method is called when returning to this step or loading an
         existing campaign. It deserializes the parameter data and populates
         the UI table.
@@ -167,7 +169,6 @@ class ParametersStep(BaseStep):
         try:
             # Get parameters data from campaign
             loaded_parameters = self.campaign.parameters
-
             if not loaded_parameters:
                 print("No saved parameters found - starting with empty table")
                 return

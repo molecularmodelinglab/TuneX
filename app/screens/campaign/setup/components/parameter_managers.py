@@ -74,6 +74,13 @@ class ParameterRowManager:
     PARAMETER_NAME_PLACEHOLDER = "Enter parameter name..."
     PARAMETER_TYPE_PLACEHOLDER = "Select parameter type..."
 
+    # Validation Error Messages
+    NO_PARAMETERS_MESSAGE = "No parameters configured"
+    PARAMETER_TYPE_REQUIRED_MESSAGE = "Parameter {0} must have a type"
+    PARAMETER_NAME_REQUIRED_MESSAGE = "Parameter {0} must have a name"
+    PARAMETER_VALIDATION_ERROR_MESSAGE = "Parameter {0}: {1}"
+    DUPLICATE_NAMES_MESSAGE = "Parameter names must be unique"
+
     # Object Names for Styling
     OBJECT_NAME_PARAMETER_INPUT = "ParameterNameInput"
     OBJECT_NAME_TYPE_COMBO = "ParameterTypeCombo"
@@ -205,27 +212,27 @@ class ParameterRowManager:
             tuple[bool, Optional[str]]: (is_valid, error_message)
         """
         if not self.constraint_widgets:
-            return False, "No parameters configured"
+            return False, self.NO_PARAMETERS_MESSAGE
 
         # Check for incomplete parameters (missing type or name)
         for i, constraint_widget in enumerate(self.constraint_widgets):
             if constraint_widget is None:
-                return False, f"Parameter {i + 1} must have a type"
+                return False, self.PARAMETER_TYPE_REQUIRED_MESSAGE.format(i + 1)
 
             self._sync_parameter_name(i)
 
             is_valid, error_message = constraint_widget.validate()
             if not is_valid:
-                return False, f"Parameter {i + 1}: {error_message}"
+                return False, self.PARAMETER_VALIDATION_ERROR_MESSAGE.format(i + 1, error_message)
 
             param = self.parameters[i]
             if not param or not param.name:
-                return False, f"Parameter {i + 1} must have a name"
+                return False, self.PARAMETER_NAME_REQUIRED_MESSAGE.format(i + 1)
 
         # Check for duplicate parameter names
         names = [param.name for param in self.parameters if param is not None and param.name]
         if len(names) != len(set(names)):
-            return False, "Parameter names must be unique"
+            return False, self.DUPLICATE_NAMES_MESSAGE
 
         return True, None
 
