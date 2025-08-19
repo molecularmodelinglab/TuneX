@@ -215,29 +215,23 @@ class ParameterRowManager:
 
         if none_indices:
             indices_string = ", ".join(str(i) for i in none_indices)
-            return False, f"Parameters {indices_string} have no type selected"
+            return False, f"Parameters {indices_string}: missing type or name"
 
         # Validate each widget (which validates its parameter)
         for i, constraint_widget in enumerate(self.constraint_widgets):
             if constraint_widget is None:
                 continue
 
-            # Update parameter name from UI first using helper method
             self._sync_parameter_name(i)
-
-            # Let the widget validate itself
             is_valid, error_message = constraint_widget.validate()
+            param = self.parameters[i]
 
             if not is_valid:
-                param = self.parameters[i]
-                if param is not None:
-                    parameter_name = param.name
-                else:
-                    parameter_name = f"{self.DEFAULT_PARAMETER_NAME_PREFIX}{i + 1}"
-                return (
-                    False,
-                    f"Parameter '{parameter_name}' validation error: {error_message}",
-                )
+                name = param.name if param else f"Parameter {i + 1}"
+                return False, f"'{name}': {error_message}"
+
+            if not param or not param.name:
+                return False, f"Parameter {i + 1} needs a name and a type"
 
         # Check for duplicate parameter names
         names = [param.name for param in self.parameters if param is not None]
@@ -296,12 +290,12 @@ class ParameterRowManager:
             row: Table row index
 
         Returns:
-            Parameter name from UI, or default name if widget is invalid/empty
+            Parameter name from UI.
         """
         name_widget = self.parameters_table.cellWidget(row, self.COLUMN_NAME)
         if isinstance(name_widget, QLineEdit) and name_widget.text().strip():
             return name_widget.text().strip()
-        return f"{self.DEFAULT_PARAMETER_NAME_PREFIX}{row + 1}"
+        return ""
 
     def _get_parameter_type_from_ui(self, row: int) -> Optional[ParameterType]:
         """
@@ -353,6 +347,8 @@ class ParameterRowManager:
         name_edit = QLineEdit(f"{self.DEFAULT_PARAMETER_NAME_PREFIX}{row + 1}")
         name_edit.setObjectName(self.OBJECT_NAME_PARAMETER_INPUT)
         name_edit.setPlaceholderText(self.PARAMETER_NAME_PLACEHOLDER)
+        # Connect to handler
+        name_edit.textChanged.connect(lambda text: self._on_name_changed(row))
         return name_edit
 
     def _create_type_combo(self, row: int) -> QComboBox:
@@ -407,6 +403,17 @@ class ParameterRowManager:
         parameter_type = self._get_parameter_type_from_ui(row)
         if parameter_type is not None:
             self.update_parameter_type(row, parameter_type)
+
+    def _on_name_changed(self, row: int) -> None:
+        """Handle parameter name change - recreate parameter if type is selected."""
+        parameter_type = self._get_parameter_type_from_ui(row)
+        parameter_name = self._get_parameter_name_from_ui(row)
+        # Recreate parameter if we have both name and type
+        if parameter_type and parameter_name:
+            try:
+                self.update_parameter_type(row, parameter_type)
+            except Exception as e:
+                print(f"Error updating parameter on name change: {e}")
 
     def _remove_by_button(self, button: QPushButton) -> None:
         """Find row by button and remove it."""
