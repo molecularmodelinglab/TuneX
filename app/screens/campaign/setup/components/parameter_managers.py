@@ -397,11 +397,14 @@ class ParameterRowManager:
 
     def _on_type_changed(self, row: int, index: int) -> None:
         """Handle parameter type selection change."""
-        if index == 0:  # Placeholder selected
-            return
-
         parameter_type = self._get_parameter_type_from_ui(row)
-        if parameter_type is not None:
+
+        if parameter_type is None:
+            self.parameters[row] = None
+            self.constraint_widgets[row] = None
+            self.parameters_table.setCellWidget(row, self.COLUMN_CONSTRAINTS, self._create_empty_constraints_widget())
+            print(f"Cleared parameter type for row {row}")
+        else:
             self.update_parameter_type(row, parameter_type)
 
     def _on_name_changed(self, row: int) -> None:
