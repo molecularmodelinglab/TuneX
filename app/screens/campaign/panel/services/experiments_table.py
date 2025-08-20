@@ -2,11 +2,13 @@
 Screen for displaying and editing experiment results in a table format.
 """
 
+import csv
 from typing import Any, Dict, List
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QFileDialog,
     QFrame,
     QHBoxLayout,
     QHeaderView,
@@ -17,15 +19,13 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
-    QFileDialog,
 )
 
 from app.core.base import BaseWidget
 from app.models.campaign import Campaign
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
 from app.shared.components.cards import Card
-from app.shared.components.dialogs import ConfirmationDialog, InfoDialog, ErrorDialog
-import csv
+from app.shared.components.dialogs import ConfirmationDialog, ErrorDialog, InfoDialog
 
 
 class LargeInputDelegate(QStyledItemDelegate):
@@ -328,7 +328,7 @@ class ExperimentsTableScreen(BaseWidget):
                         row_values.append(item.text() if item else "")
                     writer.writerow(row_values)
             InfoDialog.show_info("Export CSV", f"Export successful:\n{file_path}", parent=self)
-        except Exception as e:  # noqa: BLE001
+        except (IOError, OSError, PermissionError) as e:
             ErrorDialog.show_error("Export Failed", f"Could not export CSV. Error: {e}", parent=self)
 
     def get_panel_buttons(self):
