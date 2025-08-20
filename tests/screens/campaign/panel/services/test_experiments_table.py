@@ -192,7 +192,6 @@ class TestExperimentsTableScreen:
         # Should preserve as string
         assert isinstance(experiments_table_screen.experiments[0]["yield"], str)
         assert experiments_table_screen.experiments[0]["yield"] == "pending"
-        assert experiments_table_screen.experiments[0]["yield"] == "pending"
 
     def test_empty_values_converted_to_none(self, experiments_table_screen):
         """Test that empty values are converted to None."""
