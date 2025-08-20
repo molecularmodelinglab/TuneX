@@ -17,12 +17,15 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
+    QFileDialog,
 )
 
 from app.core.base import BaseWidget
 from app.models.campaign import Campaign
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
 from app.shared.components.cards import Card
+from app.shared.components.dialogs import ConfirmationDialog, InfoDialog, ErrorDialog
+import csv
 
 
 class LargeInputDelegate(QStyledItemDelegate):
@@ -65,6 +68,7 @@ class ExperimentsTableScreen(BaseWidget):
     SAVE_RESULTS_TEXT = "Save Results"
     GENERATE_NEW_RUN_TEXT = "Generate New Run"
     DEFAULT_INSTRUCTION_TEXT = "💡 Fill in target values for each experiment before saving."
+    EXPORT_CSV_TEXT = "Export CSV"
 
     back_to_runs_requested = Signal()
     save_results_requested = Signal(list)
@@ -137,6 +141,10 @@ class ExperimentsTableScreen(BaseWidget):
         back_button = SecondaryButton(self.BACK_TO_RUNS_TEXT)
         back_button.clicked.connect(self.back_to_runs_requested.emit)
         button_layout.addWidget(back_button)
+
+        export_button = SecondaryButton(self.EXPORT_CSV_TEXT)
+        export_button.clicked.connect(self._handle_export_csv)
+        button_layout.addWidget(export_button)
 
         button_layout.addStretch()
 
@@ -279,6 +287,49 @@ class ExperimentsTableScreen(BaseWidget):
                     if str(original_value) != current_text:
                         return True
         return False
+
+    def _handle_export_csv(self):
+        """Export current table data to a CSV file chosen by the user."""
+        if not self.experiments:
+            InfoDialog.show_info("Export CSV", "No experiments to export.")
+            return
+
+        # Warn if there are unsaved edits
+        if self.has_unsaved_changes():
+            proceed = ConfirmationDialog.show_confirmation(
+                "Unsaved Changes",
+                "There are unsaved changes. Export including current (unsaved) edits?",
+                confirm_text="Export",
+                cancel_text="Cancel",
+                parent=self,
+            )
+            if not proceed:
+                return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Experiments to CSV",
+            f"{self.campaign.name}_run_{self.run_number}.csv",
+            "CSV Files (*.csv)",
+        )
+        if not file_path:
+            return
+
+        headers = self._param_columns + self._target_columns
+
+        try:
+            with open(file_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(headers)
+                for row in range(self.table.rowCount()):
+                    row_values = []
+                    for col in range(self.table.columnCount()):
+                        item = self.table.item(row, col)
+                        row_values.append(item.text() if item else "")
+                    writer.writerow(row_values)
+            InfoDialog.show_info("Export CSV", f"Export successful:\n{file_path}", parent=self)
+        except Exception as e:  # noqa: BLE001
+            ErrorDialog.show_error("Export Failed", f"Could not export CSV. Error: {e}", parent=self)
 
     def get_panel_buttons(self):
         """Return empty list as buttons are handled internally."""
