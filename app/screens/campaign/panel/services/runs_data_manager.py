@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from app.models.campaign import Campaign
+from app.shared.components.dialogs import ErrorDialog
 from app.shared.constants import WorkspaceConstants
 
 
@@ -43,7 +44,7 @@ class RunsDataManager:
 
             return runs_data
         except (json.JSONDecodeError, KeyError, ValueError) as e:
-            print(f"Error loading runs data: {e}")
+            ErrorDialog.show_error("Error loading runs data", str(e), parent=None)
             return []
 
     def save_runs(self, runs_data: List[Dict[str, Any]]):
@@ -62,7 +63,7 @@ class RunsDataManager:
             with open(self.runs_file, "w", encoding="utf-8") as f:
                 json.dump(serializable_runs, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            print(f"Error saving runs data: {e}")
+            ErrorDialog.show_error("Error saving runs data", str(e), parent=None)
 
     def add_run(self, experiments: List[Dict[str, Any]], campaign: Campaign) -> int:
         """Add a new run and return its run number."""
