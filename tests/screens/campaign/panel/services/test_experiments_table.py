@@ -175,7 +175,6 @@ class TestExperimentsTableScreen:
         # Should convert to float
         assert isinstance(experiments_table_screen.experiments[0]["yield"], float)
         assert experiments_table_screen.experiments[0]["yield"] == 0.85
-        assert experiments_table_screen.experiments[0]["yield"] == 0.85
 
     def test_non_numeric_values_preserved(self, experiments_table_screen):
         """Test that non-numeric values are preserved as strings."""
