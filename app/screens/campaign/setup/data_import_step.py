@@ -10,7 +10,7 @@ from app.core.base import BaseStep
 from app.models.campaign import Campaign
 from app.models.parameters import ParameterSerializer
 from app.models.parameters.base import BaseParameter
-from app.shared.components.dialogs import ErrorDialog
+from app.shared.components.dialogs import ErrorDialog, InfoDialog
 from app.shared.components.headers import MainHeader, SectionHeader
 
 from .components.csv_data_importer import CSVDataImporter, CSVValidationResult
@@ -55,8 +55,12 @@ class DataImportStep(BaseStep):
     NO_PARAMETERS_MESSAGE = "No parameters configured - cannot generate template"
     TEMPLATE_ERROR_TITLE = "Error"
     TEMPLATE_ERROR_MESSAGE = "Error generating template: {0}"
-    VALIDATION_ERROR_TITLE = "Validation Error"
-    DATA_INVALID_MESSAGE = "Imported data is invalid: {0}"
+    VALIDATION_ERROR_TITLE = "Data Validation Failed"
+    NO_VALID_DATA_MESSAGE = "No valid data rows found. Please fix the errors in your CSV file before proceeding."
+    FILE_STRUCTURE_ERROR_TITLE = "File Structure Error"
+    FILE_STRUCTURE_ERROR_MESSAGE = "Cannot process CSV file due to structure issues. See details in the table below."
+    IMPORT_WARNINGS_TITLE = "Import Warnings"
+    IMPORT_WARNINGS_MESSAGE = "Found {0} warning(s): extra columns will be ignored during processing"
     SAVE_ERROR_MESSAGE = "Error saving import data: {0}"
     LOAD_ERROR_MESSAGE = "Error loading import data: {0}"
 
@@ -72,7 +76,8 @@ class DataImportStep(BaseStep):
             wizard_data: The campaign data model
         """
         # Initialize data before calling super()
-        self.imported_data: List[Dict[str, Any]] = []
+        self.all_imported_data: List[Dict[str, Any]] = []  # All rows including invalid
+        self.valid_imported_data: List[Dict[str, Any]] = []  # Only valid rows
         self.parameters: List[BaseParameter] = []
         self.selected_file_path: Optional[str] = None
         self.validation_result: Optional[CSVValidationResult] = None
@@ -142,12 +147,13 @@ class DataImportStep(BaseStep):
 
         try:
             csv_importer = CSVDataImporter(self.parameters, self.campaign)
-            self.imported_data, self.validation_result = csv_importer.import_csv(file_path)
+            self.all_imported_data, self.valid_imported_data, self.validation_result = csv_importer.import_csv(
+                file_path
+            )
             self._update_preview()
 
         except Exception as e:
             ErrorDialog.show_error(self.IMPORT_ERROR_TITLE, self.IMPORT_ERROR_MESSAGE.format(e), parent=self)
-            # Note: DataPreviewWidget doesn't have display_error method
 
     def _on_template_requested(self) -> None:
         """Handle template download request."""
@@ -169,44 +175,76 @@ class DataImportStep(BaseStep):
                 generator.generate_template(file_path)
                 print(f"Template saved to: {file_path}")
 
-                # Template saved successfully (no UI update method available)
-
             except Exception as e:
                 ErrorDialog.show_error(self.TEMPLATE_ERROR_TITLE, self.TEMPLATE_ERROR_MESSAGE.format(e), parent=self)
-                # Error occurred (no UI update method available)
+
+    def _update_preview(self) -> None:
+        """Update the preview widget with the current data and validation results."""
+        if not hasattr(self, "preview_widget"):
+            return
+
+        # Check for critical errors (missing columns, file structure issues)
+        if self.validation_result and (self.validation_result.errors or self.validation_result.missing_columns):
+            # Critical errors - show error summary table
+            self.preview_widget.display_validation_errors(self.validation_result)
+
+            # Show simple error dialog for critical issues
+            ErrorDialog.show_error(
+                self.FILE_STRUCTURE_ERROR_TITLE,
+                self.FILE_STRUCTURE_ERROR_MESSAGE,
+                parent=self,
+            )
+            return
+
+        # No critical errors - show data (valid + invalid with highlighting)
+        if self.all_imported_data:
+            print(f"Displaying {len(self.all_imported_data)} total rows ({len(self.valid_imported_data)} valid)")
+            self.preview_widget.display_data(self.all_imported_data, self.valid_imported_data, self.validation_result)
+        else:
+            print("No data to display")
+            self.preview_widget.clear_data()
+
+        if self.validation_result and self.validation_result.warnings and len(self.all_imported_data) > 0:
+            warning_count = len(self.validation_result.warnings)
+            InfoDialog.show_info(
+                self.IMPORT_WARNINGS_TITLE,
+                self.IMPORT_WARNINGS_MESSAGE.format(warning_count),
+                parent=self,
+            )
 
     def validate(self) -> bool:
         """
         Validate that data import is complete and valid.
 
-        Data import is optional, so this step always passes validation.
-        However, if data is imported, it must be valid.
+        Data import is optional, so this step passes validation even without data.
+        If data is imported, we only proceed if we have some valid rows.
 
         Returns:
-            bool: True if no data imported or data is valid, False if data is invalid
+            bool: True if no data imported or some valid data exists
         """
-        if not self.imported_data:
+        if not self.all_imported_data:
             print("No data imported - proceeding without historical data")
             return True
 
-        if self.validation_result and not self.validation_result.is_valid:
+        if not self.valid_imported_data:
+            # No valid data at all
             ErrorDialog.show_error(
                 self.VALIDATION_ERROR_TITLE,
-                self.DATA_INVALID_MESSAGE.format(self.validation_result.get_summary()),
+                self.NO_VALID_DATA_MESSAGE,
                 parent=self,
             )
             return False
 
-        print(f"Data import validation passed - {len(self.imported_data)} rows imported")
+        print(f"Data import validation passed - {len(self.valid_imported_data)} valid rows imported")
         return True
 
     def save_data(self) -> None:
-        """Save imported data to shared data."""
+        """Save only valid imported data to campaign."""
         try:
-            # Save imported data
-            self.campaign.initial_dataset = self.imported_data.copy()
+            # Save only valid data for processing
+            self.campaign.initial_dataset = self.valid_imported_data.copy()
 
-            print(f"Successfully saved import data - {len(self.imported_data)} rows")
+            print(f"Successfully saved {len(self.valid_imported_data)} valid rows to campaign")
         except Exception as e:
             ErrorDialog.show_error(self.VALIDATION_ERROR_TITLE, self.SAVE_ERROR_MESSAGE.format(e), parent=self)
 
@@ -214,45 +252,42 @@ class DataImportStep(BaseStep):
         """Load previously imported data from the campaign model."""
         try:
             self.parameters = self.campaign.parameters
-            self.imported_data = self.campaign.initial_dataset
+            self.valid_imported_data = self.campaign.initial_dataset.copy()
 
-            if self.imported_data:
-                self._validate_data()
+            # When loading, we only have valid data, so all_data = valid_data
+            self.all_imported_data = self.valid_imported_data.copy()
+
+            if self.valid_imported_data:
+                # Create a validation result for display
+                self.validation_result = CSVValidationResult()
+                self.validation_result.total_rows = len(self.valid_imported_data)
+                self.validation_result.valid_rows = len(self.valid_imported_data)
+                self.validation_result.is_valid = True
+
                 self._update_preview()
-                print(f"Loaded and re-validated {len(self.imported_data)} rows of data")
+                print(f"Loaded {len(self.valid_imported_data)} rows of valid data")
 
         except Exception as e:
             ErrorDialog.show_error(self.IMPORT_ERROR_TITLE, self.LOAD_ERROR_MESSAGE.format(e), parent=self)
 
     def _validate_data(self) -> None:
-        """Re-validate the current self.imported_data."""
+        """Re-validate the current imported data."""
         if not self.parameters:
             print("No parameters configured - cannot validate CSV data")
             return
 
         csv_importer = CSVDataImporter(self.parameters, self.campaign)
-        self.imported_data, self.validation_result = csv_importer.validate_data(self.imported_data)
-
-    def _update_preview(self) -> None:
-        """Update the preview widget with the current data and validation results."""
-        if not hasattr(self, "preview_widget"):
-            return
-
-        if self.validation_result and self.validation_result.is_valid:
-            print(f"Successfully imported {len(self.imported_data)} rows of data")
-            self.preview_widget.display_data(self.imported_data, self.validation_result)
-        elif self.validation_result:
-            print(f"CSV validation failed: {self.validation_result.get_summary()}")
-            self.preview_widget.display_validation_errors()
+        self.all_imported_data, self.valid_imported_data, self.validation_result = csv_importer.validate_data(
+            self.valid_imported_data
+        )
 
     def reset(self):
         """Reset import step to initial state."""
         self.selected_file_path = None
-        self.imported_data = []
+        self.all_imported_data = []
+        self.valid_imported_data = []
         self.validation_result = None
 
         # Reset UI widgets
         if hasattr(self, "preview_widget"):
             self.preview_widget.clear_data()
-        # Note: UploadSectionWidget doesn't have a clear method,
-        # so we'll just reset our internal state

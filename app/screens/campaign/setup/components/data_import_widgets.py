@@ -9,15 +9,13 @@ This module contains all UI components for the data import functionality:
 - TemplateSectionWidget: Template generation buttons
 - DataPreviewWidget: Display imported data with validation status
 
-Each widget is self-contained and communicates via Qt signals.
-Focus on functionality first - styling will be added later.
 """
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QDragEnterEvent, QDropEvent
+from PySide6.QtGui import QColor, QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -312,22 +310,32 @@ class DataPreviewWidget(QWidget):
     """
     Widget for displaying imported CSV data with validation status.
 
-    Shows successfully imported data in a table with proper headers
-    and provides visual feedback about the import process.
+    Shows all imported data in a table with proper headers and provides
+    visual feedback about validation errors through cell highlighting.
     """
 
     # UI Text Constants
     SECTION_TITLE = "Data Preview"
     NO_DATA_TEXT = "No data imported yet"
     EMPTY_DATA_TEXT = "No valid data to display"
+    ERROR_DATA_TEXT = "Data contains validation errors - see details below"
     STATUS_HEADER = "Status"
-    ERROR_HEADER = "Error"
+    ERROR_HEADER = "Validation Issues"
+    DESCRIPTION_HEADER = "Description"
+    FILE_STRUCTURE_ERROR = "File Structure"
+    MISSING_COLUMN_ERROR = "Missing Column"
+    MISSING_COLUMN_ERROR_MESSAGE = "Required column '{0}' not found"
+    CELL_ERRORS_HEADER = "Cell Errors"
+    MORE_CELL_ERRORS_MESSAGE = "... and {0} more rows with errors"
+    CELL_ERROR_HEADER = "Cell Error"
+    CELL_ERROR_MESSAGE = "Row {0}, '{1}': {2}"
+    EXTRA_COLUMN_TOOLTIP = "Extra column '{0}' - will be ignored during processing"
+    ERROR_TOOLTIP_PREFIX = "Error: {0}"
+    DISPLAYING_ALL_ROWS_MESSAGE = "Displaying all {0} rows (no errors)"
+    DISPLAYING_ROWS_WITH_ERRORS_MESSAGE = "Displaying {0} rows ({1} valid, {2} with errors)"
 
     # Status Messages
     NO_DATA_DISPLAYED = "No data displayed"
-    ROWS_DISPLAYED_FORMAT = "Displaying {0} rows"
-    ROWS_WITH_ERRORS_FORMAT = "Displaying {0} valid rows ({1} rows with errors hidden)"
-    ALL_ROWS_FORMAT = "Displaying all {0} rows (no errors)"
 
     # Layout constants
     NO_MARGINS = (0, 0, 0, 0)
@@ -335,7 +343,8 @@ class DataPreviewWidget(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
-        self.imported_data: List[Dict[str, Any]] = []
+        self.all_data: List[Dict[str, Any]] = []  # All rows including invalid
+        self.valid_data: List[Dict[str, Any]] = []  # Only valid rows
         self.validation_result: Optional["CSVValidationResult"] = None
         self._setup_ui()
 
@@ -348,6 +357,11 @@ class DataPreviewWidget(QWidget):
         self.section_title = QLabel(self.SECTION_TITLE)
         self.section_title.setObjectName("DataImportSectionTitle")
         layout.addWidget(self.section_title)
+
+        # Status label
+        self.status_label = QLabel()
+        self.status_label.setObjectName("DataImportStatusLabel")
+        layout.addWidget(self.status_label)
 
         # Preview table
         self.table = self._create_preview_table()
@@ -374,50 +388,149 @@ class DataPreviewWidget(QWidget):
 
     def display_data(
         self,
-        imported_data: List[Dict[str, Any]],
+        all_data: List[Dict[str, Any]],
+        valid_data: List[Dict[str, Any]],
         validation_result: "CSVValidationResult",
     ) -> None:
         """
-        Display imported data with validation status.
+        Display all data with validation status highlighting.
 
         Args:
-            imported_data: Successfully imported and validated data
+            all_data: All rows including invalid ones
+            valid_data: Only valid rows
             validation_result: Validation results with error information
         """
-        self.imported_data = imported_data
+        self.all_data = all_data
+        self.valid_data = valid_data
         self.validation_result = validation_result
 
-        if not imported_data:
+        if not all_data:
             self._show_empty_data_message()
             return
 
-        self._populate_table()
-        print(f"Displaying {len(imported_data)} rows in preview table")
+        self._update_status_label()
+        self._populate_table_with_validation()
+        print(f"Displaying {len(all_data)} rows ({len(valid_data)} valid) in preview table")
 
-    def _populate_table(self) -> None:
-        """Populate the table with imported data."""
-        if not self.imported_data:
+    def _populate_table_with_validation(self) -> None:
+        """Populate the table with all data, highlighting invalid cells."""
+        if not self.all_data:
             return
 
         # Get column headers from first row
-        headers = list(self.imported_data[0].keys())
+        headers = list(self.all_data[0].keys())
 
-        self.table.setRowCount(len(self.imported_data))
+        self.table.setRowCount(len(self.all_data))
         self.table.setColumnCount(len(headers))
         self.table.setHorizontalHeaderLabels(headers)
 
-        # Populate table data
-        for row_index, row_data in enumerate(self.imported_data):
+        # Populate table data with validation highlighting
+        for row_index, row_data in enumerate(self.all_data):
             for col_index, header in enumerate(headers):
                 value = row_data.get(header, "")
                 item = QTableWidgetItem(str(value))
-
-                # Make cells read-only
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+
+                # Check if this cell has an error
+                if self.validation_result and self.validation_result.has_cell_error(row_index, header):
+                    # Highlight cells with errors:
+                    item.setData(Qt.ItemDataRole.ForegroundRole, QColor("#f44336"))
+
+                    # Add tooltip with error message
+                    error_msg = self.validation_result.get_cell_error(row_index, header)
+                    item.setToolTip(self.ERROR_TOOLTIP_PREFIX.format(error_msg))
+                elif self.validation_result and header in getattr(self.validation_result, "extra_columns", []):
+                    # Highlight cells of the extra columns:
+                    font = item.font()
+                    font.setItalic(True)
+                    item.setFont(font)
+                    item.setData(Qt.ItemDataRole.ForegroundRole, QColor("#757575"))  # Gray
+                    item.setToolTip(self.EXTRA_COLUMN_TOOLTIP.format(header))
 
                 self.table.setItem(row_index, col_index, item)
 
         # Auto-resize columns to content
+        self.table.resizeColumnsToContents()
+
+    def _update_status_label(self) -> None:
+        """Update the status label with current data information."""
+        if not self.validation_result:
+            self.status_label.setText("")
+            return
+
+        total_rows = len(self.all_data) if self.all_data else 0
+        valid_rows = len(self.valid_data) if self.valid_data else 0
+        invalid_rows = total_rows - valid_rows
+
+        if invalid_rows == 0:
+            status_text = f"All {total_rows} rows are valid"
+        else:
+            status_text = f"{valid_rows}/{total_rows} rows valid - hover over red values for error details"
+
+        self.status_label.setText(status_text)
+
+    def display_validation_errors(self, validation_result: "CSVValidationResult") -> None:
+        """
+        Display validation errors when no data could be loaded.
+
+        Args:
+            validation_result: Validation results with error information
+        """
+        self.validation_result = validation_result
+        self.all_data = []
+        self.valid_data = []
+
+        self._update_status_label()
+        self._show_error_summary_table()
+        print(f"Displaying validation errors: {validation_result.get_summary()}")
+
+    def _show_error_summary_table(self) -> None:
+        """Show a summary of validation errors when no valid data exists."""
+        if not self.validation_result:
+            return
+
+        # Create a simple table showing error summary
+        errors_list = []
+
+        # Add general errors
+        for error in self.validation_result.errors:
+            errors_list.append(("File Structure", error))
+
+        # Add missing columns
+        for col in self.validation_result.missing_columns:
+            errors_list.append((self.MISSING_COLUMN_ERROR, self.MISSING_COLUMN_ERROR_MESSAGE.format(col)))
+
+        # Add cell errors (first 10)
+        cell_count = 0
+        for row_idx, cell_errors in self.validation_result.cell_errors.items():
+            if cell_count >= 10:
+                remaining = len(self.validation_result.cell_errors) - 10
+                errors_list.append((self.CELL_ERRORS_HEADER, self.MORE_CELL_ERRORS_MESSAGE.format(remaining)))
+                break
+            for column, error in cell_errors.items():
+                errors_list.append((self.CELL_ERROR_HEADER, self.CELL_ERROR_MESSAGE.format(row_idx + 1, column, error)))
+            cell_count += 1
+
+        if not errors_list:
+            self._show_empty_data_message()
+            return
+
+        self.table.setRowCount(len(errors_list))
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels([self.ERROR_HEADER, self.DESCRIPTION_HEADER])
+
+        for row_index, (error_type, description) in enumerate(errors_list):
+            type_item = QTableWidgetItem(error_type)
+            type_item.setFlags(type_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+
+            desc_item = QTableWidgetItem(description)
+            desc_item.setFlags(desc_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            desc_item.setToolTip(description)  # Show full text on hover
+
+            self.table.setItem(row_index, 0, type_item)
+            self.table.setItem(row_index, 1, desc_item)
+
+        # Auto-resize columns
         self.table.resizeColumnsToContents()
 
     def _show_no_data_message(self) -> None:
@@ -430,6 +543,8 @@ class DataPreviewWidget(QWidget):
         item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         self.table.setItem(0, 0, item)
+
+        self.status_label.setText("")
 
     def _show_empty_data_message(self) -> None:
         """Show message when no valid data to display."""
@@ -444,7 +559,8 @@ class DataPreviewWidget(QWidget):
 
     def clear_data(self) -> None:
         """Clear the preview table and reset to initial state."""
-        self.imported_data = []
+        self.all_data = []
+        self.valid_data = []
         self.validation_result = None
         self._show_no_data_message()
 
@@ -455,39 +571,14 @@ class DataPreviewWidget(QWidget):
         Returns:
             String summary of what's currently displayed
         """
-        if not self.imported_data:
+        if not self.all_data:
             return self.NO_DATA_DISPLAYED
 
-        if not self.validation_result:
-            return self.ROWS_DISPLAYED_FORMAT.format(len(self.imported_data))
+        total_rows = len(self.all_data)
+        valid_rows = len(self.valid_data)
+        invalid_rows = total_rows - valid_rows
 
-        total_rows = self.validation_result.total_rows
-        valid_rows = len(self.imported_data)
-        error_rows = total_rows - valid_rows
-
-        if error_rows > 0:
-            return self.ROWS_WITH_ERRORS_FORMAT.format(valid_rows, error_rows)
+        if invalid_rows == 0:
+            return self.DISPLAYING_ALL_ROWS_MESSAGE.format(total_rows)
         else:
-            return self.ALL_ROWS_FORMAT.format(valid_rows)
-
-    def display_validation_errors(self) -> None:
-        """
-        Display validation errors in the table.
-
-        If there are validation errors, they will be shown in a separate column.
-        """
-        if not self.validation_result or not self.validation_result.errors:
-            print("No validation errors to display")
-            return
-
-        # Add error column if it doesn't exist
-        if self.ERROR_HEADER not in self.table.horizontalHeaderLabels():
-            self.table.insertColumn(self.table.columnCount())
-            self.table.setHorizontalHeaderItem(self.table.columnCount() - 1, QTableWidgetItem(self.ERROR_HEADER))
-
-        # Populate error messages
-        for row_index, row_data in enumerate(self.imported_data):
-            error_message = self.validation_result.get_error_for_row(row_index)
-            error_item = QTableWidgetItem(error_message or "")
-            error_item.setFlags(error_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.table.setItem(row_index, self.table.columnCount() - 1, error_item)
+            return self.DISPLAYING_ROWS_WITH_ERRORS_MESSAGE.format(total_rows, valid_rows, invalid_rows)
