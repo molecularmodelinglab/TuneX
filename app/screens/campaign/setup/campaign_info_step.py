@@ -19,11 +19,17 @@ from app.core.base import BaseStep
 from app.models.campaign import Campaign, Target
 from app.models.enums import TargetMode
 from app.shared.components.buttons import DangerButton, PrimaryButton
+from app.shared.components.dialogs import ErrorDialog
 from app.shared.components.headers import MainHeader, SectionHeader
 
 
 class TargetRow(QWidget):
     """Individual target row widget."""
+
+    # UI Constants
+    TARGET_NAME_PLACEHOLDER = "Enter target name"
+    REMOVE_BUTTON_TEXT = "Remove"
+    REMOVE_BUTTON_TOOLTIP = "Remove this target"
 
     def __init__(self, target: Target, on_remove_callback, parent=None):
         super().__init__(parent)
@@ -37,7 +43,7 @@ class TargetRow(QWidget):
 
         # Target name input
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Enter target name")
+        self.name_input.setPlaceholderText(self.TARGET_NAME_PLACEHOLDER)
         self.name_input.setObjectName("FormInput")
         self.name_input.setText(self.target.name)
         layout.addWidget(self.name_input)
@@ -55,8 +61,8 @@ class TargetRow(QWidget):
         layout.addWidget(self.mode_combo)
 
         # Remove button
-        self.remove_btn = DangerButton("Remove")
-        self.remove_btn.setToolTip("Remove this target")
+        self.remove_btn = DangerButton(self.REMOVE_BUTTON_TEXT)
+        self.remove_btn.setToolTip(self.REMOVE_BUTTON_TOOLTIP)
         self.remove_btn.clicked.connect(lambda: self.on_remove_callback(self))
         layout.addWidget(self.remove_btn)
 
@@ -78,16 +84,27 @@ class CampaignInfoStep(BaseStep):
     Collects basic campaign information: name, description, and target configuration.
     """
 
+    # UI Text Constants
     TITLE = "Campaign Information"
     NAME_LABEL = "Campaign Name:"
     NAME_PLACEHOLDER = "Enter campaign name"
     DESCRIPTION_LABEL = "Description:"
     DESCRIPTION_PLACEHOLDER = "Enter campaign description"
     TARGETS_LABEL = "Targets/Objectives:"
+    ADD_TARGET_BUTTON_TEXT = "Add Another Target"
+    ADD_TARGET_BUTTON_TOOLTIP = "Add a new target to the campaign"
+
+    # Object Name Constants
     FORM_INPUT_OBJECT_NAME = "FormInput"
     FORM_LABEL_OBJECT_NAME = "FormLabel"
-    ADD_TARGET_BUTTON_TEXT = "Add Another Target"
 
+    # Validation Error Constants
+    VALIDATION_ERROR_TITLE = "Validation Error"
+    CAMPAIGN_NAME_REQUIRED_MESSAGE = "Campaign name is required."
+    TARGET_REQUIRED_MESSAGE = "At least one target is required."
+    TARGET_NAME_REQUIRED_MESSAGE = "At least one target must have a name"
+
+    # Layout Constants
     MARGINS = (30, 30, 30, 30)
     MAIN_SPACING = 25
     FORM_SPACING = 15
@@ -179,7 +196,7 @@ class CampaignInfoStep(BaseStep):
         self.add_target_btn = PrimaryButton(self.ADD_TARGET_BUTTON_TEXT)
         self.add_target_btn.setObjectName("PrimaryButton")
         self.add_target_btn.setFixedWidth(250)
-        self.add_target_btn.setToolTip("Add a new target to the campaign")
+        self.add_target_btn.setToolTip(self.ADD_TARGET_BUTTON_TOOLTIP)
         self.add_target_btn.clicked.connect(self._handle_add_target_click)
         targets_layout.addWidget(self.add_target_btn)
 
@@ -220,16 +237,16 @@ class CampaignInfoStep(BaseStep):
     def validate(self) -> bool:
         """Validate form data."""
         if not self.name_input.text().strip():
-            print("Campaign name is required")  # TODO: Better error handling
+            ErrorDialog.show_error(self.VALIDATION_ERROR_TITLE, self.CAMPAIGN_NAME_REQUIRED_MESSAGE, parent=self)
             return False
 
         if not self.target_rows:
-            print("At least one target is required")  # TODO: Better error handling
+            ErrorDialog.show_error(self.VALIDATION_ERROR_TITLE, self.TARGET_REQUIRED_MESSAGE, parent=self)
             return False
 
         valid_targets = [row for row in self.target_rows if row.is_valid()]
         if not valid_targets:
-            print("At least one target must have a name")  # TODO: Better error handling
+            ErrorDialog.show_error(self.VALIDATION_ERROR_TITLE, self.TARGET_NAME_REQUIRED_MESSAGE, parent=self)
             return False
 
         return True

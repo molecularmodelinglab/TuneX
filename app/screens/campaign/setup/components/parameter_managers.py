@@ -74,6 +74,13 @@ class ParameterRowManager:
     PARAMETER_NAME_PLACEHOLDER = "Enter parameter name..."
     PARAMETER_TYPE_PLACEHOLDER = "Select parameter type..."
 
+    # Validation Error Messages
+    NO_PARAMETERS_MESSAGE = "No parameters configured"
+    PARAMETER_TYPE_REQUIRED_MESSAGE = "Parameter {0} must have a type"
+    PARAMETER_NAME_REQUIRED_MESSAGE = "Parameter {0} must have a name"
+    PARAMETER_VALIDATION_ERROR_MESSAGE = "Parameter {0}: {1}"
+    DUPLICATE_NAMES_MESSAGE = "Parameter names must be unique"
+
     # Object Names for Styling
     OBJECT_NAME_PARAMETER_INPUT = "ParameterNameInput"
     OBJECT_NAME_TYPE_COMBO = "ParameterTypeCombo"
@@ -205,44 +212,27 @@ class ParameterRowManager:
             tuple[bool, Optional[str]]: (is_valid, error_message)
         """
         if not self.constraint_widgets:
-            return False, "No parameters configured"
+            return False, self.NO_PARAMETERS_MESSAGE
 
-        # Check that all parameters have been created (no None values)
-        none_indices = []
-        for i, widget in enumerate(self.constraint_widgets):
-            if widget is None:
-                none_indices.append(i + 1)
-
-        if none_indices:
-            indices_string = ", ".join(str(i) for i in none_indices)
-            return False, f"Parameters {indices_string} have no type selected"
-
-        # Validate each widget (which validates its parameter)
+        # Check for incomplete parameters (missing type or name)
         for i, constraint_widget in enumerate(self.constraint_widgets):
             if constraint_widget is None:
-                continue
+                return False, self.PARAMETER_TYPE_REQUIRED_MESSAGE.format(i + 1)
 
-            # Update parameter name from UI first using helper method
             self._sync_parameter_name(i)
 
-            # Let the widget validate itself
             is_valid, error_message = constraint_widget.validate()
-
             if not is_valid:
-                param = self.parameters[i]
-                if param is not None:
-                    parameter_name = param.name
-                else:
-                    parameter_name = f"{self.DEFAULT_PARAMETER_NAME_PREFIX}{i + 1}"
-                return (
-                    False,
-                    f"Parameter '{parameter_name}' validation error: {error_message}",
-                )
+                return False, self.PARAMETER_VALIDATION_ERROR_MESSAGE.format(i + 1, error_message)
+
+            param = self.parameters[i]
+            if not param or not param.name:
+                return False, self.PARAMETER_NAME_REQUIRED_MESSAGE.format(i + 1)
 
         # Check for duplicate parameter names
-        names = [param.name for param in self.parameters if param is not None]
+        names = [param.name for param in self.parameters if param is not None and param.name]
         if len(names) != len(set(names)):
-            return False, "Parameter names must be unique"
+            return False, self.DUPLICATE_NAMES_MESSAGE
 
         return True, None
 
@@ -296,12 +286,12 @@ class ParameterRowManager:
             row: Table row index
 
         Returns:
-            Parameter name from UI, or default name if widget is invalid/empty
+            Parameter name from UI.
         """
         name_widget = self.parameters_table.cellWidget(row, self.COLUMN_NAME)
         if isinstance(name_widget, QLineEdit) and name_widget.text().strip():
             return name_widget.text().strip()
-        return f"{self.DEFAULT_PARAMETER_NAME_PREFIX}{row + 1}"
+        return ""
 
     def _get_parameter_type_from_ui(self, row: int) -> Optional[ParameterType]:
         """
@@ -353,6 +343,8 @@ class ParameterRowManager:
         name_edit = QLineEdit(f"{self.DEFAULT_PARAMETER_NAME_PREFIX}{row + 1}")
         name_edit.setObjectName(self.OBJECT_NAME_PARAMETER_INPUT)
         name_edit.setPlaceholderText(self.PARAMETER_NAME_PLACEHOLDER)
+        # Connect to handler
+        name_edit.textChanged.connect(lambda text: self._on_name_changed(row))
         return name_edit
 
     def _create_type_combo(self, row: int) -> QComboBox:
@@ -401,11 +393,20 @@ class ParameterRowManager:
 
     def _on_type_changed(self, row: int, index: int) -> None:
         """Handle parameter type selection change."""
-        if index == 0:  # Placeholder selected
-            return
-
         parameter_type = self._get_parameter_type_from_ui(row)
-        if parameter_type is not None:
+
+        if parameter_type is None:
+            self.parameters[row] = None
+            self.constraint_widgets[row] = None
+            self.parameters_table.setCellWidget(row, self.COLUMN_CONSTRAINTS, self._create_empty_constraints_widget())
+            print(f"Cleared parameter type for row {row}")
+        else:
+            self.update_parameter_type(row, parameter_type)
+
+    def _on_name_changed(self, row: int) -> None:
+        """Handle parameter name change - recreate parameter if type is selected."""
+        parameter_type = self._get_parameter_type_from_ui(row)
+        if parameter_type:
             self.update_parameter_type(row, parameter_type)
 
     def _remove_by_button(self, button: QPushButton) -> None:

@@ -20,6 +20,7 @@ from app.screens.campaign.setup.campaign_info_step import CampaignInfoStep
 from app.screens.campaign.setup.data_import_step import DataImportStep
 from app.screens.campaign.setup.parameters_step import ParametersStep
 from app.shared.components.buttons import NavigationButton
+from app.shared.components.dialogs import ErrorDialog
 from app.shared.constants import WorkspaceConstants
 from app.shared.styles.theme import get_navigation_styles, get_widget_styles
 
@@ -36,10 +37,23 @@ class CampaignWizard(BaseScreen):
     back_to_start_requested = Signal()
     campaign_created = Signal(Campaign)  # Emits campaign data when created
 
+    # UI Text Constants
     WINDOW_TITLE = "TuneX - Create Campaign"
     BACK_BUTTON_TEXT = "← Back"
     NEXT_BUTTON_TEXT = "Next →"
     CREATE_CAMPAIGN_BUTTON_TEXT = "Create Campaign"
+
+    # Error Dialog Constants
+    CAMPAIGN_CREATION_FAILED_TITLE = "Campaign Creation Failed"
+    CAMPAIGN_CREATION_FAILED_MESSAGE = "An unexpected error occurred while creating the campaign. Please try again."
+    CONFIGURATION_ERROR_TITLE = "Configuration Error"
+    WORKSPACE_NOT_CONFIGURED_MESSAGE = (
+        "Workspace path is not configured. Please restart the application and select a workspace."
+    )
+    SAVE_FAILED_TITLE = "Save Failed"
+    SAVE_FAILED_MESSAGE = "Could not save campaign to file.\n\nError: {0}\n\nPlease check disk space and permissions."
+
+    # Layout Constants
     MAIN_LAYOUT_MARGINS = (0, 0, 0, 0)
     MAIN_LAYOUT_SPACING = 0
     NAV_LAYOUT_MARGINS = (30, 20, 30, 20)
@@ -170,19 +184,31 @@ class CampaignWizard(BaseScreen):
         print("Creating campaign with data:")
         print(f"Campaign Data: {self.campaign}")
 
-        # Save campaign to file
-        self._save_campaign_to_file()
+        try:
+            # Save campaign to file
+            self._save_campaign_to_file()
 
-        # Emit campaign created signal
-        self.campaign_created.emit(self.campaign)
+            # Emit campaign created signal
+            self.campaign_created.emit(self.campaign)
 
-        # Go back to start screen
-        self.back_to_start_requested.emit()
+            # Go back to start screen
+            self.back_to_start_requested.emit()
+        except Exception as e:
+            print(f"Error occurred while creating the campaign: {e}")
+            ErrorDialog.show_error(
+                self.CAMPAIGN_CREATION_FAILED_TITLE,
+                self.CAMPAIGN_CREATION_FAILED_MESSAGE,
+                parent=self,
+            )
 
     def _save_campaign_to_file(self):
         """Save the campaign data to a JSON file in the workspace."""
         if not self.workspace_path:
-            print("Error: Workspace path not set. Cannot save campaign.")
+            ErrorDialog.show_error(
+                self.CONFIGURATION_ERROR_TITLE,
+                self.WORKSPACE_NOT_CONFIGURED_MESSAGE,
+                parent=self,
+            )
             return
 
         try:
@@ -203,7 +229,11 @@ class CampaignWizard(BaseScreen):
             print(f"Campaign saved to {file_path}")
 
         except Exception as e:
-            print(f"Error saving campaign to file: {e}")
+            ErrorDialog.show_error(
+                self.SAVE_FAILED_TITLE,
+                self.SAVE_FAILED_MESSAGE.format(str(e)),
+                parent=self,
+            )
 
     def reset_wizard(self):
         """Reset wizard to initial state."""

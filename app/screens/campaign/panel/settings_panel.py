@@ -29,10 +29,37 @@ class SettingsPanel(BaseWidget):
     DESCRIPTION_PLACEHOLDER = "Description of the Campaign"
 
     RENAME_BUTTON_TEXT = "Rename"
+    SAVE_BUTTON_TEXT = "Save"
     EDIT_BUTTON_TEXT = "Edit"
     DELETE_BUTTON_TEXT = "Delete Campaign"
     HOME_BUTTON_TEXT = "Home"
     EXPORT_BUTTON_TEXT = "Export Data"
+
+    # Dialog and message constants
+    DELETE_ERROR_TITLE = "Delete Error"
+    NO_CAMPAIGN_MESSAGE = "No campaign to delete."
+    CONFIRM_DELETE_TITLE = "Confirm Delete Campaign"
+    CONFIRM_DELETE_BUTTON = "Delete"
+    CANCEL_BUTTON = "Cancel"
+    CAMPAIGN_DELETED_TITLE = "Campaign Deleted"
+    SAVE_FAILED_TITLE = "Save Failed"
+    SAVE_NAME_ERROR_MESSAGE = "Could not save the campaign name change. Please try again."
+    SAVE_DESCRIPTION_ERROR_MESSAGE = "Could not save the description change. Please try again."
+    DELETE_FAILED_MESSAGE = "Failed to delete campaign '{0}'. Some files may still exist."
+    DELETE_SUCCESS_MESSAGE = "Campaign '{0}' has been successfully deleted."
+    DELETE_ERROR_MESSAGE = "An error occurred while deleting the campaign:\n{0}"
+
+    # Campaign names and placeholders
+    UNNAMED_CAMPAIGN = "Unnamed Campaign"
+
+    # Delete confirmation details
+    DELETE_CONFIRMATION_DETAILS = (
+        "This action will permanently delete:\n"
+        "• Campaign data file\n"
+        "• Campaign folder and all contents\n"
+        "• All experiment results\n\n"
+        "This action cannot be undone."
+    )
 
     MAIN_MARGINS = (30, 30, 30, 30)
     FORM_SPACING = 20
@@ -139,7 +166,7 @@ class SettingsPanel(BaseWidget):
             self.name_input.setReadOnly(False)
             self.name_input.setFocus()
             self.name_input.selectAll()
-            self.rename_button.setText("Save")
+            self.rename_button.setText(self.SAVE_BUTTON_TEXT)
         else:
             # Save and switch back to read-only mode
             new_name = self.name_input.text().strip()
@@ -153,7 +180,7 @@ class SettingsPanel(BaseWidget):
                 else:
                     self.campaign.name = old_name
                     self.name_input.setText(old_name)
-                    print("Failed to save campaign name change")
+                    ErrorDialog.show_error(self.SAVE_FAILED_TITLE, self.SAVE_NAME_ERROR_MESSAGE, parent=self)
 
             self.name_input.setReadOnly(True)
             self.rename_button.setText(self.RENAME_BUTTON_TEXT)
@@ -164,7 +191,7 @@ class SettingsPanel(BaseWidget):
             # Switch to edit mode
             self.description_input.setReadOnly(False)
             self.description_input.setFocus()
-            self.edit_button.setText("Save")
+            self.edit_button.setText(self.SAVE_BUTTON_TEXT)
         else:
             # Save and switch back to read-only mode
             new_description = self.description_input.toPlainText().strip()
@@ -177,7 +204,7 @@ class SettingsPanel(BaseWidget):
                 else:
                     self.campaign.description = old_description
                     self.description_input.setPlainText(old_description)
-                    print("Failed to save campaign description change")
+                    ErrorDialog.show_error(self.SAVE_FAILED_TITLE, self.SAVE_DESCRIPTION_ERROR_MESSAGE, parent=self)
 
             self.description_input.setReadOnly(True)
             self.edit_button.setText(self.EDIT_BUTTON_TEXT)
@@ -197,21 +224,16 @@ class SettingsPanel(BaseWidget):
     def _handle_delete_click(self):
         """Handle delete campaign button click."""
         if not self.campaign:
-            ErrorDialog.show_error("Delete Error", "No campaign to delete.", parent=self)
+            ErrorDialog.show_error(self.DELETE_ERROR_TITLE, self.NO_CAMPAIGN_MESSAGE, parent=self)
             return
 
-        campaign_name = self.campaign.name or "Unnamed Campaign"
+        campaign_name = self.campaign.name or self.UNNAMED_CAMPAIGN
 
         confirmed = ConfirmationDialog.show_confirmation(
-            "Confirm Delete Campaign",
-            f"Are you sure you want to delete the campaign '{campaign_name}'?\n\n"
-            "This action will permanently delete:\n"
-            "• Campaign data file\n"
-            "• Campaign folder and all contents\n"
-            "• All experiment results\n\n"
-            "This action cannot be undone.",
-            confirm_text="Delete",
-            cancel_text="Cancel",
+            self.CONFIRM_DELETE_TITLE,
+            f"Are you sure you want to delete the campaign '{campaign_name}'?\n\n{self.DELETE_CONFIRMATION_DETAILS}",
+            confirm_text=self.CONFIRM_DELETE_BUTTON,
+            cancel_text=self.CANCEL_BUTTON,
             parent=self,
         )
 
@@ -219,20 +241,18 @@ class SettingsPanel(BaseWidget):
             try:
                 if self._delete_campaign_files():
                     InfoDialog.show_info(
-                        "Campaign Deleted", f"Campaign '{campaign_name}' has been successfully deleted.", parent=self
+                        self.CAMPAIGN_DELETED_TITLE, self.DELETE_SUCCESS_MESSAGE.format(campaign_name), parent=self
                     )
                     # Emit signal to return to home screen
                     self.campaign_deleted.emit()
                 else:
                     ErrorDialog.show_error(
-                        "Delete Error",
-                        f"Failed to delete campaign '{campaign_name}'. Some files may still exist.",
+                        self.DELETE_ERROR_TITLE,
+                        self.DELETE_FAILED_MESSAGE.format(campaign_name),
                         parent=self,
                     )
             except Exception as e:
-                ErrorDialog.show_error(
-                    "Delete Error", f"An error occurred while deleting the campaign:\n{str(e)}", parent=self
-                )
+                ErrorDialog.show_error(self.DELETE_ERROR_TITLE, self.DELETE_ERROR_MESSAGE.format(str(e)), parent=self)
 
     def _delete_campaign_files(self) -> bool:
         """Delete campaign files and folders. Returns True if successful."""

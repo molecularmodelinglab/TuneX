@@ -2,6 +2,8 @@
 Tests for the multiple targets functionality in CampaignInfoStep.
 """
 
+from unittest.mock import patch
+
 import pytest
 from PySide6.QtCore import Qt
 
@@ -128,7 +130,8 @@ def test_save_target_data(campaign_info_step, sample_campaign):
         assert campaign_info_step.campaign.targets[0].mode == "Min"
 
 
-def test_validation_with_empty_targets(campaign_info_step):
+@patch("app.shared.components.dialogs.ErrorDialog.show_error")
+def test_validation_with_empty_targets(_, campaign_info_step):
     """Test validation when no targets are provided."""
     # Clear all targets
     for row in campaign_info_step.target_rows[:]:
@@ -138,7 +141,8 @@ def test_validation_with_empty_targets(campaign_info_step):
     assert not campaign_info_step.validate()
 
 
-def test_validation_with_invalid_targets(campaign_info_step):
+@patch("app.shared.components.dialogs.ErrorDialog.show_error")
+def test_validation_with_invalid_targets(_, campaign_info_step):
     """Test validation when targets have empty names."""
     # Add a target with empty name
     campaign_info_step._add_target_row()

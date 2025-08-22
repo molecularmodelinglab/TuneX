@@ -134,7 +134,8 @@ def test_successful_description_save(mock_campaign_loader, qtbot, settings_panel
 
 
 @patch("app.screens.campaign.panel.settings_panel.CampaignLoader")
-def test_save_failure_reverts_changes(mock_campaign_loader, qtbot, settings_panel, sample_campaign):
+@patch("app.screens.campaign.panel.settings_panel.ErrorDialog")
+def test_save_failure_reverts_changes(mock_show_error, mock_campaign_loader, qtbot, settings_panel, sample_campaign):
     """Test that save failure reverts changes."""
     # Mock the campaign loader to fail
     mock_loader_instance = Mock()

@@ -18,12 +18,12 @@ def test_base_parameter_creation():
     assert param.name == "test_param"
 
     # Test empty name
-    with pytest.raises(ValueError):
-        DiscreteNumericalRegular(name="", min_val=0, max_val=1, step=0.1)
+    param = DiscreteNumericalRegular(name="", min_val=0, max_val=1, step=0.1)
+    assert param.name == ""
 
     # Test blank name
-    with pytest.raises(ValueError):
-        DiscreteNumericalRegular(name="  ", min_val=0, max_val=1, step=0.1)
+    param = DiscreteNumericalRegular(name="  ", min_val=0, max_val=1, step=0.1)
+    assert param.name == ""
 
 
 @pytest.mark.parametrize(

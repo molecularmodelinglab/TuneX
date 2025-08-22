@@ -26,8 +26,6 @@ class BaseParameter(ABC):
         Args:
             name: Parameter name (must be unique within a campaign)
         """
-        if not name or not name.strip():
-            raise ValueError("Parameter name cannot be empty")
         self.name = name.strip()
 
     @classmethod

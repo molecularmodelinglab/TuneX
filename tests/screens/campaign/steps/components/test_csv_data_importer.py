@@ -52,7 +52,8 @@ class TestCSVDataImporter(unittest.TestCase):
             ],
         )
         importer = CSVDataImporter(self.parameters, self.campaign)
-        data, result = importer.import_csv(csv_path)
+        all_data, valid_data, result = importer.import_csv(csv_path)
+        data = all_data  # For backward compatibility with tests
 
         self.assertTrue(result.is_valid)
         self.assertEqual(len(data), 2)
@@ -64,7 +65,8 @@ class TestCSVDataImporter(unittest.TestCase):
     def test_import_missing_columns(self):
         csv_path = self._create_csv("missing_col.csv", ["temp,yield", "10.0,85.5"])
         importer = CSVDataImporter(self.parameters, self.campaign)
-        data, result = importer.import_csv(csv_path)
+        all_data, valid_data, result = importer.import_csv(csv_path)
+        data = all_data  # For backward compatibility with tests
 
         self.assertFalse(result.is_valid)
         self.assertEqual(len(data), 0)
@@ -80,7 +82,8 @@ class TestCSVDataImporter(unittest.TestCase):
             ],
         )
         importer = CSVDataImporter(self.parameters, self.campaign)
-        data, result = importer.import_csv(csv_path)
+        all_data, valid_data, result = importer.import_csv(csv_path)
+        data = all_data  # For backward compatibility with tests
 
         self.assertTrue(result.is_valid)
         self.assertEqual(len(result.warnings), 1)
@@ -96,7 +99,8 @@ class TestCSVDataImporter(unittest.TestCase):
             ],
         )
         importer = CSVDataImporter(self.parameters, self.campaign)
-        data, result = importer.import_csv(csv_path)
+        all_data, valid_data, result = importer.import_csv(csv_path)
+        # For backward compatibility with tests
         self.assertFalse(result.is_valid)
         self.assertIn("Duplicate column header: 'temp'", result.errors)
 
@@ -109,12 +113,16 @@ class TestCSVDataImporter(unittest.TestCase):
             ],
         )
         importer = CSVDataImporter(self.parameters, self.campaign)
-        data, result = importer.import_csv(csv_path)
+        all_data, valid_data, result = importer.import_csv(csv_path)
+        # For backward compatibility with tests
 
         self.assertFalse(result.is_valid)
-        self.assertEqual(len(data), 0)
-        self.assertIn(1, result.row_errors)
-        self.assertIn("Cannot convert value 'abc' for parameter 'temp'", result.row_errors[1][0])
+        self.assertEqual(len(all_data), 1)  # all_data contains all rows including invalid ones for display
+        self.assertEqual(len(valid_data), 0)  # valid_data should be empty
+        # Check for cell errors instead of row errors (0-based indexing)
+        self.assertIn(0, result.cell_errors)
+        self.assertIn("temp", result.cell_errors[0])
+        self.assertIn("Cannot convert value 'abc' for parameter 'temp'", result.cell_errors[0]["temp"])
 
     def test_import_out_of_range_value(self):
         csv_path = self._create_csv(
@@ -125,12 +133,16 @@ class TestCSVDataImporter(unittest.TestCase):
             ],
         )
         importer = CSVDataImporter(self.parameters, self.campaign)
-        data, result = importer.import_csv(csv_path)
+        all_data, valid_data, result = importer.import_csv(csv_path)
+        # For backward compatibility with tests
 
         self.assertFalse(result.is_valid)
-        self.assertEqual(len(data), 0)
-        self.assertIn(1, result.row_errors)
-        self.assertIn("Value 110.0 is outside range [0.0, 100.0].", result.row_errors[1][0])
+        self.assertEqual(len(all_data), 1)  # all_data contains all rows including invalid ones for display
+        self.assertEqual(len(valid_data), 0)  # valid_data should be empty
+        # Check for cell errors instead of row errors (0-based indexing)
+        self.assertIn(0, result.cell_errors)
+        self.assertIn("temp", result.cell_errors[0])
+        self.assertIn("Value 110.0 is outside range [0.0, 100.0]", result.cell_errors[0]["temp"])
 
     def test_import_invalid_categorical_value(self):
         csv_path = self._create_csv(
@@ -141,16 +153,21 @@ class TestCSVDataImporter(unittest.TestCase):
             ],
         )
         importer = CSVDataImporter(self.parameters, self.campaign)
-        data, result = importer.import_csv(csv_path)
+        all_data, valid_data, result = importer.import_csv(csv_path)
+        # For backward compatibility with tests
 
         self.assertFalse(result.is_valid)
-        self.assertEqual(len(data), 0)
-        self.assertIn(1, result.row_errors)
-        self.assertIn("not in allowed categories", result.row_errors[1][0])
+        self.assertEqual(len(all_data), 1)  # all_data contains all rows including invalid ones for display
+        self.assertEqual(len(valid_data), 0)  # valid_data should be empty
+        # Check for cell errors instead of row errors (0-based indexing)
+        self.assertIn(0, result.cell_errors)
+        self.assertIn("solvent", result.cell_errors[0])
+        self.assertIn("not in allowed categories", result.cell_errors[0]["solvent"])
 
     def test_import_file_not_found(self):
         importer = CSVDataImporter(self.parameters, self.campaign)
-        data, result = importer.import_csv("non_existent_file.csv")
+        all_data, valid_data, result = importer.import_csv("non_existent_file.csv")
+        data = all_data  # For backward compatibility with tests
 
         self.assertFalse(result.is_valid)
         self.assertEqual(len(data), 0)
@@ -165,7 +182,8 @@ class TestCSVDataImporter(unittest.TestCase):
             ],
         )
         importer = CSVDataImporter(self.parameters, self.campaign)
-        data, result = importer.import_csv(csv_path)
+        all_data, valid_data, result = importer.import_csv(csv_path)
+        data = all_data  # For backward compatibility with tests
 
         self.assertTrue(result.is_valid)
         self.assertEqual(len(data), 1)
