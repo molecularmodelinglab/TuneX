@@ -382,7 +382,8 @@ class DataPreviewWidget(QWidget):
         # Configure headers
         table.horizontalHeader().setStretchLastSection(True)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        table.verticalHeader().setVisible(True)  # Show row numbers
+        table.verticalHeader().setVisible(True)
+        table.verticalHeader().setDefaultSectionSize(40)
 
         return table
 
