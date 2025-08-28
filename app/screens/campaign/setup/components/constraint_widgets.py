@@ -457,7 +457,7 @@ class SmilesWidget(BaseConstraintWidget):
     def _create_widget(self) -> QWidget:
         """Create a text area for entering SMILES strings."""
         self.smilesTextEdit = QTextEdit()
-        self.smilesTextEdit.setMaximumHeight(self.TEXT_EDIT_MAX_HEIGHT)
+        self.smilesTextEdit.setObjectName(self.OBJECT_NAME_CONSTRAINT_TEXTEDIT)
         self.smilesTextEdit.setPlaceholderText(self.SMILES_PLACEHOLDER)
         return self.smilesTextEdit
 
