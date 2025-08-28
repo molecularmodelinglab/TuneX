@@ -11,8 +11,8 @@ from typing import List, Optional
 
 from PySide6.QtWidgets import (
     QComboBox,
-    QHeaderView,
     QHBoxLayout,
+    QHeaderView,
     QLineEdit,
     QPushButton,
     QTableWidget,

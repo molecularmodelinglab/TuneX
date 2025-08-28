@@ -5,7 +5,7 @@ Manages navigation between different screens.
 
 from typing import Optional
 
-from PySide6.QtWidgets import QMainWindow, QStackedWidget, QSizePolicy
+from PySide6.QtWidgets import QMainWindow, QSizePolicy, QStackedWidget
 
 from app.models.campaign import Campaign
 from app.screens.campaign.campaign_wizard import CampaignWizard
