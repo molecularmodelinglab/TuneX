@@ -81,9 +81,6 @@ class ParametersStep(BaseStep):
         buttons_layout = self._create_buttons_layout()
         main_layout.addLayout(buttons_layout)
 
-        # Add stretch to push content to top
-        main_layout.addStretch()
-
     def _create_buttons_layout(self) -> QHBoxLayout:
         """Create the layout containing control buttons."""
         layout = QHBoxLayout()
