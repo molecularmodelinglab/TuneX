@@ -298,7 +298,7 @@ class ExperimentsTableScreen(BaseWidget):
                         return True
 
         return False
-    
+
     def _prompt_unsaved_changes_on_back(self):
         """Check for unsaved changes and prompt user before going back."""
         if self.has_unsaved_changes():
