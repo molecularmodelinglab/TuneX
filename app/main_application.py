@@ -3,16 +3,18 @@ Main application window for TuneX.
 Manages navigation between different screens.
 """
 
+import os
 from typing import Optional
 
 from PySide6.QtWidgets import QMainWindow, QSizePolicy, QStackedWidget
 
+from app.core import settings
 from app.models.campaign import Campaign
 from app.screens.campaign.campaign_wizard import CampaignWizard
 from app.screens.campaign.panel.campaign_panel import CampaignPanelScreen
 from app.screens.start.start_screen import StartScreen
 from app.screens.workspace.select_workspace import SelectWorkspaceScreen
-from app.shared.constants import ScreenName
+from app.shared.constants import ScreenName, WorkspaceConstants
 
 
 class MainApplication(QMainWindow):
@@ -43,8 +45,20 @@ class MainApplication(QMainWindow):
         # Connect screen navigation
         self._connect_navigation()
 
-        # Start with welcome screen
-        self.show_select_workspace()
+        self._load_initial_screen()
+
+    def _load_initial_screen(self):
+        """Loads the last workspace or shows the selection screen."""
+        last_workspace = settings.get_last_workspace()
+        if last_workspace and self._is_valid_workspace(last_workspace):
+            self._on_workspace_selected(last_workspace)
+        else:
+            self.show_select_workspace()
+
+    def _is_valid_workspace(self, path: str) -> bool:
+        """Checks if a given path is a valid workspace."""
+        config_file = os.path.join(path, WorkspaceConstants.WORKSPACE_CONFIG_FILENAME)
+        return os.path.isdir(path) and os.path.exists(config_file)
 
     def _setup_navigation(self):
         """Setup the main navigation structure."""
@@ -129,6 +143,7 @@ class MainApplication(QMainWindow):
     def _on_workspace_selected(self, workspace_path):
         """Handle workspace selection."""
         self.current_workspace = workspace_path
+        settings.save_last_workspace(workspace_path)
         self.show_start_screen()
 
     def resizeEvent(self, event):
