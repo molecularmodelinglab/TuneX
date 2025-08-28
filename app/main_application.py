@@ -5,7 +5,7 @@ Manages navigation between different screens.
 
 from typing import Optional
 
-from PySide6.QtWidgets import QMainWindow, QStackedWidget
+from PySide6.QtWidgets import QMainWindow, QStackedWidget, QSizePolicy
 
 from app.models.campaign import Campaign
 from app.screens.campaign.campaign_wizard import CampaignWizard
@@ -29,11 +29,13 @@ class MainApplication(QMainWindow):
     WELCOME_WINDOW_TITLE = "TuneX - Welcome"
     CREATE_CAMPAIGN_WINDOW_TITLE = "TuneX - Create Campaign"
     GEOMETRY = (100, 100, 1200, 800)
+    MIN_SIZE = (900, 600)
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle(self.DEFAULT_WINDOW_TITLE)
         self.setGeometry(*self.GEOMETRY)
+        self.setMinimumSize(*self.MIN_SIZE)
 
         # Setup main navigation
         self._setup_navigation()
@@ -48,6 +50,7 @@ class MainApplication(QMainWindow):
         """Setup the main navigation structure."""
         # Create stacked widget for screen management
         self.stacked_widget = QStackedWidget()
+        self.stacked_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setCentralWidget(self.stacked_widget)
 
         # Create screens
@@ -127,6 +130,17 @@ class MainApplication(QMainWindow):
         """Handle workspace selection."""
         self.current_workspace = workspace_path
         self.show_start_screen()
+
+    def resizeEvent(self, event):
+        """Ensure child screens can respond if they need custom resize handling."""
+        # If individual screens need custom behavior, expose a hook:
+        current = self.stacked_widget.currentWidget()
+        if hasattr(current, "on_parent_resized"):
+            try:
+                current.on_parent_resized(event.size())
+            except Exception as e:
+                print(f"Resize hook error: {e}")
+        super().resizeEvent(event)
 
     def navigate_to(self, screen_name: ScreenName, data: Optional[dict] = None):
         """
