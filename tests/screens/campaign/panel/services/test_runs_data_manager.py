@@ -235,7 +235,7 @@ class TestRunsDataManager:
         assert "Expecting value" in captured["message"] or "Invalid" in captured["message"]
         assert captured["parent"] is None
 
-    def test_datetime_serialization_deserialization(self, runs_manager):
+    def test_datetime_serialization_deserialization(self, runs_manager, sample_campaign):
         """Test that datetime objects are properly serialized and deserialized."""
 
         runs_manager.add_run([{"temperature": 25.0, "solvent": "water"}], sample_campaign)
