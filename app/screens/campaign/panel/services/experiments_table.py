@@ -141,7 +141,6 @@ class ExperimentsTableScreen(BaseWidget):
 
         back_button = SecondaryButton(self.BACK_TO_RUNS_TEXT)
         back_button.clicked.connect(self._prompt_unsaved_changes_on_back)
-        # back_button.clicked.connect(self.back_to_runs_requested.emit)
         button_layout.addWidget(back_button)
 
         export_button = SecondaryButton(self.EXPORT_CSV_TEXT)
