@@ -38,6 +38,7 @@ class LargeInputDelegate(QStyledItemDelegate):
         editor.setMinimumHeight(35)
         editor.setStyleSheet("""
             QLineEdit {
+                background-color: white;
                 padding: 8px;
                 font-size: 13px;
                 border: 2px solid #ddd;
@@ -139,7 +140,7 @@ class ExperimentsTableScreen(BaseWidget):
         button_layout.setSpacing(15)
 
         back_button = SecondaryButton(self.BACK_TO_RUNS_TEXT)
-        back_button.clicked.connect(self.back_to_runs_requested.emit)
+        back_button.clicked.connect(self._prompt_unsaved_changes_on_back)
         button_layout.addWidget(back_button)
 
         export_button = SecondaryButton(self.EXPORT_CSV_TEXT)
@@ -258,15 +259,19 @@ class ExperimentsTableScreen(BaseWidget):
             self.instructions_label.setText("✅ Results saved successfully!")
             self.instructions_label.setStyleSheet("color: #28a745; font-size: 12px; padding: 10px; font-weight: bold;")
 
+            import weakref
+
             from PySide6.QtCore import QTimer
 
-            QTimer.singleShot(2000, lambda: self._reset_instructions_text(original_text))
+            weak_self = weakref.ref(self)
 
-    def _reset_instructions_text(self, original_text):
-        """Reset instructions text back to original."""
-        if hasattr(self, "instructions_label"):
-            self.instructions_label.setText(original_text)
-            self.instructions_label.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
+            def reset_text():
+                strong_self = weak_self()
+                if strong_self and hasattr(strong_self, "instructions_label") and strong_self.instructions_label:
+                    strong_self.instructions_label.setText(original_text)
+                    strong_self.instructions_label.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
+
+            QTimer.singleShot(2000, reset_text)
 
     def has_unsaved_changes(self) -> bool:
         """Check if there are unsaved changes in the table."""
@@ -280,13 +285,38 @@ class ExperimentsTableScreen(BaseWidget):
                 item = self.table.item(row, col)
                 current_text = item.text().strip() if item else ""
                 original_value = original.get(target.name, None)
-                if original_value is None:
+
+                if original_value is None or original_value == "":
                     if current_text != "":
                         return True
-                else:
+                    continue
+
+                try:
+                    current_float = float(current_text)
+                    original_float = float(original_value)
+                    if current_float != original_float:
+                        return True
+                except (ValueError, TypeError):
                     if str(original_value) != current_text:
                         return True
+
         return False
+
+    def _prompt_unsaved_changes_on_back(self):
+        """Check for unsaved changes and prompt user before going back."""
+        if self.has_unsaved_changes():
+            proceed = ConfirmationDialog.show_confirmation(
+                "Unsaved Changes",
+                "You have unsaved changes. Are you sure you want to go back and discard them?",
+                confirm_text="Discard Changes",
+                cancel_text="Stay",
+                parent=self,
+            )
+            if not proceed:
+                return
+
+        # If no unsaved changes or user confirmed to discard
+        self.back_to_runs_requested.emit()
 
     def _handle_export_csv(self):
         """Export current table data to a CSV file chosen by the user."""

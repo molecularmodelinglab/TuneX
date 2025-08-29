@@ -206,24 +206,47 @@ class TestRunsDataManager:
 
         assert runs_manager.has_previous_data() is True
 
-    def test_load_runs_with_corrupted_json(self, runs_manager):
+    def test_load_runs_with_corrupted_json(self, runs_manager, monkeypatch):
         """Test loading runs when JSON file is corrupted."""
-        # Create a corrupted JSON file
+        captured = {}
+
+        def fake_show_error(title, message, parent=None):
+            captured["title"] = title
+            captured["message"] = message
+            captured["parent"] = parent
+
+        # Patch the dialog method with a lightweight stub instead of a MagicMock
+        monkeypatch.setattr(
+            "app.screens.campaign.panel.services.runs_data_manager.ErrorDialog.show_error",
+            fake_show_error,
+        )
+
+        # Corrupt the JSON file
         runs_manager.runs_file.parent.mkdir(exist_ok=True)
-        with open(runs_manager.runs_file, "w") as f:
-            f.write("invalid json content")
+        runs_manager.runs_file.write_text("}{ invalid json :::", encoding="utf-8")
 
         runs = runs_manager.load_runs()
-        assert runs == []
 
-    def test_datetime_serialization_deserialization(self, runs_manager):
+        # Should safely return empty list
+        assert runs == []
+        # Ensure our stub was invoked
+        assert captured, "ErrorDialog.show_error was not called"
+        assert captured["title"] == "Error loading runs data"
+        assert "Expecting value" in captured["message"] or "Invalid" in captured["message"]
+        assert captured["parent"] is None
+
+    def test_datetime_serialization_deserialization(self, runs_manager, sample_campaign):
         """Test that datetime objects are properly serialized and deserialized."""
+
+        runs_manager.add_run([{"temperature": 25.0, "solvent": "water"}], sample_campaign)
+
         # Load the raw JSON to verify datetime serialization
         with open(runs_manager.runs_file, "r") as f:
             raw_data = json.load(f)
 
         # Datetime should be serialized as ISO format string
         assert isinstance(raw_data[0]["created_at"], str)
+        assert isinstance(raw_data[0]["updated_at"], str)
 
         # Load through manager should convert back to datetime
         runs = runs_manager.load_runs()

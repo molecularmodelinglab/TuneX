@@ -3,16 +3,18 @@ Main application window for TuneX.
 Manages navigation between different screens.
 """
 
+import os
 from typing import Optional
 
-from PySide6.QtWidgets import QMainWindow, QStackedWidget
+from PySide6.QtWidgets import QMainWindow, QSizePolicy, QStackedWidget
 
+from app.core import settings
 from app.models.campaign import Campaign
 from app.screens.campaign.campaign_wizard import CampaignWizard
 from app.screens.campaign.panel.campaign_panel import CampaignPanelScreen
 from app.screens.start.start_screen import StartScreen
 from app.screens.workspace.select_workspace import SelectWorkspaceScreen
-from app.shared.constants import ScreenName
+from app.shared.constants import ScreenName, WorkspaceConstants
 
 
 class MainApplication(QMainWindow):
@@ -29,11 +31,13 @@ class MainApplication(QMainWindow):
     WELCOME_WINDOW_TITLE = "TuneX - Welcome"
     CREATE_CAMPAIGN_WINDOW_TITLE = "TuneX - Create Campaign"
     GEOMETRY = (100, 100, 1200, 800)
+    MIN_SIZE = (900, 600)
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle(self.DEFAULT_WINDOW_TITLE)
         self.setGeometry(*self.GEOMETRY)
+        self.setMinimumSize(*self.MIN_SIZE)
 
         # Setup main navigation
         self._setup_navigation()
@@ -41,13 +45,26 @@ class MainApplication(QMainWindow):
         # Connect screen navigation
         self._connect_navigation()
 
-        # Start with welcome screen
-        self.show_select_workspace()
+        self._load_initial_screen()
+
+    def _load_initial_screen(self):
+        """Loads the last workspace or shows the selection screen."""
+        last_workspace = settings.get_last_workspace()
+        if last_workspace and self._is_valid_workspace(last_workspace):
+            self._on_workspace_selected(last_workspace)
+        else:
+            self.show_select_workspace()
+
+    def _is_valid_workspace(self, path: str) -> bool:
+        """Checks if a given path is a valid workspace."""
+        config_file = os.path.join(path, WorkspaceConstants.WORKSPACE_CONFIG_FILENAME)
+        return os.path.isdir(path) and os.path.exists(config_file)
 
     def _setup_navigation(self):
         """Setup the main navigation structure."""
         # Create stacked widget for screen management
         self.stacked_widget = QStackedWidget()
+        self.stacked_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setCentralWidget(self.stacked_widget)
 
         # Create screens
@@ -126,7 +143,19 @@ class MainApplication(QMainWindow):
     def _on_workspace_selected(self, workspace_path):
         """Handle workspace selection."""
         self.current_workspace = workspace_path
+        settings.save_last_workspace(workspace_path)
         self.show_start_screen()
+
+    def resizeEvent(self, event):
+        """Ensure child screens can respond if they need custom resize handling."""
+        # If individual screens need custom behavior, expose a hook:
+        current = self.stacked_widget.currentWidget()
+        if hasattr(current, "on_parent_resized"):
+            try:
+                current.on_parent_resized(event.size())
+            except Exception as e:
+                print(f"Resize hook error: {e}")
+        super().resizeEvent(event)
 
     def navigate_to(self, screen_name: ScreenName, data: Optional[dict] = None):
         """

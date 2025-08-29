@@ -12,6 +12,7 @@ from typing import List, Optional
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
+    QHeaderView,
     QLineEdit,
     QPushButton,
     QTableWidget,
@@ -52,10 +53,8 @@ class ParameterRowManager:
     CONSTRAINTS_MIN_WIDTH = 400
     COLUMN_WIDTH_NAME = 250
     COLUMN_WIDTH_TYPE = 250
-    COLUMN_WIDTH_CONSTRAINTS = 600
     COLUMN_WIDTH_ACTIONS = 60
 
-    TABLE_MIN_WIDTH = 1200
     TABLE_MIN_HEIGHT = 500
     DEFAULT_ROW_HEIGHT = 50
 
@@ -123,18 +122,18 @@ class ParameterRowManager:
         parameters_table.setAlternatingRowColors(True)
         parameters_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
 
-        # Set specific column widths for better proportions (wider overall)
+        header = parameters_table.horizontalHeader()
+        header.setSectionResizeMode(self.COLUMN_NAME, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(self.COLUMN_TYPE, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(self.COLUMN_CONSTRAINTS, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(self.COLUMN_ACTIONS, QHeaderView.ResizeMode.ResizeToContents)
+
         parameters_table.setColumnWidth(self.COLUMN_NAME, self.COLUMN_WIDTH_NAME)
         parameters_table.setColumnWidth(self.COLUMN_TYPE, self.COLUMN_WIDTH_TYPE)
-        parameters_table.setColumnWidth(self.COLUMN_CONSTRAINTS, self.COLUMN_WIDTH_CONSTRAINTS)
         parameters_table.setColumnWidth(self.COLUMN_ACTIONS, self.COLUMN_WIDTH_ACTIONS)
 
         # Set minimum table size
-        parameters_table.setMinimumWidth(self.TABLE_MIN_WIDTH)
         parameters_table.setMinimumHeight(self.TABLE_MIN_HEIGHT)
-
-        # Disable stretch to maintain fixed widths
-        parameters_table.horizontalHeader().setStretchLastSection(False)
 
         # Set default row height to be taller
         parameters_table.verticalHeader().setDefaultSectionSize(self.DEFAULT_ROW_HEIGHT)
