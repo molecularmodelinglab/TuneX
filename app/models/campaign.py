@@ -4,7 +4,7 @@ Data models for the campaign.
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from app.models.parameters import ParameterSerializer
@@ -17,6 +17,10 @@ class Target:
 
     name: str = ""
     mode: str = "Max"
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+    transformation: Optional[str] = "LINEAR"
+    weight: Optional[float] = None
 
 
 @dataclass
@@ -56,7 +60,12 @@ class Campaign:
         parameters = serializer.deserialize_parameters(data.get("parameters", []))
 
         targets_data = data.get("targets", [])
-        targets = [Target(name=target.get("name", ""), mode=target.get("mode", "Max")) for target in targets_data]
+        targets = [Target(name=target.get("name", ""), 
+                          mode=target.get("mode", "Max"), 
+                          min_value=target.get("min_value"), 
+                          max_value=target.get("max_value"), 
+                          transformation=target.get("transformation"), 
+                          weight=target.get("weight")) for target in targets_data]
 
         created_at = data.get("created_at", datetime.now())
         updated_at = data.get("updated_at", datetime.now())
@@ -88,6 +97,10 @@ class Campaign:
                 {
                     "name": target.name,
                     "mode": target.mode,
+                    "min_value": target.min_value,
+                    "max_value": target.max_value,
+                    "transformation": target.transformation,
+                    "weight": target.weight,
                 }
                 for target in self.targets
             ],
