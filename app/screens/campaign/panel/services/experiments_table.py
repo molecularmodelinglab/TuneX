@@ -260,15 +260,25 @@ class ExperimentsTableScreen(BaseWidget):
             self.instructions_label.setText("✅ Results saved successfully!")
             self.instructions_label.setStyleSheet("color: #28a745; font-size: 12px; padding: 10px; font-weight: bold;")
 
+            import weakref
+
             from PySide6.QtCore import QTimer
 
-            QTimer.singleShot(2000, lambda: self._reset_instructions_text(original_text))
+            weak_self = weakref.ref(self)
 
-    def _reset_instructions_text(self, original_text):
-        """Reset instructions text back to original."""
-        if hasattr(self, "instructions_label"):
-            self.instructions_label.setText(original_text)
-            self.instructions_label.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
+            def reset_text():
+                strong_self = weak_self()
+                if strong_self and hasattr(strong_self, "instructions_label") and strong_self.instructions_label:
+                    strong_self.instructions_label.setText(original_text)
+                    strong_self.instructions_label.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
+
+            QTimer.singleShot(2000, reset_text)
+
+    # def _reset_instructions_text(self, original_text):
+    #     """Reset instructions text back to original."""
+    #     if hasattr(self, "instructions_label"):
+    #         self.instructions_label.setText(original_text)
+    #         self.instructions_label.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
 
     def has_unsaved_changes(self) -> bool:
         """Check if there are unsaved changes in the table."""
