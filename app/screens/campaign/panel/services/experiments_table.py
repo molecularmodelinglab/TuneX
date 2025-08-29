@@ -274,12 +274,6 @@ class ExperimentsTableScreen(BaseWidget):
 
             QTimer.singleShot(2000, reset_text)
 
-    # def _reset_instructions_text(self, original_text):
-    #     """Reset instructions text back to original."""
-    #     if hasattr(self, "instructions_label"):
-    #         self.instructions_label.setText(original_text)
-    #         self.instructions_label.setStyleSheet("color: #666; font-size: 12px; padding: 10px;")
-
     def has_unsaved_changes(self) -> bool:
         """Check if there are unsaved changes in the table."""
         if not self.experiments:
