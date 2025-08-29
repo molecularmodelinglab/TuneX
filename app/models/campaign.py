@@ -60,12 +60,17 @@ class Campaign:
         parameters = serializer.deserialize_parameters(data.get("parameters", []))
 
         targets_data = data.get("targets", [])
-        targets = [Target(name=target.get("name", ""), 
-                          mode=target.get("mode", "Max"), 
-                          min_value=target.get("min_value"), 
-                          max_value=target.get("max_value"), 
-                          transformation=target.get("transformation"), 
-                          weight=target.get("weight")) for target in targets_data]
+        targets = [
+            Target(
+                name=target.get("name", ""),
+                mode=target.get("mode", "Max"),
+                min_value=target.get("min_value"),
+                max_value=target.get("max_value"),
+                transformation=target.get("transformation"),
+                weight=target.get("weight"),
+            )
+            for target in targets_data
+        ]
 
         created_at = data.get("created_at", datetime.now())
         updated_at = data.get("updated_at", datetime.now())

@@ -7,6 +7,7 @@ class TargetMode(Enum):
     MAX = "Max"
     MATCH = "Match"
 
+
 class TargetTransformation(Enum):
     LINEAR = "Linear"
     BELL = "Bell"
