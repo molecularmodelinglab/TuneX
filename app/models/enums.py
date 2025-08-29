@@ -7,6 +7,11 @@ class TargetMode(Enum):
     MAX = "Max"
     MATCH = "Match"
 
+class TargetTransformation(Enum):
+    LINEAR = "Linear"
+    BELL = "Bell"
+    TRIGANGULAR = "Triangular"
+
 
 class ParameterType(str, Enum):
     """
