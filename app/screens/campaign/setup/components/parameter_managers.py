@@ -343,7 +343,7 @@ class ParameterRowManager:
         name_edit.setObjectName(self.OBJECT_NAME_PARAMETER_INPUT)
         name_edit.setPlaceholderText(self.PARAMETER_NAME_PLACEHOLDER)
         # Connect to handler
-        name_edit.textChanged.connect(lambda text: self._on_name_changed(row))
+        name_edit.textChanged.connect(lambda: self._on_name_changed_by_widget(name_edit))
         return name_edit
 
     def _create_type_combo(self, row: int) -> QComboBox:
@@ -356,7 +356,7 @@ class ParameterRowManager:
             type_combo_box.addItem(param_type.display_name, param_type)
 
         # Connect to handler
-        type_combo_box.currentIndexChanged.connect(lambda index: self._on_type_changed(row, index))
+        type_combo_box.currentIndexChanged.connect(lambda: self._on_type_changed_by_widget(type_combo_box))
 
         return type_combo_box
 
@@ -390,6 +390,13 @@ class ParameterRowManager:
         empty_widget.setEnabled(False)
         return empty_widget
 
+    def _find_row_by_widget(self, widget: QWidget, column: int) -> int:
+        """Find which row contains the given widget in the specified column."""
+        for row in range(self.parameters_table.rowCount()):
+            if self.parameters_table.cellWidget(row, column) == widget:
+                return row
+        return -1
+
     def _on_type_changed(self, row: int, index: int) -> None:
         """Handle parameter type selection change."""
         parameter_type = self._get_parameter_type_from_ui(row)
@@ -407,6 +414,19 @@ class ParameterRowManager:
         parameter_type = self._get_parameter_type_from_ui(row)
         if parameter_type:
             self.update_parameter_type(row, parameter_type)
+
+    def _on_type_changed_by_widget(self, type_widget: QComboBox) -> None:
+        """Handle type change by finding current row of the widget."""
+        row = self._find_row_by_widget(type_widget, self.COLUMN_TYPE)
+        if row >= 0:
+            index = type_widget.currentIndex()
+            self._on_type_changed(row, index)
+
+    def _on_name_changed_by_widget(self, name_widget: QLineEdit) -> None:
+        """Handle name change by finding current row of the widget."""
+        row = self._find_row_by_widget(name_widget, self.COLUMN_NAME)
+        if row >= 0:
+            self._on_name_changed(row)
 
     def _remove_by_button(self, button: QPushButton) -> None:
         """Find row by button and remove it."""
