@@ -6,6 +6,7 @@ constraint widget for different parameter types. It centralizes the widget
 creation logic and makes it easy to add support for new parameter types.
 """
 
+import logging
 from typing import Optional
 
 from app.models.parameters.base import BaseParameter
@@ -59,10 +60,12 @@ def create_constraint_widget(
     try:
         return _create_widget_by_type(parameter)
     except TypeError as e:
-        print(f"Failed to create widget for parameter '{parameter.name}': {e}")
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to create widget for parameter '{parameter.name}': {e}")
         return None
     except Exception as e:
-        print(f"Unexpected error creating widget for parameter '{parameter.name}': {e}")
+        logger = logging.getLogger(__name__)
+        logger.error(f"Unexpected error creating widget for parameter '{parameter.name}': {e}")
         return None
 
 
@@ -95,7 +98,8 @@ def _create_widget_by_type(parameter: BaseParameter) -> Optional[BaseConstraintW
     elif isinstance(parameter, Substance):
         return SmilesWidget(parameter)
     else:
-        print(
+        logger = logging.getLogger(__name__)
+        logger.warning(
             f"Unsupported parameter type '{type(parameter).__name__}' "
             f"for parameter '{parameter.name}'. No widget created."
         )

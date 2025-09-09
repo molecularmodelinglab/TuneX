@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 
@@ -70,6 +71,7 @@ class SettingsPanel(BaseWidget):
         self.campaign = campaign
         self.workspace_path = workspace_path
         self.campaign_loader = CampaignLoader(workspace_path) if workspace_path else None
+        self.logger = logging.getLogger(__name__)
         super().__init__(parent)
 
     def _setup_widget(self):
@@ -176,7 +178,7 @@ class SettingsPanel(BaseWidget):
 
                 if self._save_campaign_changes():
                     self.campaign_renamed.emit(new_name)
-                    print(f"Campaign renamed from '{old_name}' to '{new_name}'")
+                    self.logger.info(f"Campaign renamed from '{old_name}' to '{new_name}'")
                 else:
                     self.campaign.name = old_name
                     self.name_input.setText(old_name)
@@ -200,7 +202,7 @@ class SettingsPanel(BaseWidget):
                 self.campaign.description = new_description
                 if self._save_campaign_changes():
                     self.campaign_description_updated.emit(new_description)
-                    print("Campaign description updated")
+                    self.logger.info("Campaign description updated")
                 else:
                     self.campaign.description = old_description
                     self.description_input.setPlainText(old_description)
@@ -269,24 +271,24 @@ class SettingsPanel(BaseWidget):
             if os.path.exists(campaign_folder) and os.path.isdir(campaign_folder):
                 try:
                     shutil.rmtree(campaign_folder)
-                    print(f"Deleted campaign folder: {campaign_folder}")
+                    self.logger.info(f"Deleted campaign folder: {campaign_folder}")
                 except Exception as e:
-                    print(f"Failed to delete campaign folder {campaign_folder}: {e}")
+                    self.logger.error(f"Failed to delete campaign folder {campaign_folder}: {e}")
                     success = False
             else:
-                print(f"Campaign folder not found: {campaign_folder}")
+                self.logger.warning(f"Campaign folder not found: {campaign_folder}")
                 success = False
 
             if self.campaign_loader:
                 try:
                     self.campaign_loader.delete_campaign(self.campaign)
                 except Exception as e:
-                    print(f"Failed to remove campaign from loader: {e}")
+                    self.logger.error(f"Failed to remove campaign from loader: {e}")
                     # Don't set success to False here as the files might still be deleted
             return success
 
         except Exception as e:
-            print(f"Error during campaign deletion: {e}")
+            self.logger.error(f"Error during campaign deletion: {e}")
             return False
 
     def _save_campaign_changes(self) -> bool:
@@ -298,7 +300,7 @@ class SettingsPanel(BaseWidget):
             self.campaign_loader.update_campaign(self.campaign)
             return True
         except Exception as e:
-            print(f"Error saving campaign: {e}")
+            self.logger.error(f"Error saving campaign: {e}")
             return False
 
     def get_panel_buttons(self):

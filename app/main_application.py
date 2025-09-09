@@ -3,6 +3,7 @@ Main application window for TuneX.
 Manages navigation between different screens.
 """
 
+import logging
 import os
 from typing import Optional
 
@@ -35,6 +36,7 @@ class MainApplication(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self.logger = logging.getLogger(__name__)
         self.setWindowTitle(self.DEFAULT_WINDOW_TITLE)
         self.setGeometry(*self.GEOMETRY)
         self.setMinimumSize(*self.MIN_SIZE)
@@ -127,11 +129,10 @@ class MainApplication(QMainWindow):
     def show_browse_campaigns(self):
         """Navigate to browse campaigns screen."""
         # TODO: Implement browse campaigns screen
-        print("Browse campaigns functionality coming soon!")
+        self.logger.info("Browse campaigns functionality coming soon!")
 
     def on_campaign_created(self, campaign: Campaign):
-        """Handle campaign creation completion."""
-        print(f"Campaign created successfully: {campaign.name}")
+        self.logger.info(f"Campaign created successfully: {campaign.name}")
 
         # TODO: Save campaign to database/file
         # TODO: Show success message
@@ -154,7 +155,7 @@ class MainApplication(QMainWindow):
             try:
                 current.on_parent_resized(event.size())
             except Exception as e:
-                print(f"Resize hook error: {e}")
+                self.logger.error(f"Resize hook error: {e}")
         super().resizeEvent(event)
 
     def navigate_to(self, screen_name: ScreenName, data: Optional[dict] = None):
@@ -174,7 +175,7 @@ class MainApplication(QMainWindow):
         elif screen_name == ScreenName.SELECT_WORKSPACE:
             self.show_select_workspace()
         else:
-            print(f"Unknown screen: {screen_name}")
+            self.logger.warning(f"Unknown screen: {screen_name}")
 
     def closeEvent(self, event):
         """Handle application close event."""

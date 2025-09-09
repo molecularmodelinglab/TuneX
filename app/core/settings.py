@@ -3,6 +3,7 @@ Manages persistent application settings.
 """
 
 import json
+import logging
 import os
 from typing import Optional
 
@@ -40,11 +41,12 @@ def _read_settings() -> dict:
 def _write_settings(settings: dict):
     """Writes a dictionary to the settings file."""
     settings_path = _get_settings_path()
+    logger = logging.getLogger(__name__)
     try:
         with open(settings_path, "w") as f:
             json.dump(settings, f, indent=2)
     except IOError as e:
-        print(f"Error writing settings: {e}")
+        logger.error(f"Error writing settings: {e}")
 
 
 def save_last_workspace(path: str):

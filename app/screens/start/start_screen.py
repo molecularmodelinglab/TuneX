@@ -3,6 +3,7 @@ Start screen for TuneX application.
 Main entry point showing welcome UI and navigation to other screens.
 """
 
+import logging
 from typing import List
 
 from PySide6.QtCore import Signal
@@ -47,6 +48,7 @@ class StartScreen(BaseScreen):
     BUTTON_SPACING = 15
 
     def __init__(self, parent=None):
+        self.logger = logging.getLogger(__name__)
         super().__init__(parent)
         self.setWindowTitle(self.WINDOW_TITLE)
         self.campaigns: List[Campaign] = []
@@ -64,7 +66,7 @@ class StartScreen(BaseScreen):
         if not self.loader:
             return
         self.campaigns = self.loader.load_campaigns()
-        print(f"Loaded campaigns: {[c.name for c in self.campaigns]}")
+        self.logger.info(f"Loaded campaigns: {[c.name for c in self.campaigns]}")
 
         if hasattr(self, "recent_campaigns_widget") and self.recent_campaigns_widget is not None:
             self.recent_campaigns_widget.update_campaigns(self.campaigns)

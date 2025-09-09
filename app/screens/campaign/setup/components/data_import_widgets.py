@@ -11,6 +11,7 @@ This module contains all UI components for the data import functionality:
 
 """
 
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -131,6 +132,7 @@ class DragDropArea(QFrame):
         super().__init__()
         self.setObjectName("DragDropArea")
         self.file_validator = FileValidator()
+        self.logger = logging.getLogger(__name__)
         self._setup_ui()
         self._setup_drag_drop()
 
@@ -179,14 +181,14 @@ class DragDropArea(QFrame):
                 is_valid, error_msg = self.file_validator.validate_file(file_path)
 
                 if is_valid:
-                    print(f"File dropped: {file_path}")
+                    self.logger.info(f"File dropped: {file_path}")
                     self.file_dropped.emit(file_path)
                     event.accept()
                     return
                 else:
                     ErrorDialog.show_error(self.IMPORT_ERROR_TITLE, error_msg, parent=self)
 
-        print("Invalid file dropped")
+        self.logger.warning("Invalid file dropped")
         event.ignore()
 
     def _is_valid_drag(self, event) -> bool:
@@ -223,6 +225,7 @@ class UploadSectionWidget(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.file_validator = FileValidator()
+        self.logger = logging.getLogger(__name__)
         self._setup_ui()
         self._connect_signals()
 
@@ -253,14 +256,14 @@ class UploadSectionWidget(QWidget):
             is_valid, error_msg = self.file_validator.validate_file(file_path)
 
             if is_valid:
-                print(f"Valid CSV file selected: {file_path}")
+                self.logger.info(f"Valid CSV file selected: {file_path}")
                 self.file_selected.emit(file_path)
             else:
                 ErrorDialog.show_error(
                     self.IMPORT_ERROR_TITLE, self.INVALID_FILE_MESSAGE.format(error_msg), parent=self
                 )
         else:
-            print("File selection cancelled by user")
+            self.logger.info("File selection cancelled by user")
 
     def _on_file_dropped(self, file_path: str) -> None:
         """Handle file dropped from drag & drop area."""
@@ -346,6 +349,7 @@ class DataPreviewWidget(QWidget):
         self.all_data: List[Dict[str, Any]] = []  # All rows including invalid
         self.valid_data: List[Dict[str, Any]] = []  # Only valid rows
         self.validation_result: Optional["CSVValidationResult"] = None
+        self.logger = logging.getLogger(__name__)
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -411,7 +415,7 @@ class DataPreviewWidget(QWidget):
 
         self._update_status_label()
         self._populate_table_with_validation()
-        print(f"Displaying {len(all_data)} rows ({len(valid_data)} valid) in preview table")
+        self.logger.info(f"Displaying {len(all_data)} rows ({len(valid_data)} valid) in preview table")
 
     def _populate_table_with_validation(self) -> None:
         """Populate the table with all data, highlighting invalid cells."""
@@ -483,7 +487,7 @@ class DataPreviewWidget(QWidget):
 
         self._update_status_label()
         self._show_error_summary_table()
-        print(f"Displaying validation errors: {validation_result.get_summary()}")
+        self.logger.info(f"Displaying validation errors: {validation_result.get_summary()}")
 
     def _show_error_summary_table(self) -> None:
         """Show a summary of validation errors when no valid data exists."""

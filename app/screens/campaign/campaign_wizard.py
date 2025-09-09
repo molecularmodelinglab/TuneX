@@ -4,6 +4,7 @@ Multi-step process for creating new campaigns.
 """
 
 import json
+import logging
 import os
 
 from PySide6.QtCore import Signal as Signal
@@ -67,6 +68,7 @@ class CampaignWizard(BaseScreen):
 
         # Shared campaign data
         self.campaign = Campaign()
+        self.logger = logging.getLogger(__name__)
 
         super().__init__(parent)
         self.setWindowTitle(self.WINDOW_TITLE)
@@ -181,8 +183,8 @@ class CampaignWizard(BaseScreen):
 
     def _create_campaign(self):
         """Create campaign with collected data."""
-        print("Creating campaign with data:")
-        print(f"Campaign Data: {self.campaign}")
+        self.logger.info("Creating campaign with data:")
+        self.logger.info(f"Campaign Data: {self.campaign}")
 
         try:
             # Save campaign to file
@@ -194,7 +196,7 @@ class CampaignWizard(BaseScreen):
             # Go back to start screen
             self.back_to_start_requested.emit()
         except Exception as e:
-            print(f"Error occurred while creating the campaign: {e}")
+            self.logger.error(f"Error occurred while creating the campaign: {e}")
             ErrorDialog.show_error(
                 self.CAMPAIGN_CREATION_FAILED_TITLE,
                 self.CAMPAIGN_CREATION_FAILED_MESSAGE,
@@ -226,7 +228,7 @@ class CampaignWizard(BaseScreen):
 
             with open(file_path, "w") as f:
                 json.dump(campaign_data, f, indent=4)
-            print(f"Campaign saved to {file_path}")
+            self.logger.info(f"Campaign saved to {file_path}")
 
         except Exception as e:
             ErrorDialog.show_error(

@@ -7,6 +7,7 @@ specialized classes for different aspects:
 - Parameter validation is handled by the constraint widgets themselves
 """
 
+import logging
 from typing import List, Optional
 
 from PySide6.QtWidgets import (
@@ -94,6 +95,7 @@ class ParameterRowManager:
         """
         self.parameters: List[Optional[BaseParameter]] = parameters
         self.constraint_widgets: List[Optional[BaseConstraintWidget]] = []
+        self.logger = logging.getLogger(__name__)
 
         # Create and setup the table
         self.parameters_table: QTableWidget = self._create_table()
@@ -169,7 +171,7 @@ class ParameterRowManager:
 
         if row < len(self.parameters):
             removed_param = self.parameters.pop(row)
-            print(f"Removed parameter: {removed_param}")
+            self.logger.info(f"Removed parameter: {removed_param}")
 
         if row < len(self.constraint_widgets):
             self.constraint_widgets.pop(row)
@@ -195,7 +197,7 @@ class ParameterRowManager:
         else:
             self.parameters_table.setCellWidget(row, self.COLUMN_CONSTRAINTS, self._create_empty_constraints_widget())
 
-        print(f"Updated parameter {row}: {parameter}")
+        self.logger.info(f"Updated parameter {row}: {parameter}")
 
     def validate_all_widgets(self) -> tuple[bool, Optional[str]]:
         """
@@ -405,7 +407,7 @@ class ParameterRowManager:
             self.parameters[row] = None
             self.constraint_widgets[row] = None
             self.parameters_table.setCellWidget(row, self.COLUMN_CONSTRAINTS, self._create_empty_constraints_widget())
-            print(f"Cleared parameter type for row {row}")
+            self.logger.info(f"Cleared parameter type for row {row}")
         else:
             self.update_parameter_type(row, parameter_type)
 
