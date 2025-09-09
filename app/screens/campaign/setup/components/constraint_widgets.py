@@ -12,6 +12,7 @@ The widgets follow a common interface defined by BaseConstraintWidget,
 making them interchangeable and easy to extend.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Optional
 
@@ -100,6 +101,7 @@ class BaseConstraintWidget(ABC):
             )
 
         self.parameter: BaseParameter = parameter
+        self.logger = logging.getLogger(__name__)
         self.widgetContainer: QWidget = self._create_widget()
         self._load_from_parameter()
 
@@ -381,7 +383,7 @@ class ValuesListWidget(BaseConstraintWidget):
                 self.parameter.values = [float(v) for v in raw_values]
             except ValueError as e:
                 # Log error but don't crash - validation will catch this
-                print(self.INVALID_NUMERICAL_VALUES_WARNING.format(raw_values, e))
+                self.logger.warning(self.INVALID_NUMERICAL_VALUES_WARNING.format(raw_values, e))
                 self.parameter.values = []
         else:
             # Keep as strings for categorical parameters

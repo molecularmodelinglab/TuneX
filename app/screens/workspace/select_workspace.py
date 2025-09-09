@@ -3,6 +3,7 @@ Select workspace screen for TuneX application
 """
 
 import json
+import logging
 import os
 from datetime import datetime
 
@@ -47,6 +48,7 @@ class SelectWorkspaceScreen(BaseScreen):
     BUTTON_SPACING = 15
 
     def __init__(self, parent=None):
+        self.logger = logging.getLogger(__name__)
         super().__init__(parent)
         self.setWindowTitle(self.WINDOW_TITLE)
 
@@ -168,7 +170,7 @@ class SelectWorkspaceScreen(BaseScreen):
 
     def _workspace_selected(self, folder_path):
         """Called when a workspace is successfully selected."""
-        print(self.WORKSPACE_SELECTED_TEXT.format(folder_path))
+        self.logger.info(self.WORKSPACE_SELECTED_TEXT.format(folder_path))
         self.workspace_selected.emit(folder_path)
 
     def _apply_styles(self):

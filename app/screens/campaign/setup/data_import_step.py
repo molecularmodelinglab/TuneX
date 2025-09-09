@@ -2,6 +2,7 @@
 Data import step for campaign creation wizard.
 """
 
+import logging
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtWidgets import QFileDialog, QVBoxLayout
@@ -83,6 +84,8 @@ class DataImportStep(BaseStep):
         self.validation_result: Optional[CSVValidationResult] = None
         self.serializer = ParameterSerializer()
 
+        self.logger = logging.getLogger(__name__)
+
         super().__init__(wizard_data, parent)
         self.campaign: Campaign = self.wizard_data
 
@@ -128,7 +131,7 @@ class DataImportStep(BaseStep):
 
     def _on_file_selected(self, file_path: str) -> None:
         """Handle file selection from upload widget."""
-        print(f"File selected: {file_path}")
+        self.logger.info(f"File selected: {file_path}")
 
         self.selected_file_path = file_path
 
@@ -173,7 +176,7 @@ class DataImportStep(BaseStep):
             try:
                 generator = CSVTemplateGenerator(self.parameters, self.campaign)
                 generator.generate_template(file_path)
-                print(f"Template saved to: {file_path}")
+                self.logger.info(f"Template saved to: {file_path}")
 
             except Exception as e:
                 ErrorDialog.show_error(self.TEMPLATE_ERROR_TITLE, self.TEMPLATE_ERROR_MESSAGE.format(e), parent=self)
@@ -198,10 +201,12 @@ class DataImportStep(BaseStep):
 
         # No critical errors - show data (valid + invalid with highlighting)
         if self.all_imported_data:
-            print(f"Displaying {len(self.all_imported_data)} total rows ({len(self.valid_imported_data)} valid)")
+            self.logger.info(
+                f"Displaying {len(self.all_imported_data)} total rows ({len(self.valid_imported_data)} valid)"
+            )
             self.preview_widget.display_data(self.all_imported_data, self.valid_imported_data, self.validation_result)
         else:
-            print("No data to display")
+            self.logger.info("No data to display")
             self.preview_widget.clear_data()
 
         if self.validation_result and self.validation_result.warnings and len(self.all_imported_data) > 0:
@@ -223,7 +228,7 @@ class DataImportStep(BaseStep):
             bool: True if no data imported or some valid data exists
         """
         if not self.all_imported_data:
-            print("No data imported - proceeding without historical data")
+            self.logger.info("No data imported - proceeding without historical data")
             return True
 
         if not self.valid_imported_data:
@@ -235,7 +240,7 @@ class DataImportStep(BaseStep):
             )
             return False
 
-        print(f"Data import validation passed - {len(self.valid_imported_data)} valid rows imported")
+        self.logger.info(f"Data import validation passed - {len(self.valid_imported_data)} valid rows imported")
         return True
 
     def save_data(self) -> None:
@@ -244,7 +249,7 @@ class DataImportStep(BaseStep):
             # Save only valid data for processing
             self.campaign.initial_dataset = self.valid_imported_data.copy()
 
-            print(f"Successfully saved {len(self.valid_imported_data)} valid rows to campaign")
+            self.logger.info(f"Successfully saved {len(self.valid_imported_data)} valid rows to campaign")
         except Exception as e:
             ErrorDialog.show_error(self.VALIDATION_ERROR_TITLE, self.SAVE_ERROR_MESSAGE.format(e), parent=self)
 
@@ -265,7 +270,7 @@ class DataImportStep(BaseStep):
                 self.validation_result.is_valid = True
 
                 self._update_preview()
-                print(f"Loaded {len(self.valid_imported_data)} rows of valid data")
+                self.logger.info(f"Loaded {len(self.valid_imported_data)} rows of valid data")
 
         except Exception as e:
             ErrorDialog.show_error(self.IMPORT_ERROR_TITLE, self.LOAD_ERROR_MESSAGE.format(e), parent=self)
@@ -273,7 +278,7 @@ class DataImportStep(BaseStep):
     def _validate_data(self) -> None:
         """Re-validate the current imported data."""
         if not self.parameters:
-            print("No parameters configured - cannot validate CSV data")
+            self.logger.info("No parameters configured - cannot validate CSV data")
             return
 
         csv_importer = CSVDataImporter(self.parameters, self.campaign)

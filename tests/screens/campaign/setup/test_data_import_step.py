@@ -198,15 +198,16 @@ def test_data_import_step_validate_data_method(data_import_step):
 
 
 def test_data_import_step_validate_data_without_parameters(data_import_step):
-    """Test the _validate_data method when no parameters are configured."""
-    # Clear parameters
-    data_import_step.parameters = []
-    data_import_step.valid_imported_data = []
+    """Test that validate_data handles missing parameters gracefully."""
 
-    # Call validate_data method (this should not raise an exception)
-    with patch("builtins.print") as mock_print:
-        data_import_step._validate_data()
-        mock_print.assert_called_with("No parameters configured - cannot validate CSV data")
+    data_import_step.parameters = []
+
+    # The method should not crash
+    original_data = data_import_step.valid_imported_data.copy()
+    data_import_step._validate_data()
+
+    # Data unchanged
+    assert data_import_step.valid_imported_data == original_data
 
 
 if __name__ == "__main__":

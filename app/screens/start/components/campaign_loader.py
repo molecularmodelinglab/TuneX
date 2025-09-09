@@ -3,6 +3,7 @@ Business logic for loading campaigns.
 """
 
 import json
+import logging
 import os
 from datetime import datetime
 from typing import List
@@ -22,6 +23,7 @@ class CampaignLoader:
             workspace_path: The path to the current workspace.
         """
         self.workspace_path = workspace_path
+        self.logger = logging.getLogger(__name__)
         self.campaign_filename_map: dict[str, str] = {}
 
     def load_campaigns(self) -> List[Campaign]:
@@ -64,14 +66,14 @@ class CampaignLoader:
             A Campaign object or None if loading fails.
         """
         if not os.path.exists(campaign_path):
-            print(f"Campaign path {campaign_path} does not exist")
+            self.logger.warning(f"Campaign path {campaign_path} does not exist")
             return None
         try:
             with open(campaign_path, "r") as f:
                 campaign_data = json.load(f)
             return Campaign.from_dict(campaign_data)
         except (json.JSONDecodeError, KeyError, TypeError) as e:
-            print(f"Skipping invalid campaign in {campaign_path}: {e}")
+            self.logger.warning(f"Skipping invalid campaign in {campaign_path}: {e}")
             return None
 
     def update_campaign(self, campaign: Campaign) -> None:
@@ -97,11 +99,11 @@ class CampaignLoader:
         with open(os.path.join(campaign_path, filename), "w") as f:
             json.dump(campaign.to_dict(), f, indent=4)
 
-        print(f"Campaign '{campaign.name}' updated: {campaign_path}")
+        self.logger.info(f"Campaign '{campaign.name}' updated: {campaign_path}")
 
     def delete_campaign(self, campaign):
         """Delete a campaign from the loader's internal tracking."""
         if hasattr(self, "campaign_filename_map") and campaign.id in self.campaign_filename_map:
             del self.campaign_filename_map[campaign.id]
 
-        print(f"Campaign {campaign.name} (ID: {campaign.id}) removed from loader tracking")
+        self.logger.info(f"Campaign {campaign.name} (ID: {campaign.id}) removed from loader tracking")

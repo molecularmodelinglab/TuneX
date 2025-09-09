@@ -12,6 +12,7 @@ BaseParameter objects and their constraints.
 """
 
 import csv
+import logging
 from typing import Any, Dict, List, Union
 
 from app.models.campaign import Campaign
@@ -46,6 +47,7 @@ class CSVTemplateGenerator:
         """
         self.parameters = parameters
         self.campaign = campaign
+        self.logger = logging.getLogger(__name__)
 
     def generate_template(self, file_path: str) -> bool:
         """
@@ -65,13 +67,13 @@ class CSVTemplateGenerator:
             # Write to CSV file
             self._write_csv_file(file_path, headers, rows)
 
-            print(f"CSV template generated successfully: {file_path}")
-            print(f"Template includes {len(headers)} columns and {len(rows)} example rows")
+            self.logger.info(f"CSV template generated successfully: {file_path}")
+            self.logger.info(f"Template includes {len(headers)} columns and {len(rows)} example rows")
 
             return True
 
         except Exception as e:
-            print(f"Error generating CSV template: {e!r}")
+            self.logger.error(f"Error generating CSV template: {e!r}")
             return False
 
     def _generate_headers(self) -> List[str]:

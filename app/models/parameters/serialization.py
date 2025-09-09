@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List
 
 from app.models.parameters.base import BaseParameter
@@ -45,6 +46,7 @@ class ParameterSerializer:
             about internal parameter formats or types.
         """
         parameters = []
+        logger = logging.getLogger(__name__)
 
         for param_dict in parameters_data:
             try:
@@ -52,7 +54,7 @@ class ParameterSerializer:
                 parameter = BaseParameter.from_dict(param_dict)
                 parameters.append(parameter)
             except Exception as e:
-                print(f"Error loading parameter: {e}")
+                logger.error(f"Error loading parameter: {e}")
                 # Continue loading other parameters even if one fails
 
         return parameters

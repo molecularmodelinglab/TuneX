@@ -1,20 +1,36 @@
+import logging
 import sys
 
 from PySide6.QtWidgets import QApplication
 
+from app.logging_config import setup_application_logging
 from app.main_application import MainApplication
+
+APPLICATION_NAME = "TuneX"
 
 
 def main():
-    app = QApplication(sys.argv)
+    setup_application_logging(app_name=APPLICATION_NAME)
 
-    # Set application properties
-    app.setApplicationName("TuneX")
-    app.setApplicationVersion("0.0.1")
-    app.setOrganizationName("MML - UNC")
+    logger = logging.getLogger(__name__)
+    logger.info("TuneX Starting")
 
-    # Create and show main application window
-    window = MainApplication()
-    window.show()
+    try:
+        app = QApplication(sys.argv)
 
-    sys.exit(app.exec())
+        # Set application properties
+        app.setApplicationName(APPLICATION_NAME)
+        app.setApplicationVersion("0.0.1")
+        app.setOrganizationName("MML - UNC")
+
+        logger.info("Qt Application created successfully")
+
+        # Create and show main application window
+        window = MainApplication()
+        window.show()
+        logger.info("Main application window initialized and shown")
+        sys.exit(app.exec())
+
+    except Exception:
+        logger.critical("Critical startup error", exc_info=True)
+        sys.exit(1)

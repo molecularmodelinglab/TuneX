@@ -2,6 +2,7 @@
 Parameters configuration step for campaign creation wizard.
 """
 
+import logging
 from typing import List, Optional
 
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout
@@ -51,6 +52,7 @@ class ParametersStep(BaseStep):
         """
         # Initialize parameters list before calling super()
         self.parameters: List[Optional[BaseParameter]] = []
+        self.logger = logging.getLogger(__name__)
         super().__init__(wizard_data, parent)
         self.campaign: Campaign = self.wizard_data
         # Connect UI signals
@@ -128,7 +130,7 @@ class ParametersStep(BaseStep):
                 self.VALIDATION_ERROR_TITLE, self.VALIDATION_ERROR_MESSAGE.format(error_message), parent=self
             )
         else:
-            print(f"Successfully validated {len(self.parameters)} parameters")
+            self.logger.info(f"Successfully validated {len(self.parameters)} parameters")
 
         return is_valid
 
@@ -146,14 +148,14 @@ class ParametersStep(BaseStep):
             valid_parameters = [p for p in self.parameters if p is not None]
             self.campaign.parameters = valid_parameters
 
-            print(f"Successfully saved {len(self.parameters)} parameters to campaign data")
+            self.logger.info(f"Successfully saved {len(self.parameters)} parameters to campaign data")
 
             # Debug output - in production this might be logged instead
             for i, param in enumerate(self.campaign.parameters, 1):
-                print(f"  Parameter {i}: {param.name} ({param.parameter_type.value})")
+                self.logger.info(f"  Parameter {i}: {param.name} ({param.parameter_type.value})")
 
         except Exception as e:
-            print(f"Error saving parameters: {e}")
+            self.logger.error(f"Error saving parameters: {e}")
             # In a real application, you would handle this error more gracefully
 
     def load_data(self) -> None:
@@ -167,10 +169,10 @@ class ParametersStep(BaseStep):
             # Get parameters data from campaign
             loaded_parameters = self.campaign.parameters
             if not loaded_parameters:
-                print("No saved parameters found - starting with empty table")
+                self.logger.info("No saved parameters found - starting with empty table")
                 return
 
-            print(f"Loading {len(loaded_parameters)} parameters from campaign data")
+            self.logger.info(f"Loading {len(loaded_parameters)} parameters from campaign data")
 
             # Update our parameters list
             self.parameters.clear()
@@ -179,14 +181,14 @@ class ParametersStep(BaseStep):
             # Populate the UI table with loaded parameters
             self.row_manager.load_parameters_to_table(loaded_parameters)
 
-            print(f"Successfully loaded {len(loaded_parameters)} parameters")
+            self.logger.info(f"Successfully loaded {len(loaded_parameters)} parameters")
 
             # Debug output
             for param in loaded_parameters:
-                print(f"  Loaded: {param}")
+                self.logger.info(f"  Loaded: {param}")
 
         except Exception as e:
-            print(f"Error loading parameters: {e}")
+            self.logger.error(f"Error loading parameters: {e}")
 
     def reset(self):
         """Reset parameters to initial state."""

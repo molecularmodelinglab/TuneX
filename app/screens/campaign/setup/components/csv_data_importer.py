@@ -7,6 +7,7 @@ and data validation using the existing parameter validation methods.
 """
 
 import csv
+import logging
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.models.campaign import Campaign
@@ -139,6 +140,7 @@ class CSVDataImporter:
         """
         self.parameters = parameters
         self.campaign = campaign
+        self.logger = logging.getLogger(__name__)
 
     def import_csv(self, file_path: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], CSVValidationResult]:
         """
@@ -176,7 +178,7 @@ class CSVDataImporter:
             if valid_data:
                 result.is_valid = True
 
-            print(f"CSV import completed: {len(valid_data)}/{len(all_data)} rows valid")
+            self.logger.info(f"CSV import completed: {len(valid_data)}/{len(all_data)} rows valid")
 
         except Exception as e:
             result.add_error(f"Failed to import CSV: {e}")
@@ -282,7 +284,7 @@ class CSVDataImporter:
             result.missing_columns = list(missing)
             for col in missing:
                 result.add_error(f"Missing required column: '{col}'")
-                print(f"Error: Required column '{col}' is missing from CSV")
+                self.logger.error(f"Error: Required column '{col}' is missing from CSV")
 
         # Check for extra columns (not an error, just a warning)
         extra = actual_columns - expected_columns
@@ -290,14 +292,14 @@ class CSVDataImporter:
             result.extra_columns = list(extra)
             for col in extra:
                 result.add_warning(f"Extra column found: '{col}' (will be ignored)")
-                print(f"Warning: Extra column '{col}' found in CSV (will be ignored)")
+                self.logger.warning(f"Warning: Extra column '{col}' found in CSV (will be ignored)")
 
         # Check for duplicate headers
         if len(headers) != len(set(headers)):
             duplicates = [h for h in headers if headers.count(h) > 1]
             for dup in set(duplicates):
                 result.add_error(f"Duplicate column header: '{dup}'")
-                print(f"CSV headers validated: {len(headers)} columns found")
+                self.logger.info(f"CSV headers validated: {len(headers)} columns found")
 
     def _validate_data_rows(
         self,
