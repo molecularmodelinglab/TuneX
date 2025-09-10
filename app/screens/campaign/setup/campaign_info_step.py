@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QScrollArea,
     QSizePolicy,
@@ -17,10 +18,12 @@ from PySide6.QtWidgets import (
 
 from app.core.base import BaseStep
 from app.models.campaign import Campaign, Target
-from app.models.enums import TargetMode
+from app.models.enums import TargetMode, TargetTransformation
 from app.shared.components.buttons import DangerButton, PrimaryButton
 from app.shared.components.dialogs import ErrorDialog
 from app.shared.components.headers import MainHeader, SectionHeader
+
+COLUMN_STRETCH = (3, 3, 2, 2, 2, 2, 0)
 
 
 class TargetRow(QWidget):
@@ -28,7 +31,10 @@ class TargetRow(QWidget):
 
     # UI Constants
     TARGET_NAME_PLACEHOLDER = "Enter target name"
-    REMOVE_BUTTON_TEXT = "Remove"
+    MIN_VALUE_PLACEHOLDER = "Min (optional)"
+    MAX_VALUE_PLACEHOLDER = "Max (optional)"
+    WEIGHT_PLACEHOLDER = "Weight (optional)"
+    REMOVE_BUTTON_TEXT = "X"
     REMOVE_BUTTON_TOOLTIP = "Remove this target"
 
     def __init__(self, target: Target, on_remove_callback, parent=None):
@@ -46,6 +52,7 @@ class TargetRow(QWidget):
         self.name_input.setPlaceholderText(self.TARGET_NAME_PLACEHOLDER)
         self.name_input.setObjectName("FormInput")
         self.name_input.setText(self.target.name)
+        self.name_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.name_input)
 
         # Target mode combo
@@ -58,23 +65,163 @@ class TargetRow(QWidget):
         index = self.mode_combo.findText(self.target.mode or TargetMode.MAX.value)
         if index >= 0:
             self.mode_combo.setCurrentIndex(index)
+        self.mode_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.mode_combo)
+
+        self.min_input = QLineEdit()
+        self.min_input.setPlaceholderText(self.MIN_VALUE_PLACEHOLDER)
+        self.min_input.setObjectName("FormInput")
+        if self.target.min_value is not None:
+            self.min_input.setText(str(self.target.min_value))
+        self.min_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        layout.addWidget(self.min_input)
+
+        # Max value input
+        self.max_input = QLineEdit()
+        self.max_input.setPlaceholderText(self.MAX_VALUE_PLACEHOLDER)
+        self.max_input.setObjectName("FormInput")
+        if self.target.max_value is not None:
+            self.max_input.setText(str(self.target.max_value))
+        self.max_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        layout.addWidget(self.max_input)
+
+        # Transformation combo
+        self.transformation_combo = QComboBox()
+        self.transformation_combo.setObjectName("FormInput")
+        for transformation in TargetTransformation:
+            self.transformation_combo.addItem(transformation.value)
+        transformation_index = self.transformation_combo.findText(
+            self.target.transformation or TargetTransformation.LINEAR.value
+        )
+        if transformation_index >= 0:
+            self.transformation_combo.setCurrentIndex(transformation_index)
+        self.transformation_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        layout.addWidget(self.transformation_combo)
+
+        # Weight input
+        self.weight_input = QLineEdit()
+        self.weight_input.setPlaceholderText(self.WEIGHT_PLACEHOLDER)
+        self.weight_input.setObjectName("FormInput")
+        self.weight_input.setMinimumWidth(80)
+        if self.target.weight is not None:
+            self.weight_input.setText(str(self.target.weight))
+        self.weight_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        layout.addWidget(self.weight_input)
 
         # Remove button
         self.remove_btn = DangerButton(self.REMOVE_BUTTON_TEXT)
         self.remove_btn.setToolTip(self.REMOVE_BUTTON_TOOLTIP)
         self.remove_btn.clicked.connect(lambda: self.on_remove_callback(self))
+        self.remove_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.remove_btn)
+
+        for idx, stretch in enumerate(COLUMN_STRETCH):
+            layout.setStretch(idx, stretch)
 
     def get_target_data(self) -> Target:
         """Get target data from this row."""
         self.target.name = self.name_input.text().strip()
         self.target.mode = self.mode_combo.currentText()
+
+        min_value_str = self.min_input.text().strip()
+        max_value_str = self.max_input.text().strip()
+
+        weight_str = self.weight_input.text().strip()
+
+        self.target.transformation = self.transformation_combo.currentText()
+
+        try:
+            self.target.min_value = float(min_value_str) if min_value_str else None
+        except ValueError:
+            self.target.min_value = None
+
+        try:
+            self.target.max_value = float(max_value_str) if max_value_str else None
+        except ValueError:
+            self.target.max_value = None
+
+        try:
+            self.target.weight = float(weight_str) if weight_str else None
+        except ValueError:
+            self.target.weight = None
+
         return self.target
 
     def is_valid(self) -> bool:
         """Check if this target row has valid data."""
-        return bool(self.name_input.text().strip())
+        if not self.name_input.text().strip():
+            return False
+
+        min_text = self.min_input.text().strip()
+        max_text = self.max_input.text().strip()
+
+        if min_text or max_text:
+            try:
+                min_text = float(min_text) if min_text else None
+                max_text = float(max_text) if max_text else None
+
+                if min_text is not None and max_text is not None:
+                    if min_text >= max_text:
+                        return False
+
+            except ValueError:
+                return False
+
+        weight_text = self.weight_input.text().strip()
+
+        if weight_text:
+            try:
+                weight_text = float(weight_text) if weight_text else None
+                if weight_text is not None:
+                    if weight_text <= 0:
+                        return False
+            except ValueError:
+                return False
+
+        return True
+
+    def get_validation_errors(self) -> list[str]:
+        """Get list of validation errors for this target row."""
+        errors = []
+
+        if not self.name_input.text().strip():
+            errors.append("Target name is required")
+
+        min_text = self.min_input.text().strip()
+        max_text = self.max_input.text().strip()
+        weight_text = self.weight_input.text().strip()
+
+        # Validate bounds
+        if min_text:
+            try:
+                min_val = float(min_text)
+            except ValueError:
+                errors.append("Min value must be a valid number")
+                min_val = None
+        else:
+            min_val = None
+
+        if max_text:
+            try:
+                max_val = float(max_text)
+            except ValueError:
+                errors.append("Max value must be a valid number")
+                max_val = None
+        else:
+            max_val = None
+
+        if min_val is not None and max_val is not None and min_val >= max_val:
+            errors.append("Min value must be less than max value")
+
+        if weight_text:
+            try:
+                weight = float(weight_text)
+                if weight <= 0:
+                    errors.append("Weight must be a positive number")
+            except ValueError:
+                errors.append("Weight must be a valid number")
+
+        return errors
 
 
 class CampaignInfoStep(BaseStep):
@@ -102,7 +249,13 @@ class CampaignInfoStep(BaseStep):
     VALIDATION_ERROR_TITLE = "Validation Error"
     CAMPAIGN_NAME_REQUIRED_MESSAGE = "Campaign name is required."
     TARGET_REQUIRED_MESSAGE = "At least one target is required."
+    MIN_VALUE_TARGET_MESSAGE = "Min value must be a number."
+    MAX_VALUE_TARGET_MESSAGE = "Max value must be a number."
+    WEIGHT_TARGET_MESSAGE = "Weight must be a number."
     TARGET_NAME_REQUIRED_MESSAGE = "At least one target must have a name"
+    MULTI_TARGET_BOUNDS_REQUIRED_MESSAGE = "Bounds (min/max values) are required for multi-target campaigns."
+    MULTI_TARGET_WEIGHT_REQUIRED_MESSAGE = "Weights are required for multi-target campaigns."
+    INVALID_BOUNDS_MESSAGE = "Min value must be less than max value for target: {}"
 
     # Layout Constants
     MARGINS = (30, 30, 30, 30)
@@ -190,6 +343,8 @@ class CampaignInfoStep(BaseStep):
         self.targets_layout.setContentsMargins(10, 10, 10, 10)
         self.targets_layout.setSpacing(5)
 
+        self._add_targets_header()
+
         scroll_area.setWidget(self.targets_container)
         targets_layout.addWidget(scroll_area)
 
@@ -203,6 +358,28 @@ class CampaignInfoStep(BaseStep):
         targets_label = SectionHeader(self.TARGETS_LABEL)
         targets_label.setObjectName(self.FORM_LABEL_OBJECT_NAME)
         form_layout.addRow(targets_label, targets_widget)
+
+    def _add_targets_header(self):
+        """Add header row for targets table."""
+        header_widget = QWidget()
+        header_layout = QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(0, 0, 0, 5)
+        header_layout.setSpacing(5)
+
+        headers = ["Name", "Mode", "Min", "Max", "Transform", "Weight", ""]
+        # widths = [120, 120, 120, 100, 100, 100, 30]
+
+        for header in headers:
+            label = QLabel(header)
+            label.setStyleSheet("font-weight: bold; color: #666; font-size: 11px;")
+            label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            header_layout.addWidget(label)
+
+        for idx, stretch in enumerate(COLUMN_STRETCH):
+            header_layout.setStretch(idx, stretch)
+
+        self.targets_layout.addWidget(header_widget)
 
     def _handle_add_target_click(self):
         """Slot for the 'Add Target' button. Calls _add_target_row with no target."""
@@ -244,10 +421,49 @@ class CampaignInfoStep(BaseStep):
             ErrorDialog.show_error(self.VALIDATION_ERROR_TITLE, self.TARGET_REQUIRED_MESSAGE, parent=self)
             return False
 
-        valid_targets = [row for row in self.target_rows if row.is_valid()]
+        validation_errors = []
+        valid_targets = []
+
+        for i, row in enumerate(self.target_rows, 1):
+            row_errors = row.get_validation_errors()
+            if row_errors:
+                for error in row_errors:
+                    validation_errors.append(f"Target {i}: {error}")
+            else:
+                if row.name_input.text().strip():
+                    valid_targets.append(row)
+
+        if validation_errors:
+            error_message = "Please fix the following errors:\n\n" + "\n".join(validation_errors)
+            ErrorDialog.show_error(self.VALIDATION_ERROR_TITLE, error_message, parent=self)
+            return False
+
         if not valid_targets:
             ErrorDialog.show_error(self.VALIDATION_ERROR_TITLE, self.TARGET_NAME_REQUIRED_MESSAGE, parent=self)
             return False
+
+        if len(valid_targets) > 1:
+            multi_target_errors = []
+
+            for i, row in enumerate(valid_targets, 1):
+                target_data = row.get_target_data()
+
+                # Bounds are required for multi-target
+                if target_data.min_value is None or target_data.max_value is None:
+                    multi_target_errors.append(
+                        f"Target {i} ({target_data.name}): {self.MULTI_TARGET_BOUNDS_REQUIRED_MESSAGE}"
+                    )
+
+                # Weights are required for multi-target
+                if target_data.weight is None:
+                    multi_target_errors.append(
+                        f"Target {i} ({target_data.name}): {self.MULTI_TARGET_WEIGHT_REQUIRED_MESSAGE}"
+                    )
+
+            if multi_target_errors:
+                error_message = "Multi-target validation errors:\n\n" + "\n".join(multi_target_errors)
+                ErrorDialog.show_error(self.VALIDATION_ERROR_TITLE, error_message, parent=self)
+                return False
 
         return True
 

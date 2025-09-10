@@ -8,6 +8,12 @@ class TargetMode(Enum):
     MATCH = "Match"
 
 
+class TargetTransformation(Enum):
+    LINEAR = "Linear"
+    BELL = "Bell"
+    TRIANGULAR = "Triangular"
+
+
 class ParameterType(str, Enum):
     """
     Parameter types for campaign optimization, with UI-friendly display names.
