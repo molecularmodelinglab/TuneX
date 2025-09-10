@@ -123,25 +123,25 @@ class TargetRow(QWidget):
         self.target.name = self.name_input.text().strip()
         self.target.mode = self.mode_combo.currentText()
 
-        self.target.min_value = self.min_input.text().strip()
-        self.target.max_value = self.max_input.text().strip()
+        min_value_str = self.min_input.text().strip()
+        max_value_str = self.max_input.text().strip()
 
-        self.target.weight = self.weight_input.text().strip()
+        weight_str = self.weight_input.text().strip()
 
         self.target.transformation = self.transformation_combo.currentText()
 
         try:
-            self.target.min_value = float(self.target.min_value) if self.target.min_value else None
+            self.target.min_value = float(min_value_str) if min_value_str else None
         except ValueError:
             self.target.min_value = None
 
         try:
-            self.target.max_value = float(self.target.max_value) if self.target.max_value else None
+            self.target.max_value = float(max_value_str) if max_value_str else None
         except ValueError:
             self.target.max_value = None
 
         try:
-            self.target.weight = float(self.target.weight) if self.target.weight else None
+            self.target.weight = float(weight_str) if weight_str else None
         except ValueError:
             self.target.weight = None
 
@@ -213,7 +213,6 @@ class TargetRow(QWidget):
         if min_val is not None and max_val is not None and min_val >= max_val:
             errors.append("Min value must be less than max value")
 
-        weight_text = self.weight_input.text().strip()
         if weight_text:
             try:
                 weight = float(weight_text)
