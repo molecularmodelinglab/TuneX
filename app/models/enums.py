@@ -11,7 +11,7 @@ class TargetMode(Enum):
 class TargetTransformation(Enum):
     LINEAR = "Linear"
     BELL = "Bell"
-    TRIGANGULAR = "Triangular"
+    TRIANGULAR = "Triangular"
 
 
 class ParameterType(str, Enum):
