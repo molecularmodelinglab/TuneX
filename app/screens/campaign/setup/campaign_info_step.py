@@ -23,6 +23,8 @@ from app.shared.components.buttons import DangerButton, PrimaryButton
 from app.shared.components.dialogs import ErrorDialog
 from app.shared.components.headers import MainHeader, SectionHeader
 
+COLUMN_STRETCH = (3, 3, 2, 2, 2, 2, 0)
+
 
 class TargetRow(QWidget):
     """Individual target row widget."""
@@ -50,6 +52,7 @@ class TargetRow(QWidget):
         self.name_input.setPlaceholderText(self.TARGET_NAME_PLACEHOLDER)
         self.name_input.setObjectName("FormInput")
         self.name_input.setText(self.target.name)
+        self.name_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.name_input)
 
         # Target mode combo
@@ -62,6 +65,7 @@ class TargetRow(QWidget):
         index = self.mode_combo.findText(self.target.mode or TargetMode.MAX.value)
         if index >= 0:
             self.mode_combo.setCurrentIndex(index)
+        self.mode_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.mode_combo)
 
         self.min_input = QLineEdit()
@@ -69,6 +73,7 @@ class TargetRow(QWidget):
         self.min_input.setObjectName("FormInput")
         if self.target.min_value is not None:
             self.min_input.setText(str(self.target.min_value))
+        self.min_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.min_input)
 
         # Max value input
@@ -77,6 +82,7 @@ class TargetRow(QWidget):
         self.max_input.setObjectName("FormInput")
         if self.target.max_value is not None:
             self.max_input.setText(str(self.target.max_value))
+        self.max_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.max_input)
 
         # Transformation combo
@@ -84,13 +90,12 @@ class TargetRow(QWidget):
         self.transformation_combo.setObjectName("FormInput")
         for transformation in TargetTransformation:
             self.transformation_combo.addItem(transformation.value)
-
-        # Set current transformation
         transformation_index = self.transformation_combo.findText(
             self.target.transformation or TargetTransformation.LINEAR.value
         )
         if transformation_index >= 0:
             self.transformation_combo.setCurrentIndex(transformation_index)
+        self.transformation_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.transformation_combo)
 
         # Weight input
@@ -100,13 +105,18 @@ class TargetRow(QWidget):
         self.weight_input.setMinimumWidth(80)
         if self.target.weight is not None:
             self.weight_input.setText(str(self.target.weight))
+        self.weight_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.weight_input)
 
         # Remove button
         self.remove_btn = DangerButton(self.REMOVE_BUTTON_TEXT)
         self.remove_btn.setToolTip(self.REMOVE_BUTTON_TOOLTIP)
         self.remove_btn.clicked.connect(lambda: self.on_remove_callback(self))
+        self.remove_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         layout.addWidget(self.remove_btn)
+
+        for idx, stretch in enumerate(COLUMN_STRETCH):
+            layout.setStretch(idx, stretch)
 
     def get_target_data(self) -> Target:
         """Get target data from this row."""
@@ -358,13 +368,17 @@ class CampaignInfoStep(BaseStep):
         header_layout.setSpacing(5)
 
         headers = ["Name", "Mode", "Min", "Max", "Transform", "Weight", ""]
-        widths = [120, 120, 120, 100, 100, 100, 30]
+        # widths = [120, 120, 120, 100, 100, 100, 30]
 
-        for header, width in zip(headers, widths):
+        for header in headers:
             label = QLabel(header)
             label.setStyleSheet("font-weight: bold; color: #666; font-size: 11px;")
-            label.setMinimumWidth(width)
+            label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             header_layout.addWidget(label)
+
+        for idx, stretch in enumerate(COLUMN_STRETCH):
+            header_layout.setStretch(idx, stretch)
 
         self.targets_layout.addWidget(header_widget)
 
