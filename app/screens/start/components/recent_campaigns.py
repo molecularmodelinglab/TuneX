@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QStyle, QVBoxLayout
@@ -51,7 +53,7 @@ class RecentCampaignsWidget(BaseWidget):
                 child.widget().deleteLater()
 
     def _show_campaigns_list(self):
-        recent_campaigns = self.campaigns[:5][::-1]
+        recent_campaigns = sorted(self.campaigns, key=lambda x: x.updated_at or datetime.min, reverse=True)[:5]
 
         for campaign in recent_campaigns:
             card = CampaignCard(campaign)
