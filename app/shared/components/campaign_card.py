@@ -102,8 +102,8 @@ class CampaignCard(QFrame):
 
     def _get_last_modified(self) -> str:
         """Get last modified date string."""
-        if hasattr(self.campaign, "last_modified") and self.campaign.last_modified:
-            return f"Modified {self.campaign.last_modified.strftime('%b %d, %Y')}"
+        if hasattr(self.campaign, "updated_at") and self.campaign.updated_at:
+            return f"Modified {self.campaign.updated_at.strftime('%b %d, %Y')}"
         return "Recently created"
 
     def _create_status_indicator(self) -> QLabel:
