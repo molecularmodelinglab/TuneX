@@ -3,10 +3,11 @@ Screen for displaying and editing experiment results in a table format.
 """
 
 import csv
+import math
 from typing import Any, Dict, List
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QDoubleValidator, QFont
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -36,6 +37,9 @@ class LargeInputDelegate(QStyledItemDelegate):
         editor.setPlaceholderText("Enter value...")
         # Make the input field larger
         editor.setMinimumHeight(35)
+        validator = QDoubleValidator(-1e308, 1e308, 15, editor)
+        validator.setNotation(QDoubleValidator.Notation.StandardNotation)
+        editor.setValidator(validator)
         editor.setStyleSheet("""
             QLineEdit {
                 background-color: white;
@@ -56,8 +60,22 @@ class LargeInputDelegate(QStyledItemDelegate):
             editor.setText(str(value))
 
     def setModelData(self, editor, model, index):
-        value = editor.text()
-        model.setData(index, value, Qt.ItemDataRole.EditRole)
+        text = editor.text().strip()
+        if text == "":
+            model.setData(index, "", Qt.ItemDataRole.EditRole)
+            return
+        try:
+            v = float(text)
+            if not math.isfinite(v):
+                raise ValueError("Non-finite value")
+            model.setData(index, text, Qt.ItemDataRole.EditRole)
+        except ValueError:
+            # Invalid input: show error and keep previous value unchanged
+            ErrorDialog.show_error(
+                "Invalid Input",
+                "Please enter a numeric value (integer or float).",
+                parent=editor.window(),
+            )
 
 
 class ExperimentsTableScreen(BaseWidget):
@@ -243,6 +261,22 @@ class ExperimentsTableScreen(BaseWidget):
                     experiment[target.name] = float(text)
                 except ValueError:
                     experiment[target.name] = text
+                try:
+                    value = float(text)
+                    if not math.isfinite(value):
+                        raise ValueError("Non-finite value")
+                    experiment[target.name] = value
+                except ValueError:
+                    # Show error, focus the offending cell, and abort save
+                    ErrorDialog.show_error(
+                        "Invalid Input",
+                        f"Invalid value '{text}' for target '{target.name}'. Please enter a number.",
+                        parent=self,
+                    )
+                    self.table.setCurrentCell(row, col)
+                    if item:
+                        self.table.editItem(item)
+                    return
 
             updated_experiments.append(experiment)
 
