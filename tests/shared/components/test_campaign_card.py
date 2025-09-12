@@ -25,7 +25,7 @@ def qapp():
 def sample_campaign():
     """Create a sample campaign for testing."""
     campaign = Campaign(name="Test Campaign", description="A test campaign")
-    campaign.updated_at = datetime(2023, 1, 15, 10, 30, 0)
+    campaign.accessed_at = datetime(2023, 1, 15, 10, 30, 0)
     return campaign
 
 
@@ -58,10 +58,10 @@ def test_campaign_card_displays_campaign_details(campaign_card, sample_campaign)
     assert campaign_card.details_label.text() == "No parameters defined"
 
 
-def test_campaign_card_displays_last_modified_date(campaign_card, sample_campaign):
-    """Test that CampaignCard displays the last modified date."""
+def test_campaign_card_displays_last_accessed_date(campaign_card, sample_campaign):
+    """Test that CampaignCard displays the last accessed date."""
     # Assert
-    expected_date = "Modified Jan 15, 2023"
+    expected_date = "Accessed Jan 15, 2023"
     assert campaign_card.date_label.text() == expected_date
 
 
@@ -121,11 +121,11 @@ def test_campaign_card_with_single_parameter(sample_campaign):
     assert card.details_label.text() == "1 parameter"
 
 
-def test_campaign_card_with_none_updated_at():
-    """Test that CampaignCard handles None updated_at correctly."""
+def test_campaign_card_with_none_accessed_at():
+    """Test that CampaignCard handles None accessed_at correctly."""
     # Arrange
     campaign = Campaign(name="Test Campaign")
-    campaign.updated_at = None
+    campaign.accessed_at = None
 
     app = QApplication.instance()
     if app is None:

@@ -53,7 +53,7 @@ class RecentCampaignsWidget(BaseWidget):
                 child.widget().deleteLater()
 
     def _show_campaigns_list(self):
-        recent_campaigns = sorted(self.campaigns, key=lambda x: x.updated_at or datetime.min, reverse=True)[:5]
+        recent_campaigns = sorted(self.campaigns, key=lambda x: x.accessed_at or datetime.min, reverse=True)[:5]
 
         for campaign in recent_campaigns:
             card = CampaignCard(campaign)

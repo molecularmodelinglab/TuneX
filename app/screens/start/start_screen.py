@@ -131,13 +131,26 @@ class StartScreen(BaseScreen):
 
         # Create container for dynamic content
         self.recent_campaigns_widget = RecentCampaignsWidget()
-        self.recent_campaigns_widget.campaign_selected.connect(self.campaign_selected.emit)
+        self.recent_campaigns_widget.campaign_selected.connect(self._on_campaign_selected)
         self.main_layout.addWidget(self.recent_campaigns_widget)
 
     def _update_campaigns_display(self):
         """Update the campaigns display based on loaded campaigns."""
         if hasattr(self, "recent_campaigns_widget"):
             self.recent_campaigns_widget.update_campaigns(self.campaigns)
+
+    def _update_campaign_access_time(self, campaign: Campaign):
+        """Update the campaign's accessed_at field and save it."""
+        from datetime import datetime
+
+        campaign.accessed_at = datetime.now()
+        if self.loader:
+            self.loader.update_campaign(campaign)
+
+    def _on_campaign_selected(self, campaign: Campaign):
+        """Handle campaign selection by updating access time and emitting signal."""
+        self._update_campaign_access_time(campaign)
+        self.campaign_selected.emit(campaign)
 
     def _apply_styles(self):
         """Apply screen-specific styles."""

@@ -45,7 +45,7 @@ class CampaignCard(QFrame):
         self.details_label.setObjectName("CampaignDetails")
         info_layout.addWidget(self.details_label)
 
-        self.date_label = QLabel(self._get_last_modified())
+        self.date_label = QLabel(self._get_last_accessed())
         self.date_label.setObjectName("CampaignDate")
         info_layout.addWidget(self.date_label)
 
@@ -100,10 +100,10 @@ class CampaignCard(QFrame):
             return f"{param_count} parameter{'s' if param_count != 1 else ''}"
         return "No parameters defined"
 
-    def _get_last_modified(self) -> str:
-        """Get last modified date string."""
-        if hasattr(self.campaign, "updated_at") and self.campaign.updated_at:
-            return f"Modified {self.campaign.updated_at.strftime('%b %d, %Y')}"
+    def _get_last_accessed(self) -> str:
+        """Get last accessed date string."""
+        if hasattr(self.campaign, "accessed_at") and self.campaign.accessed_at:
+            return f"Accessed {self.campaign.accessed_at.strftime('%b %d, %Y')}"
         return "Recently created"
 
     def _create_status_indicator(self) -> QLabel:

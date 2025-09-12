@@ -74,19 +74,19 @@ def test_show_campaigns_when_campaigns_exist(recent_campaigns_widget):
         assert isinstance(widget, CampaignCard)
 
 
-def test_sort_campaigns_by_updated_at_descending(recent_campaigns_widget):
-    """Test that campaigns are sorted by updated_at in descending order."""
+def test_sort_campaigns_by_accessed_at_descending(recent_campaigns_widget):
+    """Test that campaigns are sorted by accessed_at in descending order."""
     # Arrange
-    # Create campaigns with different updated_at times
+    # Create campaigns with different accessed_at times
     now = datetime.now()
     campaign1 = Campaign(name="Campaign 1")
-    campaign1.updated_at = now - timedelta(days=3)  # Oldest
+    campaign1.accessed_at = now - timedelta(days=3)  # Oldest
 
     campaign2 = Campaign(name="Campaign 2")
-    campaign2.updated_at = now - timedelta(days=1)  # Newest
+    campaign2.accessed_at = now - timedelta(days=1)  # Newest
 
     campaign3 = Campaign(name="Campaign 3")
-    campaign3.updated_at = now - timedelta(days=2)  # Middle
+    campaign3.accessed_at = now - timedelta(days=2)  # Middle
 
     campaigns = [campaign1, campaign2, campaign3]
 
@@ -114,7 +114,7 @@ def test_limit_to_5_most_recent_campaigns(recent_campaigns_widget):
     campaigns = []
     for i in range(7):  # Create 7 campaigns
         campaign = Campaign(name=f"Campaign {i}")
-        campaign.updated_at = now - timedelta(days=7 - i)  # Campaign 0 is oldest, Campaign 6 is newest
+        campaign.accessed_at = now - timedelta(days=7 - i)  # Campaign 0 is oldest, Campaign 6 is newest
         campaigns.append(campaign)
 
     # Act
@@ -153,14 +153,14 @@ def test_campaign_selection_signal_emitted(recent_campaigns_widget):
     mock_slot.assert_called_once_with(campaign)
 
 
-def test_handle_none_updated_at_values(recent_campaigns_widget):
-    """Test that campaigns with None updated_at values are handled correctly."""
+def test_handle_none_accessed_at_values(recent_campaigns_widget):
+    """Test that campaigns with None accessed_at values are handled correctly."""
     # Arrange
     campaign1 = Campaign(name="Campaign 1")
-    campaign1.updated_at = None  # No updated time
+    campaign1.accessed_at = None  # No accessed time
 
     campaign2 = Campaign(name="Campaign 2")
-    campaign2.updated_at = datetime.now()  # Has updated time
+    campaign2.accessed_at = datetime.now()  # Has accessed time
 
     campaigns = [campaign1, campaign2]
 
@@ -168,14 +168,14 @@ def test_handle_none_updated_at_values(recent_campaigns_widget):
     recent_campaigns_widget.update_campaigns(campaigns)
 
     # Assert
-    # Should show both campaigns, with the one with updated_at appearing first
+    # Should show both campaigns, with the one with accessed_at appearing first
     assert recent_campaigns_widget.main_layout.count() == 2
 
-    # The campaign with updated_at should be first
+    # The campaign with accessed_at should be first
     first_card = recent_campaigns_widget.main_layout.itemAt(0).widget()
     assert first_card.campaign.name == "Campaign 2"
 
-    # The campaign without updated_at should be second
+    # The campaign without accessed_at should be second
     second_card = recent_campaigns_widget.main_layout.itemAt(1).widget()
     assert second_card.campaign.name == "Campaign 1"
 
