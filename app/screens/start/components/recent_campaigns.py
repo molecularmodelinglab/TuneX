@@ -26,6 +26,11 @@ class RecentCampaignsWidget(BaseWidget):
     CAMPAIGN_LABEL_STYLESHEET = "padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin: 2px;"
     CARD_SPACING = 8
     LAYOUT_MARGINS = (0, 0, 0, 0)
+    SEARCH_BAR_MARGINS = (0, 0, 0, 10)
+    ZERO_MARGIN = 0
+    SCROLL_AREA_MIN_HEIGHT = 400
+    EMPTY_ICON_SIZE = 48
+    EMPTY_ICON_FONT_SIZE = 25
     SCROLL_AREA_STYLE = """QScrollArea {
         background: transparent;
         border: none;
@@ -33,6 +38,68 @@ class RecentCampaignsWidget(BaseWidget):
     QScrollArea > QWidget > QWidget {
         background: transparent;
     }"""
+
+    # Combined styles
+    WIDGET_STYLES = """
+            /* Campaign Cards */
+            #CampaignCard {
+                background-color: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 12px;
+                padding: 0px;
+            }
+
+            #CampaignCard[hovered="true"] {
+                border-color: #007BFF;
+                background-color: #f8f9fa;
+            }
+
+            #CampaignName {
+                font-size: 16px;
+                font-weight: 600;
+                color: #333333;
+                margin: 0px;
+            }
+
+            #CampaignDetails {
+                font-size: 13px;
+                color: #666666;
+                margin: 0px;
+            }
+
+            #CampaignDate {
+                font-size: 12px;
+                color: #999999;
+                margin: 0px;
+            }
+
+            /* Existing button styles */
+            #NewCampaignButton {
+                background-color: #007BFF;
+                color: white;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 12px 24px;
+                border: none;
+                border-radius: 8px;
+            }
+            #NewCampaignButton:hover {
+                background-color: #0056b3;
+            }
+
+            #BrowseAllButton {
+                background-color: white;
+                color: #333333;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 12px 24px;
+                border: 1px solid #CCCCCC;
+                border-radius: 8px;
+            }
+            #BrowseAllButton:hover {
+                background-color: #f0f0f0;
+            }
+        """
 
     def __init__(self, parent=None):
         self.campaigns: list[Campaign] = []
@@ -58,14 +125,14 @@ class RecentCampaignsWidget(BaseWidget):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.scroll_area.setMinimumHeight(400)
+        self.scroll_area.setMinimumHeight(self.SCROLL_AREA_MIN_HEIGHT)
 
         self.scroll_area.setStyleSheet(self.SCROLL_AREA_STYLE)
 
         # Container widget for scroll area
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
-        self.scroll_layout.setContentsMargins(0, self.CARD_SPACING, 0, self.CARD_SPACING)
+        self.scroll_layout.setContentsMargins(self.ZERO_MARGIN, self.CARD_SPACING, self.ZERO_MARGIN, self.CARD_SPACING)
         self.scroll_layout.setSpacing(self.CARD_SPACING)
         self.scroll_area.setWidget(self.scroll_content)
 
@@ -76,7 +143,7 @@ class RecentCampaignsWidget(BaseWidget):
         """Create the search bar widget."""
         self.search_container = QWidget()
         search_layout = QHBoxLayout(self.search_container)
-        search_layout.setContentsMargins(0, 0, 0, 10)
+        search_layout.setContentsMargins(*self.SEARCH_BAR_MARGINS)
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText(self.SEARCH_PLACEHOLDER_TEXT)
@@ -149,12 +216,12 @@ class RecentCampaignsWidget(BaseWidget):
 
     def _get_empty_campaigns_icon(self) -> QPixmap:
         """Get icon for empty campaigns state."""
-        pixmap = QPixmap(48, 48)
+        pixmap = QPixmap(self.EMPTY_ICON_SIZE, self.EMPTY_ICON_SIZE)
         pixmap.fill(Qt.GlobalColor.transparent)
 
         painter = QPainter(pixmap)
         painter.setPen(Qt.GlobalColor.black)
-        font = QFont("Segoe UI Emoji", 25)
+        font = QFont("Segoe UI Emoji", self.EMPTY_ICON_FONT_SIZE)
         painter.setFont(font)
         painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "🚀")
         painter.end()
@@ -163,66 +230,4 @@ class RecentCampaignsWidget(BaseWidget):
 
     def _apply_styles(self):
         """Apply screen-specific styles."""
-        self.setStyleSheet(
-            get_widget_styles()
-            + """
-            /* Campaign Cards */
-            #CampaignCard {
-                background-color: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 12px;
-                padding: 0px;
-            }
-
-            #CampaignCard[hovered="true"] {
-                border-color: #007BFF;
-                background-color: #f8f9fa;
-            }
-
-            #CampaignName {
-                font-size: 16px;
-                font-weight: 600;
-                color: #333333;
-                margin: 0px;
-            }
-
-            #CampaignDetails {
-                font-size: 13px;
-                color: #666666;
-                margin: 0px;
-            }
-
-            #CampaignDate {
-                font-size: 12px;
-                color: #999999;
-                margin: 0px;
-            }
-
-            /* Existing button styles */
-            #NewCampaignButton {
-                background-color: #007BFF;
-                color: white;
-                font-size: 14px;
-                font-weight: bold;
-                padding: 12px 24px;
-                border: none;
-                border-radius: 8px;
-            }
-            #NewCampaignButton:hover {
-                background-color: #0056b3;
-            }
-
-            #BrowseAllButton {
-                background-color: white;
-                color: #333333;
-                font-size: 14px;
-                font-weight: bold;
-                padding: 12px 24px;
-                border: 1px solid #CCCCCC;
-                border-radius: 8px;
-            }
-            #BrowseAllButton:hover {
-                background-color: #f0f0f0;
-            }
-        """
-        )
+        self.setStyleSheet(get_widget_styles() + self.WIDGET_STYLES)

@@ -208,3 +208,42 @@ def test_search_shows_empty_state_when_no_matches(recent_campaigns_widget):
     # Check the text is correct for search case
     # We can't easily check the text content, but we can verify the card was created
     assert widget is not None
+
+
+def test_constants_defined():
+    """Test that all constants are properly defined."""
+    # Check that all text constants are defined
+    text_constants = [
+        "NO_RECENT_CAMPAIGNS_TEXT",
+        "NO_RECENT_CAMPAIGNS_SUBTEXT",
+        "NO_CAMPAIGNS_FOUND_TEXT",
+        "NO_CAMPAIGNS_FOUND_SUBTEXT",
+        "SEARCH_PLACEHOLDER_TEXT",
+        "CAMPAIGN_LABEL_STYLESHEET",
+    ]
+
+    for constant in text_constants:
+        assert hasattr(RecentCampaignsWidget, constant), f"Missing text constant: {constant}"
+
+    # Check that all layout constants are defined
+    layout_constants = [
+        "CARD_SPACING",
+        "LAYOUT_MARGINS",
+        "SEARCH_BAR_MARGINS",
+        "ZERO_MARGIN",
+        "SCROLL_AREA_MIN_HEIGHT",
+        "EMPTY_ICON_SIZE",
+        "EMPTY_ICON_FONT_SIZE",
+    ]
+
+    for constant in layout_constants:
+        assert hasattr(RecentCampaignsWidget, constant), f"Missing layout constant: {constant}"
+
+    # Check that all style constants are defined
+    style_constants = [
+        "SCROLL_AREA_STYLE",
+        "WIDGET_STYLES",
+    ]
+
+    for constant in style_constants:
+        assert hasattr(RecentCampaignsWidget, constant), f"Missing style constant: {constant}"
