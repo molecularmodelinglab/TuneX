@@ -33,16 +33,14 @@ class StartScreen(BaseScreen):
 
     # Signals for navigation
     new_campaign_requested = Signal()
-    browse_campaigns_requested = Signal()
     back_requested = Signal()
     campaign_selected = Signal(Campaign)
 
     WINDOW_TITLE = "TuneX - Welcome"
     HEADER_TEXT = "TuneX"
     NEW_CAMPAIGN_BUTTON_TEXT = "+ New Campaign"
-    BROWSE_CAMPAIGNS_BUTTON_TEXT = "Browse All"
-    BACK_BUTTON_TEXT = "Back to Workspace Selection"
-    RECENT_CAMPAIGNS_HEADER_TEXT = "Recently Opened Campaigns"
+    BACK_BUTTON_TEXT = "Change Workspace"
+    RECENT_CAMPAIGNS_HEADER_TEXT = "Campaigns"
     MARGINS = (30, 30, 30, 30)
     SPACING = 25
     BUTTON_SPACING = 15
@@ -87,9 +85,6 @@ class StartScreen(BaseScreen):
         self._create_action_buttons()
         self._create_campaigns_section()
 
-        # Add stretch to push content to top
-        self.main_layout.addStretch()
-
     def _create_header(self):
         """Create the application header."""
         header = MainHeader(self.HEADER_TEXT)
@@ -105,15 +100,7 @@ class StartScreen(BaseScreen):
         self.new_campaign_btn = PrimaryButton(self.NEW_CAMPAIGN_BUTTON_TEXT)
         self.new_campaign_btn.setObjectName("NewCampaignButton")
         self.new_campaign_btn.clicked.connect(self.new_campaign_requested.emit)
-
-        # Browse All button
-        self.browse_all_btn = SecondaryButton(self.BROWSE_CAMPAIGNS_BUTTON_TEXT)
-        self.browse_all_btn.setObjectName("BrowseAllButton")
-        self.browse_all_btn.clicked.connect(self.browse_campaigns_requested.emit)
-
         button_layout.addWidget(self.new_campaign_btn)
-        button_layout.addWidget(self.browse_all_btn)
-
         # Back button
         self.back_btn = SecondaryButton(self.BACK_BUTTON_TEXT)
         self.back_btn.clicked.connect(self.back_requested.emit)
@@ -132,7 +119,7 @@ class StartScreen(BaseScreen):
         # Create container for dynamic content
         self.recent_campaigns_widget = RecentCampaignsWidget()
         self.recent_campaigns_widget.campaign_selected.connect(self._on_campaign_selected)
-        self.main_layout.addWidget(self.recent_campaigns_widget)
+        self.main_layout.addWidget(self.recent_campaigns_widget, 1)  # Add with stretch factor
 
     def _update_campaigns_display(self):
         """Update the campaigns display based on loaded campaigns."""
@@ -171,18 +158,5 @@ class StartScreen(BaseScreen):
                 background-color: #0056b3; /* Darker blue on hover */
             }
 
-            /* "Browse All" Button */
-            #BrowseAllButton {
-                background-color: white;
-                color: #333333; /* Dark gray text */
-                font-size: 14px;
-                font-weight: bold;
-                padding: 12px 24px;
-                border: 1px solid #CCCCCC; /* Light gray border */
-                border-radius: 8px;
-            }
-            #BrowseAllButton:hover {
-                background-color: #f0f0f0; /* Light gray on hover */
-            }
         """
         )
