@@ -9,9 +9,12 @@ from typing import Optional
 
 from PySide6.QtCore import QStandardPaths
 
+RECENT_WORKSPACE_COUNT = 5
+
 APP_NAME = "TuneX"
 SETTINGS_FILENAME = "settings.json"
 LAST_WORKSPACE_KEY = "last_workspace_path"
+RECENT_WORKSPACE_PATHS_KEY = "recent_workspace_paths"
 
 
 def _get_settings_path() -> str:
@@ -49,10 +52,27 @@ def _write_settings(settings: dict):
         logger.error(f"Error writing settings: {e}")
 
 
+def _update_recent_workspace_paths(settings: dict, path: str):
+    """Updates recent workspace paths list in-memory only."""
+    if RECENT_WORKSPACE_PATHS_KEY not in settings:
+        settings[RECENT_WORKSPACE_PATHS_KEY] = []
+
+    recent_workspaces = settings[RECENT_WORKSPACE_PATHS_KEY]
+    try:
+        recent_workspaces.remove(path)
+    except ValueError:
+        pass
+
+    recent_workspaces.insert(0, path)
+    if len(recent_workspaces) > RECENT_WORKSPACE_COUNT:
+        recent_workspaces.pop()
+
+
 def save_last_workspace(path: str):
     """Saves the path of the last used workspace."""
     settings = _read_settings()
     settings[LAST_WORKSPACE_KEY] = path
+    _update_recent_workspace_paths(settings, path)
     _write_settings(settings)
 
 
@@ -60,3 +80,9 @@ def get_last_workspace() -> Optional[str]:
     """Retrieves the path of the last used workspace."""
     settings = _read_settings()
     return settings.get(LAST_WORKSPACE_KEY)
+
+
+def get_recent_workspaces() -> list[str]:
+    """Retrieves the list of recent workspace paths."""
+    settings = _read_settings()
+    return settings.get(RECENT_WORKSPACE_PATHS_KEY, [])
