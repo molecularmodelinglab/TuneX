@@ -132,7 +132,9 @@ class TestExperimentsTableScreen:
         param_count = len(experiments_table_screen._param_columns)
 
         # Modify a target value in the table
+        assert "yield" in experiments_table_screen._target_columns
         yield_col_idx = param_count + experiments_table_screen._target_columns.index("yield")
+
         new_item = QTableWidgetItem("0.95")
         table.setItem(0, yield_col_idx, new_item)
 
@@ -166,7 +168,9 @@ class TestExperimentsTableScreen:
         param_count = len(experiments_table_screen._param_columns)
 
         # Set numeric value as string for yield target
+        assert "yield" in experiments_table_screen._target_columns
         yield_col_idx = param_count + experiments_table_screen._target_columns.index("yield")
+
         new_item = QTableWidgetItem("0.85")
         table.setItem(0, yield_col_idx, new_item)
 
@@ -258,7 +262,14 @@ class TestExperimentsTableScreen:
     def test_existing_target_values_displayed(self, qtbot, sample_campaign):
         """Test that existing target values are displayed in the table."""
         # Update campaign to have multiple targets for this test
+        sample_campaign.targets = []
+
         from app.models.campaign import Target
+
+        yield_target = Target()
+        yield_target.name = "yield"
+        yield_target.mode = "MAX"
+        sample_campaign.targets.append(yield_target)
 
         purity_target = Target()
         purity_target.name = "purity"
