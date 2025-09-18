@@ -244,8 +244,7 @@ class ExperimentsTableScreen(BaseWidget):
         updated_experiments: List[Dict[str, Any]] = []
 
         for row in range(self.table.rowCount()):
-            original = self.original_experiments[row].copy()
-            experiment = original
+            experiment = self.original_experiments[row].copy()
 
             for target_idx, target in enumerate(self.campaign.targets):
                 col = len(self._param_columns) + target_idx
@@ -257,10 +256,7 @@ class ExperimentsTableScreen(BaseWidget):
                 if not text:
                     experiment[target.name] = None
                     continue
-                try:
-                    experiment[target.name] = float(text)
-                except ValueError:
-                    experiment[target.name] = text
+
                 try:
                     value = float(text)
                     if not math.isfinite(value):
