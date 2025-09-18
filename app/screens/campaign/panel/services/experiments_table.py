@@ -4,6 +4,7 @@ Screen for displaying and editing experiment results in a table format.
 
 import csv
 import math
+import sys
 from typing import Any, Dict, List
 
 from PySide6.QtCore import Qt, Signal
@@ -37,7 +38,7 @@ class LargeInputDelegate(QStyledItemDelegate):
         editor.setPlaceholderText("Enter value...")
         # Make the input field larger
         editor.setMinimumHeight(35)
-        validator = QDoubleValidator(-1e308, 1e308, 15, editor)
+        validator = QDoubleValidator(-sys.float_info.max, sys.float_info.max, 15, editor)
         validator.setNotation(QDoubleValidator.Notation.StandardNotation)
         editor.setValidator(validator)
         editor.setStyleSheet("""
@@ -73,7 +74,7 @@ class LargeInputDelegate(QStyledItemDelegate):
             # Invalid input: show error and keep previous value unchanged
             ErrorDialog.show_error(
                 "Invalid Input",
-                "Please enter a numeric value (integer or float).",
+                "Please enter a number (integer or float).",
                 parent=editor.window(),
             )
 
