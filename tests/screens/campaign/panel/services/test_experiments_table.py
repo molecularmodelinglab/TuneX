@@ -132,7 +132,9 @@ class TestExperimentsTableScreen:
         param_count = len(experiments_table_screen._param_columns)
 
         # Modify a target value in the table
+        assert "yield" in experiments_table_screen._target_columns
         yield_col_idx = param_count + experiments_table_screen._target_columns.index("yield")
+
         new_item = QTableWidgetItem("0.95")
         table.setItem(0, yield_col_idx, new_item)
 
@@ -166,7 +168,9 @@ class TestExperimentsTableScreen:
         param_count = len(experiments_table_screen._param_columns)
 
         # Set numeric value as string for yield target
+        assert "yield" in experiments_table_screen._target_columns
         yield_col_idx = param_count + experiments_table_screen._target_columns.index("yield")
+
         new_item = QTableWidgetItem("0.85")
         table.setItem(0, yield_col_idx, new_item)
 
@@ -176,21 +180,31 @@ class TestExperimentsTableScreen:
         assert isinstance(experiments_table_screen.experiments[0]["yield"], float)
         assert experiments_table_screen.experiments[0]["yield"] == 0.85
 
-    def test_non_numeric_values_preserved(self, experiments_table_screen):
-        """Test that non-numeric values are preserved as strings."""
+    def test_rejects_non_numeric_on_save(self, experiments_table_screen, monkeypatch):
+        """Non-numeric inputs should be rejected with an error popup and save aborted."""
+        from app.shared.components.dialogs import ErrorDialog
+
+        # Spy for error dialog
+        errors = []
+        monkeypatch.setattr(ErrorDialog, "show_error", lambda title, msg, parent=None: errors.append((title, msg)))
+
         table = experiments_table_screen.table
         param_count = len(experiments_table_screen._param_columns)
 
-        # Set non-numeric value for yield target
         yield_col_idx = param_count + experiments_table_screen._target_columns.index("yield")
         new_item = QTableWidgetItem("pending")
         table.setItem(0, yield_col_idx, new_item)
 
+        # Spy for save signal; should not emit
+        emitted = []
+        experiments_table_screen.save_results_requested.connect(lambda data: emitted.append(data))
+
         experiments_table_screen._handle_save_results()
 
-        # Should preserve as string
-        assert isinstance(experiments_table_screen.experiments[0]["yield"], str)
-        assert experiments_table_screen.experiments[0]["yield"] == "pending"
+        assert len(errors) == 1
+        assert "Invalid Input" in errors[0][0]
+        assert "Please enter a number" in errors[0][1]
+        assert len(emitted) == 0
 
     def test_empty_values_converted_to_none(self, experiments_table_screen):
         """Test that empty values are converted to None."""
@@ -207,10 +221,55 @@ class TestExperimentsTableScreen:
         # Should convert to None
         assert experiments_table_screen.experiments[0]["yield"] is None
 
+    def test_rejects_nan_on_save(self, experiments_table_screen, monkeypatch):
+        """'NaN' should be rejected as non-finite."""
+        from app.shared.components.dialogs import ErrorDialog
+
+        errors = []
+        monkeypatch.setattr(ErrorDialog, "show_error", lambda title, msg, parent=None: errors.append((title, msg)))
+
+        table = experiments_table_screen.table
+        param_count = len(experiments_table_screen._param_columns)
+        col_idx = param_count + experiments_table_screen._target_columns.index("yield")
+        table.setItem(0, col_idx, QTableWidgetItem("NaN"))
+
+        emitted = []
+        experiments_table_screen.save_results_requested.connect(lambda data: emitted.append(data))
+        experiments_table_screen._handle_save_results()
+
+        assert errors, "Expected an error dialog for NaN"
+        assert len(emitted) == 0
+
+    def test_rejects_infinite_on_save(self, experiments_table_screen, monkeypatch):
+        """'inf' should be rejected as non-finite."""
+        from app.shared.components.dialogs import ErrorDialog
+
+        errors = []
+        monkeypatch.setattr(ErrorDialog, "show_error", lambda title, msg, parent=None: errors.append((title, msg)))
+
+        table = experiments_table_screen.table
+        param_count = len(experiments_table_screen._param_columns)
+        col_idx = param_count + experiments_table_screen._target_columns.index("yield")
+        table.setItem(0, col_idx, QTableWidgetItem("inf"))
+
+        emitted = []
+        experiments_table_screen.save_results_requested.connect(lambda data: emitted.append(data))
+        experiments_table_screen._handle_save_results()
+
+        assert errors, "Expected an error dialog for inf"
+        assert len(emitted) == 0
+
     def test_existing_target_values_displayed(self, qtbot, sample_campaign):
         """Test that existing target values are displayed in the table."""
         # Update campaign to have multiple targets for this test
+        sample_campaign.targets = []
+
         from app.models.campaign import Target
+
+        yield_target = Target()
+        yield_target.name = "yield"
+        yield_target.mode = "MAX"
+        sample_campaign.targets.append(yield_target)
 
         purity_target = Target()
         purity_target.name = "purity"
@@ -320,12 +379,12 @@ class TestLargeInputDelegate:
         # Should have set the editor text
         assert editor.text() == "test_value"
 
-    def test_set_model_data(self, delegate, qtbot):
-        """Test setting model data from editor."""
+    def test_set_model_data_accepts_numeric(self, delegate, qtbot):
+        """Delegate should set model data when input is numeric."""
         from PySide6.QtWidgets import QLineEdit
 
         editor = QLineEdit()
-        editor.setText("new_value")
+        editor.setText("123.45")
         qtbot.addWidget(editor)
 
         model = Mock()
@@ -333,5 +392,23 @@ class TestLargeInputDelegate:
 
         delegate.setModelData(editor, model, index)
 
-        # Should have called setData on the model
-        model.setData.assert_called_once_with(index, "new_value", Qt.ItemDataRole.EditRole)
+        model.setData.assert_called_with(index, "123.45", Qt.ItemDataRole.EditRole)
+
+    def test_set_model_data_rejects_non_numeric(self, delegate, qtbot, monkeypatch):
+        """Delegate should reject non-numeric input and not update the model."""
+        from PySide6.QtWidgets import QLineEdit
+
+        # Patch the ErrorDialog used inside the module under test
+        import app.screens.campaign.panel.services.experiments_table as et
+
+        errors = []
+        monkeypatch.setattr(et.ErrorDialog, "show_error", lambda title, msg, parent=None: errors.append((title, msg)))
+        editor = QLineEdit()
+        editor.setText("abc")
+        qtbot.addWidget(editor)
+        model = Mock()
+        index = Mock()
+        delegate.setModelData(editor, model, index)
+        # Should not have updated the model
+        assert model.setData.call_count == 0
+        assert errors, "Expected an error dialog for non-numeric input"

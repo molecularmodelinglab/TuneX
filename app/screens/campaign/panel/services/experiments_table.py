@@ -3,10 +3,12 @@ Screen for displaying and editing experiment results in a table format.
 """
 
 import csv
+import math
+import sys
 from typing import Any, Dict, List
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QDoubleValidator, QFont
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -36,6 +38,9 @@ class LargeInputDelegate(QStyledItemDelegate):
         editor.setPlaceholderText("Enter value...")
         # Make the input field larger
         editor.setMinimumHeight(35)
+        validator = QDoubleValidator(-sys.float_info.max, sys.float_info.max, 15, editor)
+        validator.setNotation(QDoubleValidator.Notation.StandardNotation)
+        editor.setValidator(validator)
         editor.setStyleSheet("""
             QLineEdit {
                 background-color: white;
@@ -56,8 +61,22 @@ class LargeInputDelegate(QStyledItemDelegate):
             editor.setText(str(value))
 
     def setModelData(self, editor, model, index):
-        value = editor.text()
-        model.setData(index, value, Qt.ItemDataRole.EditRole)
+        text = editor.text().strip()
+        if text == "":
+            model.setData(index, "", Qt.ItemDataRole.EditRole)
+            return
+        try:
+            v = float(text)
+            if not math.isfinite(v):
+                raise ValueError("Non-finite value")
+            model.setData(index, text, Qt.ItemDataRole.EditRole)
+        except ValueError:
+            # Invalid input: show error and keep previous value unchanged
+            ErrorDialog.show_error(
+                "Invalid Input",
+                "Please enter a number (integer or float).",
+                parent=editor.window(),
+            )
 
 
 class ExperimentsTableScreen(BaseWidget):
@@ -226,8 +245,7 @@ class ExperimentsTableScreen(BaseWidget):
         updated_experiments: List[Dict[str, Any]] = []
 
         for row in range(self.table.rowCount()):
-            original = self.original_experiments[row].copy()
-            experiment = original
+            experiment = self.original_experiments[row].copy()
 
             for target_idx, target in enumerate(self.campaign.targets):
                 col = len(self._param_columns) + target_idx
@@ -239,10 +257,23 @@ class ExperimentsTableScreen(BaseWidget):
                 if not text:
                     experiment[target.name] = None
                     continue
+
                 try:
-                    experiment[target.name] = float(text)
+                    value = float(text)
+                    if not math.isfinite(value):
+                        raise ValueError("Non-finite value")
+                    experiment[target.name] = value
                 except ValueError:
-                    experiment[target.name] = text
+                    # Show error, focus the offending cell, and abort save
+                    ErrorDialog.show_error(
+                        "Invalid Input",
+                        f"Invalid value '{text}' for target '{target.name}'. Please enter a number.",
+                        parent=self,
+                    )
+                    self.table.setCurrentCell(row, col)
+                    if item:
+                        self.table.editItem(item)
+                    return
 
             updated_experiments.append(experiment)
 
