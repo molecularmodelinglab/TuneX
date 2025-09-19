@@ -46,7 +46,9 @@ class ObjectiveConverter:
         }
 
         if tunex_target.mode.upper() == "MATCH":
-            match_value = sum([tunex_target.min_value, tunex_target.max_value]) / 2
+            if tunex_target.min_value is None or tunex_target.max_value is None:
+                raise ValueError("MATCH mode requires both min_value and max_value")
+            match_value = (tunex_target.min_value + tunex_target.max_value) / 2
             return NumericalTarget.match_triangular(
                 name=tunex_target.name,
                 match_value=match_value,
@@ -116,7 +118,6 @@ class ObjectiveConverter:
             weights.append(weight)
 
         return DesirabilityObjective(targets=baybe_targets, weights=weights)
-
 
     @staticmethod
     def validate_targets(tunex_targets: List[Target]) -> List[str]:
