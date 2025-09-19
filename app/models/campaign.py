@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
+from app.models.enums import TargetTransformation
 from app.models.parameters import ParameterSerializer
 from app.models.parameters.base import BaseParameter
 
@@ -19,7 +20,7 @@ class Target:
     mode: str = "Max"
     min_value: Optional[float] = None
     max_value: Optional[float] = None
-    transformation: Optional[str] = "LINEAR"
+    transformation: Optional[str] = TargetTransformation.NONE.value
     weight: Optional[float] = None
 
 
