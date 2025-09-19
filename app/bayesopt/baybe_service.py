@@ -323,7 +323,8 @@ class BayBeIntegrationService:
             # Add BayBE-specific information
             try:
                 info["measurements_count"] = len(self.baybe_campaign.measurements)
-            except:
+            except Exception as e:
+                self.logger.error(f"Error retrieving measurements count: {str(e)}")
                 info["measurements_count"] = 0
 
         return info
