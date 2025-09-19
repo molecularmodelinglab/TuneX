@@ -9,6 +9,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import pandas as pd
+from baybe import Campaign as BayBeCampaign
+
+from app.bayesopt.objective import ObjectiveConverter
+from app.bayesopt.parameters import ParameterConverter
 from app.models.campaign import Campaign
 from app.models.parameters.base import BaseParameter
 from app.shared.constants import WorkspaceConstants
@@ -26,6 +31,7 @@ class BayBeIntegrationService:
         self.workspace_path = workspace_path
         self.campaign_folder = Path(workspace_path) / WorkspaceConstants.CAMPAIGNS_DIRNAME / f"{self.campaign.id}"
         self.logger = self._setup_logging()
+        self.baybe_campaign: Optional[BayBeCampaign] = None
 
     def _setup_logging(self) -> logging.Logger:
         """Setup logging for BayBe operations."""
@@ -50,31 +56,36 @@ class BayBeIntegrationService:
         """
         Generate experiments using BayBe.
 
-        For now, this is a mock implementation that generates random experiments.
-        This should be replaced with actual BayBe integration.
+        Args:
+            num_experiments: Number of experiments to generate
+            has_previous_data: Whether there is previous experimental data
+
+        Returns:
+            List of experiment dictionaries
+
+        Raises:
+            Exception: If experiment generation fails
         """
-        self.logger.info(f"Starting generation of {num_experiments} experiments")
+        self.logger.info(f"Starting generation of {num_experiments} experiments using BayBE")
         self.logger.info(f"Campaign: {self.campaign.name}")
         self.logger.info(f"Parameters: {len(self.campaign.parameters)}")
+        self.logger.info(f"Targets: {len(self.campaign.targets)}")
         self.logger.info(f"Has previous data: {has_previous_data}")
 
-        experiments = []
-
         try:
-            for i in range(num_experiments):
-                experiment = {}
+            # Initialize or update BayBE campaign
+            if not has_previous_data:
+                self._initialize_baybe_campaign()
+            else:
+                self._update_baybe_campaign_with_data()
 
-                # Generate values for each parameter
-                for param in self.campaign.parameters:
-                    experiment[param.name] = self._generate_parameter_value(param)
+            # Generate recommendations
+            recommendations = self.baybe_campaign.recommend(batch_size=num_experiments)
 
-                experiments.append(experiment)
+            # Convert to list of dictionaries
+            experiments = recommendations.to_dict("records")
 
-                # Log progress
-                if (i + 1) % 10 == 0 or i == 0:
-                    self.logger.info(f"Generated {i + 1}/{num_experiments} experiments")
-
-            self.logger.info(f"Successfully generated {len(experiments)} experiments")
+            self.logger.info(f"Successfully generated {len(experiments)} experiments using BayBE")
 
             # Save experiments to CSV
             self._save_experiments_csv(experiments)
@@ -82,8 +93,153 @@ class BayBeIntegrationService:
             return experiments
 
         except Exception as e:
-            self.logger.error(f"Error generating experiments: {str(e)}")
-            raise
+            self.logger.error(f"Error generating experiments with BayBE: {str(e)}")
+            self.logger.info("Falling back to random generation")
+            # Fallback to random generation
+            return self._generate_random_experiments(num_experiments)
+
+    def _initialize_baybe_campaign(self) -> None:
+        """Initialize a new BayBE campaign."""
+        self.logger.info("Initializing new BayBE campaign")
+
+        # Validate campaign configuration
+        validation_errors = self._validate_campaign()
+        if validation_errors:
+            raise ValueError(f"Campaign validation failed: {'; '.join(validation_errors)}")
+
+        # Convert parameters to BayBE search space
+        search_space = ParameterConverter.create_search_space(self.campaign.parameters)
+        self.logger.info(f"Created search space with {len(search_space.parameters)} parameters")
+
+        # Convert targets to BayBE objective
+        objective = ObjectiveConverter.create_objective(self.campaign.targets)
+
+        # Log objective information
+        if len(self.campaign.targets) == 1:
+            self.logger.info(f"Created single-target objective: {self.campaign.targets[0].name}")
+        else:
+            self.logger.info(f"Created desirability objective with {len(self.campaign.targets)} targets")
+            weights = ObjectiveConverter.calculate_desirability_weights(self.campaign.targets)
+            for target_name, weight in weights.items():
+                self.logger.info(f"  - {target_name}: {weight:.3f} weight ({weight * 100:.1f}%)")
+
+        # Log multi-objective note if applicable
+        multi_obj_note = ObjectiveConverter.create_multi_objective_note(self.campaign.targets)
+        if multi_obj_note:
+            self.logger.info(multi_obj_note)
+
+        # Create BayBE campaign
+        self.baybe_campaign = BayBeCampaign(searchspace=search_space, objective=objective)
+
+    def _update_baybe_campaign_with_data(self) -> None:
+        """Update BayBE campaign with existing experimental data."""
+        self.logger.info("Updating BayBE campaign with existing data")
+
+        # Initialize campaign first
+        self._initialize_baybe_campaign()
+
+        # Load existing experimental data
+        existing_data = self._load_existing_experimental_data()
+
+        if existing_data is not None and not existing_data.empty:
+            self.logger.info(f"Found {len(existing_data)} existing experiments")
+
+            # Add measurements to campaign
+            self.baybe_campaign.add_measurements(existing_data)
+            self.logger.info("Successfully added existing measurements to BayBE campaign")
+        else:
+            self.logger.info("No existing experimental data found")
+
+    def _load_existing_experimental_data(self) -> Optional[pd.DataFrame]:
+        """
+        Load existing experimental data from campaign folder.
+
+        Returns:
+            DataFrame with existing experimental data, or None if not found
+        """
+        try:
+            # Look for CSV files in the runs folder
+            runs_dir = self.campaign_folder / self.RUNS_FOLDERNAME
+            if not runs_dir.exists():
+                return None
+
+            csv_files = list(runs_dir.glob("*.csv"))
+            if not csv_files:
+                return None
+
+            # For now, use the most recent CSV file
+            # TODO: Implement proper data aggregation from multiple files
+            latest_file = max(csv_files, key=lambda f: f.stat().st_mtime)
+            self.logger.info(f"Loading data from: {latest_file}")
+
+            df = pd.read_csv(latest_file)
+
+            # Validate that the DataFrame has required columns
+            target_names = ObjectiveConverter.get_target_names(self.campaign.targets)
+            missing_targets = [name for name in target_names if name not in df.columns]
+
+            if missing_targets:
+                self.logger.warning(f"Missing target columns in data: {missing_targets}")
+                # Add missing columns with NaN values
+                for target_name in missing_targets:
+                    df[target_name] = None
+
+            return df
+
+        except Exception as e:
+            self.logger.error(f"Error loading existing data: {str(e)}")
+            return None
+
+    def _validate_campaign(self) -> List[str]:
+        """
+        Validate campaign configuration for BayBE.
+
+        Returns:
+            List of validation error messages
+        """
+        errors = []
+
+        # Check parameters
+        if not self.campaign.parameters:
+            errors.append("No parameters defined")
+        else:
+            # Validate individual parameters
+            valid_params = 0
+            for param in self.campaign.parameters:
+                if ParameterConverter.validate_parameter_constraints(param):
+                    valid_params += 1
+                else:
+                    errors.append(f"Invalid parameter configuration: {param.name}")
+
+            if valid_params == 0:
+                errors.append("No valid parameters for optimization")
+
+        # Check targets
+        target_errors = ObjectiveConverter.validate_targets(self.campaign.targets)
+        errors.extend(target_errors)
+
+        return errors
+
+    def _generate_random_experiments(self, num_experiments: int) -> List[Dict[str, Any]]:
+        """
+        Fallback method to generate random experiments when BayBE fails.
+
+        Args:
+            num_experiments: Number of experiments to generate
+
+        Returns:
+            List of experiment dictionaries
+        """
+        self.logger.info(f"Generating {num_experiments} random experiments as fallback")
+
+        experiments = []
+        for i in range(num_experiments):
+            experiment = {}
+            for param in self.campaign.parameters:
+                experiment[param.name] = self._generate_parameter_value(param)
+            experiments.append(experiment)
+
+        return experiments
 
     def _generate_parameter_value(self, parameter: BaseParameter) -> Any:
         """
@@ -140,16 +296,76 @@ class BayBeIntegrationService:
             return datetime.fromtimestamp(timestamp)
         return None
 
+    def get_campaign_info(self) -> Dict[str, Any]:
+        """
+        Get information about the BayBE campaign status.
+
+        Returns:
+            Dictionary with campaign information
+        """
+        info = {
+            "campaign_initialized": self.baybe_campaign is not None,
+            "parameter_count": len(self.campaign.parameters),
+            "target_count": len(self.campaign.targets),
+            "valid_parameters": 0,
+            "validation_errors": [],
+        }
+
+        # Count valid parameters
+        for param in self.campaign.parameters:
+            if ParameterConverter.validate_parameter_constraints(param):
+                info["valid_parameters"] += 1
+
+        # Get validation errors
+        info["validation_errors"] = self._validate_campaign()
+
+        if self.baybe_campaign is not None:
+            # Add BayBE-specific information
+            try:
+                info["measurements_count"] = len(self.baybe_campaign.measurements)
+            except:
+                info["measurements_count"] = 0
+
+        return info
+
+    def get_desirability_info(self) -> Optional[Dict[str, Any]]:
+        """
+        Get information about the desirability function if using multi-objective optimization.
+
+        Returns:
+            Dictionary with desirability information, or None if single-objective
+        """
+        if len(self.campaign.targets) <= 1:
+            return None
+
+        weights = ObjectiveConverter.calculate_desirability_weights(self.campaign.targets)
+        explanation = ObjectiveConverter.explain_desirability_function(self.campaign.targets)
+
+        return {
+            "target_count": len(self.campaign.targets),
+            "target_weights": weights,
+            "explanation": explanation,
+            "targets": [
+                {
+                    "name": target.name,
+                    "mode": target.mode,
+                    "weight": target.weight,
+                    "normalized_weight": weights[target.name],
+                }
+                for target in self.campaign.targets
+            ],
+        }
+
 
 class MockBayBeService(BayBeIntegrationService):
     """
     Mock BayBe service for development and testing.
-    Simulates the behavior of BayBe with realistic delays.
+    Uses the real BayBE implementation but adds simulated delays and fallback behavior.
     """
 
     def generate_experiments(self, num_experiments: int, has_previous_data: bool = False) -> List[Dict[str, Any]]:
         """
-        Generate mock experiments with simulated processing time.
+        Generate experiments with simulated processing time and fallback to random if BayBE fails.
         """
         import time
 
@@ -157,10 +373,16 @@ class MockBayBeService(BayBeIntegrationService):
 
         # Simulate processing time (faster for first run, slower for subsequent)
         if not has_previous_data:
-            # First run is quick (random generation)
-            time.sleep(1)
+            # First run is quick
+            time.sleep(0.5)
         else:
             # Subsequent runs take longer (optimization)
-            time.sleep(2 + (num_experiments * 0.1))  # Scale with number of experiments
+            time.sleep(1 + (num_experiments * 0.05))
 
-        return super().generate_experiments(num_experiments, has_previous_data)
+        try:
+            # Try to use real BayBE implementation
+            return super().generate_experiments(num_experiments, has_previous_data)
+        except Exception as e:
+            self.logger.warning(f"BayBE failed, using random generation: {str(e)}")
+            # Always fall back to random generation in mock mode
+            return self._generate_random_experiments(num_experiments)
