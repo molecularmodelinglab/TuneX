@@ -14,6 +14,7 @@ from app.core.base import BaseScreen
 from app.core.settings import get_recent_workspaces
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
 from app.shared.components.headers import MainHeader
+from app.shared.components.workspace_card import WorkspaceCard
 from app.shared.constants import WorkspaceConstants
 from app.shared.styles.theme import get_widget_styles
 
@@ -56,7 +57,41 @@ class SelectWorkspaceScreen(BaseScreen):
 
     # UI Styles
     RECENT_WORKSPACES_HEADER_STYLE = "font-size: 16px; font-weight: bold; color: #333;"
-    WORKSPACE_BUTTON_STYLE = "; text-align: left; padding: 8px 12px;"
+
+    # Workspace Card Styles
+    WORKSPACE_CARD_STYLES = """
+        /* Workspace Cards */
+        #WorkspaceCard {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 0px;
+        }
+
+        #WorkspaceCard[hovered="true"] {
+            border-color: #007BFF;
+            background-color: #f8f9fa;
+        }
+
+        #WorkspaceName {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333333;
+            margin: 0px;
+        }
+
+        #WorkspaceDetails {
+            font-size: 13px;
+            color: #666666;
+            margin: 0px;
+        }
+
+        #WorkspaceDate {
+            font-size: 12px;
+            color: #999999;
+            margin: 0px;
+        }
+    """
 
     def __init__(self, parent=None):
         self.logger = logging.getLogger(__name__)
@@ -129,19 +164,19 @@ class SelectWorkspaceScreen(BaseScreen):
         self._populate_recent_workspaces()
 
     def _populate_recent_workspaces(self):
-        """Populate the recent workspaces container with buttons."""
+        """Populate the recent workspaces container with workspace cards."""
         # Clear existing widgets
         while self.recent_workspaces_layout.count():
             child = self.recent_workspaces_layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
 
-        recent_workspaces = get_recent_workspaces()
-        for workspace_path in recent_workspaces:
-            workspace_button = SecondaryButton(workspace_path)
-            workspace_button.clicked.connect(lambda checked, path=workspace_path: self._workspace_selected(path))
-            workspace_button.setStyleSheet(workspace_button.styleSheet() + self.WORKSPACE_BUTTON_STYLE)
-            self.recent_workspaces_layout.addWidget(workspace_button)
+        recent_workspaces = get_recent_workspaces()  # Returns List[Workspace]
+
+        for workspace in recent_workspaces:
+            workspace_card = WorkspaceCard(workspace)
+            workspace_card.workspace_selected.connect(self._workspace_selected)
+            self.recent_workspaces_layout.addWidget(workspace_card)
 
     def _on_create_new_workspace(self):
         """Handle creating a new workspace."""
@@ -223,7 +258,7 @@ class SelectWorkspaceScreen(BaseScreen):
 
     def _apply_styles(self):
         """Apply screen-specific styles."""
-        self.setStyleSheet(get_widget_styles())
+        self.setStyleSheet(get_widget_styles() + self.WORKSPACE_CARD_STYLES)
 
     def showEvent(self, event):
         """Refresh recent workspaces when the screen is shown."""

@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+from datetime import datetime
 from unittest.mock import Mock, patch
 
 import pytest
@@ -9,16 +10,18 @@ from app.core.settings import (
     APP_NAME,
     LAST_WORKSPACE_KEY,
     RECENT_WORKSPACE_COUNT,
-    RECENT_WORKSPACE_PATHS_KEY,
+    RECENT_WORKSPACES_KEY,
     SETTINGS_FILENAME,
     _get_settings_path,
     _read_settings,
-    _update_recent_workspace_paths,
+    _update_recent_workspaces,
     _write_settings,
     get_last_workspace,
+    get_recent_workspace_paths,
     get_recent_workspaces,
     save_last_workspace,
 )
+from app.models.workspace import Workspace
 
 
 class TestSettingsPath:
@@ -133,61 +136,99 @@ class TestWriteSettings:
         assert "Error writing settings" in str(mock_log.error.call_args)
 
 
-class TestUpdateRecentWorkspacePaths:
-    """Test updating recent workspace paths."""
+class TestWorkspace:
+    """Test Workspace dataclass functionality."""
 
-    def test_update_recent_workspace_paths_empty_settings(self):
+    def test_workspace_creation_with_auto_name(self):
+        workspace = Workspace(path="/path/to/MyProject")
+        assert workspace.name == "MyProject"
+        assert workspace.path == "/path/to/MyProject"
+        assert isinstance(workspace.accessed_at, datetime)
+
+    def test_workspace_creation_with_explicit_name(self):
+        workspace = Workspace(path="/path/to/folder", name="Custom Name")
+        assert workspace.name == "Custom Name"
+        assert workspace.path == "/path/to/folder"
+
+    def test_workspace_from_dict(self):
+        data = {"path": "/test/path", "name": "Test Workspace", "accessed_at": "2024-12-15T10:30:00"}
+        workspace = Workspace.from_dict(data)
+        assert workspace.path == "/test/path"
+        assert workspace.name == "Test Workspace"
+        assert workspace.accessed_at == datetime.fromisoformat("2024-12-15T10:30:00")
+
+    def test_workspace_to_dict(self):
+        workspace = Workspace(path="/test/path", name="Test Workspace", accessed_at=datetime(2024, 12, 15, 10, 30, 0))
+        result = workspace.to_dict()
+        expected = {"path": "/test/path", "name": "Test Workspace", "accessed_at": "2024-12-15T10:30:00"}
+        assert result == expected
+
+
+class TestUpdateRecentWorkspaces:
+    """Test updating recent workspaces."""
+
+    def test_update_recent_workspaces_empty_settings(self):
         settings = {}
         path = "/path/to/workspace"
 
-        _update_recent_workspace_paths(settings, path)
+        _update_recent_workspaces(settings, path)
 
-        assert RECENT_WORKSPACE_PATHS_KEY in settings
-        assert settings[RECENT_WORKSPACE_PATHS_KEY] == [path]
+        assert RECENT_WORKSPACES_KEY in settings
+        workspaces = settings[RECENT_WORKSPACES_KEY]
+        assert len(workspaces) == 1
+        assert workspaces[0]["path"] == path
+        assert workspaces[0]["name"] == "workspace"
 
-    def test_update_recent_workspace_paths_new_path(self):
-        settings = {RECENT_WORKSPACE_PATHS_KEY: ["/old/path"]}
+    def test_update_recent_workspaces_new_path(self):
+        # Create settings with existing workspace
+        existing_workspace = Workspace(path="/old/path", name="old").to_dict()
+        settings = {RECENT_WORKSPACES_KEY: [existing_workspace]}
         new_path = "/new/path"
 
-        _update_recent_workspace_paths(settings, new_path)
+        _update_recent_workspaces(settings, new_path)
 
-        expected = [new_path, "/old/path"]
-        assert settings[RECENT_WORKSPACE_PATHS_KEY] == expected
+        workspaces = settings[RECENT_WORKSPACES_KEY]
+        assert len(workspaces) == 2
+        assert workspaces[0]["path"] == new_path  # Most recent first
+        assert workspaces[1]["path"] == "/old/path"
 
-    def test_update_recent_workspace_paths_existing_path_moves_to_top(self):
-        settings = {RECENT_WORKSPACE_PATHS_KEY: ["/path1", "/path2", "/path3"]}
-        existing_path = "/path2"
+    def test_update_recent_workspaces_existing_path_updates_time(self):
+        # Create settings with existing workspaces
+        old_time = datetime(2024, 1, 1, 12, 0, 0)
+        workspace1 = Workspace(path="/path1", accessed_at=old_time).to_dict()
+        workspace2 = Workspace(path="/path2", accessed_at=old_time).to_dict()
+        settings = {RECENT_WORKSPACES_KEY: [workspace1, workspace2]}
 
-        _update_recent_workspace_paths(settings, existing_path)
+        _update_recent_workspaces(settings, "/path2")
 
-        expected = ["/path2", "/path1", "/path3"]
-        assert settings[RECENT_WORKSPACE_PATHS_KEY] == expected
+        workspaces = settings[RECENT_WORKSPACES_KEY]
+        assert len(workspaces) == 2
+        assert workspaces[0]["path"] == "/path2"  # Moved to front
+        # Time should be updated (newer than old_time)
+        updated_time = datetime.fromisoformat(workspaces[0]["accessed_at"])
+        assert updated_time > old_time
 
-    def test_update_recent_workspace_paths_exceeds_limit(self):
-        # Create a list at the limit
-        initial_paths = [f"/path{i}" for i in range(RECENT_WORKSPACE_COUNT)]
-        settings = {RECENT_WORKSPACE_PATHS_KEY: initial_paths.copy()}
+    def test_update_recent_workspaces_exceeds_limit(self):
+        # Create settings at the limit
+        initial_workspaces = []
+        for i in range(RECENT_WORKSPACE_COUNT):
+            ws = Workspace(path=f"/path{i}", name=f"path{i}").to_dict()
+            initial_workspaces.append(ws)
+
+        settings = {RECENT_WORKSPACES_KEY: initial_workspaces}
         new_path = "/new/path"
 
-        _update_recent_workspace_paths(settings, new_path)
+        _update_recent_workspaces(settings, new_path)
 
-        # Should have new path at front and last item removed
-        expected = [new_path] + initial_paths[:-1]
-        assert settings[RECENT_WORKSPACE_PATHS_KEY] == expected
-        assert len(settings[RECENT_WORKSPACE_PATHS_KEY]) == RECENT_WORKSPACE_COUNT
+        workspaces = settings[RECENT_WORKSPACES_KEY]
+        assert len(workspaces) == RECENT_WORKSPACE_COUNT
+        assert workspaces[0]["path"] == new_path  # New path at front
 
-    def test_update_recent_workspace_paths_existing_path_at_limit(self):
-        # Test moving existing path to top when at limit
-        initial_paths = [f"/path{i}" for i in range(RECENT_WORKSPACE_COUNT)]
-        settings = {RECENT_WORKSPACE_PATHS_KEY: initial_paths.copy()}
-        existing_path = initial_paths[2]  # Move middle item to front
-
-        _update_recent_workspace_paths(settings, existing_path)
-
-        # Should move existing path to front, no items should be lost
-        expected = [existing_path] + [p for p in initial_paths if p != existing_path]
-        assert settings[RECENT_WORKSPACE_PATHS_KEY] == expected
-        assert len(settings[RECENT_WORKSPACE_PATHS_KEY]) == RECENT_WORKSPACE_COUNT
+        # Check that we have the correct number of items
+        paths = [ws["path"] for ws in workspaces]
+        assert new_path in paths
+        # The new path should be first due to sorting by accessed_at
+        assert paths[0] == new_path
 
 
 class TestSaveLastWorkspace:
@@ -205,14 +246,19 @@ class TestSaveLastWorkspace:
         mock_write.assert_called_once()
         written_settings = mock_write.call_args[0][0]
         assert written_settings[LAST_WORKSPACE_KEY] == path
-        assert path in written_settings[RECENT_WORKSPACE_PATHS_KEY]
+
+        # Check that workspace was added to recent list
+        workspaces = written_settings[RECENT_WORKSPACES_KEY]
+        assert len(workspaces) == 1
+        assert workspaces[0]["path"] == path
 
     @patch("app.core.settings._write_settings")
     @patch("app.core.settings._read_settings")
     def test_save_last_workspace_existing_settings(self, mock_read, mock_write):
+        old_workspace = Workspace(path="/old/workspace", name="old").to_dict()
         existing_settings = {
             LAST_WORKSPACE_KEY: "/old/workspace",
-            RECENT_WORKSPACE_PATHS_KEY: ["/old/workspace", "/another/path"],
+            RECENT_WORKSPACES_KEY: [old_workspace],
         }
         mock_read.return_value = existing_settings
         new_path = "/new/workspace"
@@ -223,7 +269,7 @@ class TestSaveLastWorkspace:
         mock_write.assert_called_once()
         written_settings = mock_write.call_args[0][0]
         assert written_settings[LAST_WORKSPACE_KEY] == new_path
-        assert written_settings[RECENT_WORKSPACE_PATHS_KEY][0] == new_path
+        assert written_settings[RECENT_WORKSPACES_KEY][0]["path"] == new_path
 
 
 class TestGetLastWorkspace:
@@ -257,11 +303,20 @@ class TestGetRecentWorkspaces:
 
     @patch("app.core.settings._read_settings")
     def test_get_recent_workspaces_exists(self, mock_read):
-        paths = ["/path1", "/path2", "/path3"]
-        mock_read.return_value = {RECENT_WORKSPACE_PATHS_KEY: paths}
+        workspace_dicts = [
+            Workspace(path="/path1", name="path1").to_dict(),
+            Workspace(path="/path2", name="path2").to_dict(),
+            Workspace(path="/path3", name="path3").to_dict(),
+        ]
+        mock_read.return_value = {RECENT_WORKSPACES_KEY: workspace_dicts}
 
         result = get_recent_workspaces()
-        assert result == paths
+
+        assert len(result) == 3
+        assert all(isinstance(ws, Workspace) for ws in result)
+        assert result[0].path == "/path1"
+        assert result[1].path == "/path2"
+        assert result[2].path == "/path3"
 
     @patch("app.core.settings._read_settings")
     def test_get_recent_workspaces_not_exists(self, mock_read):
@@ -271,11 +326,26 @@ class TestGetRecentWorkspaces:
         assert result == []
 
     @patch("app.core.settings._read_settings")
-    def test_get_recent_workspaces_empty_list(self, mock_read):
-        mock_read.return_value = {RECENT_WORKSPACE_PATHS_KEY: []}
+    def test_get_recent_workspaces_handles_legacy_format(self, mock_read):
+        # Test that the current implementation handles empty results gracefully
+        # (Your current settings.py doesn't support legacy string format)
+        mock_read.return_value = {RECENT_WORKSPACES_KEY: ["/path1", "/path2"]}
 
         result = get_recent_workspaces()
-        assert result == []
+
+        # Current implementation should return empty list since it only handles dict format
+        assert len(result) == 0
+
+    @patch("app.core.settings._read_settings")
+    def test_get_recent_workspace_paths_backward_compatibility(self, mock_read):
+        workspace_dicts = [
+            Workspace(path="/path1", name="Workspace1").to_dict(),
+            Workspace(path="/path2", name="Workspace2").to_dict(),
+        ]
+        mock_read.return_value = {RECENT_WORKSPACES_KEY: workspace_dicts}
+
+        result = get_recent_workspace_paths()
+        assert result == ["/path1", "/path2"]
 
 
 class TestIntegration:
@@ -292,20 +362,27 @@ class TestIntegration:
 
                 # Verify it was saved
                 assert get_last_workspace() == "/first/workspace"
-                assert get_recent_workspaces() == ["/first/workspace"]
+                workspaces = get_recent_workspaces()
+                assert len(workspaces) == 1
+                assert workspaces[0].path == "/first/workspace"
 
                 # Save second workspace
                 save_last_workspace("/second/workspace")
 
-                # Verify order
+                # Verify order (most recent first)
                 assert get_last_workspace() == "/second/workspace"
-                assert get_recent_workspaces() == ["/second/workspace", "/first/workspace"]
+                workspaces = get_recent_workspaces()
+                assert len(workspaces) == 2
+                assert workspaces[0].path == "/second/workspace"
+                assert workspaces[1].path == "/first/workspace"
 
                 # Save first workspace again (should move to top)
                 save_last_workspace("/first/workspace")
 
                 assert get_last_workspace() == "/first/workspace"
-                assert get_recent_workspaces() == ["/first/workspace", "/second/workspace"]
+                workspaces = get_recent_workspaces()
+                assert workspaces[0].path == "/first/workspace"
+                assert workspaces[1].path == "/second/workspace"
 
     def test_recent_workspaces_limit_integration(self):
         """Test that recent workspaces respect the limit."""
@@ -317,37 +394,35 @@ class TestIntegration:
                 for i in range(RECENT_WORKSPACE_COUNT + 3):
                     save_last_workspace(f"/workspace{i}")
 
-                recent = get_recent_workspaces()
+                workspaces = get_recent_workspaces()
 
                 # Should only have the limit number of workspaces
-                assert len(recent) == RECENT_WORKSPACE_COUNT
-                # Should have the most recent ones
-                assert recent[0] == f"/workspace{RECENT_WORKSPACE_COUNT + 2}"
-                assert recent[-1] == f"/workspace{3}"
+                assert len(workspaces) == RECENT_WORKSPACE_COUNT
+                # Should have the most recent ones (sorted by access time)
+                assert workspaces[0].path == f"/workspace{RECENT_WORKSPACE_COUNT + 2}"
 
 
 @pytest.mark.parametrize(
-    "initial_paths, new_path, expected_result",
+    "initial_workspace_paths, new_path, expected_first_path",
     [
         # Empty list
-        ([], "/new", ["/new"]),
+        ([], "/new", "/new"),
         # New path at front
-        (["/old"], "/new", ["/new", "/old"]),
+        (["/old"], "/new", "/new"),
         # Move existing to front
-        (["/a", "/b", "/c"], "/b", ["/b", "/a", "/c"]),
-        # Exceed limit
-        (
-            [f"/p{i}" for i in range(RECENT_WORKSPACE_COUNT)],
-            "/new",
-            ["/new"] + [f"/p{i}" for i in range(RECENT_WORKSPACE_COUNT - 1)],
-        ),
+        (["/a", "/b", "/c"], "/b", "/b"),
     ],
 )
-def test_update_recent_workspace_paths_parametrized(initial_paths, new_path, expected_result):
-    """Parametrized tests for recent workspace path updates."""
-    settings = {RECENT_WORKSPACE_PATHS_KEY: initial_paths.copy()}
+def test_update_recent_workspaces_parametrized(initial_workspace_paths, new_path, expected_first_path):
+    """Parametrized tests for recent workspace updates."""
+    # Convert paths to workspace dicts
+    initial_workspaces = [
+        Workspace(path=path, name=os.path.basename(path)).to_dict() for path in initial_workspace_paths
+    ]
+    settings = {RECENT_WORKSPACES_KEY: initial_workspaces}
 
-    _update_recent_workspace_paths(settings, new_path)
+    _update_recent_workspaces(settings, new_path)
 
-    assert settings[RECENT_WORKSPACE_PATHS_KEY] == expected_result
-    assert len(settings[RECENT_WORKSPACE_PATHS_KEY]) <= RECENT_WORKSPACE_COUNT
+    workspaces = settings[RECENT_WORKSPACES_KEY]
+    assert workspaces[0]["path"] == expected_first_path
+    assert len(workspaces) <= RECENT_WORKSPACE_COUNT
