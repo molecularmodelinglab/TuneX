@@ -178,7 +178,10 @@ class ParameterConverter:
         param_type = tunex_param.TYPE
 
         if param_type == ParameterType.CONTINUOUS_NUMERICAL:
-            return hasattr(tunex_param, 'min_val') and hasattr(tunex_param, 'max_val')
+            if hasattr(tunex_param, 'min_val') and hasattr(tunex_param, 'max_val'):
+                return tunex_param.min_val is not None and tunex_param.max_val is not None
+            else:
+                return False
 
         elif param_type in [ParameterType.DISCRETE_NUMERICAL_REGULAR, ParameterType.DISCRETE_NUMERICAL_IRREGULAR]:
             if hasattr(tunex_param, 'values'):
