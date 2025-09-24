@@ -1,6 +1,8 @@
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QStyle, QVBoxLayout
+from datetime import datetime
+
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont, QPainter, QPixmap
+from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
 
 from app.core.base import BaseWidget
 from app.models.campaign import Campaign
@@ -11,72 +13,34 @@ from app.shared.styles.theme import get_widget_styles
 
 class RecentCampaignsWidget(BaseWidget):
     """
-    Widget to display a list of recent campaigns.
+    Widget to display all campaigns with search functionality.
     """
 
     campaign_selected = Signal(Campaign)
 
-    NO_RECENT_CAMPAIGNS_TEXT = "No recent campaigns"
-    NO_RECENT_CAMPAIGNS_SUBTEXT = "Browse or create a new one"
+    NO_RECENT_CAMPAIGNS_TEXT = "No campaigns yet"
+    NO_RECENT_CAMPAIGNS_SUBTEXT = "Create your first campaign"
+    NO_CAMPAIGNS_FOUND_TEXT = "No campaigns found"
+    NO_CAMPAIGNS_FOUND_SUBTEXT = "Try a different search term"
+    SEARCH_PLACEHOLDER_TEXT = "Search campaigns..."
     CAMPAIGN_LABEL_STYLESHEET = "padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin: 2px;"
     CARD_SPACING = 8
     LAYOUT_MARGINS = (0, 0, 0, 0)
+    SEARCH_BAR_MARGINS = (0, 0, 0, 10)
+    ZERO_MARGIN = 0
+    SCROLL_AREA_MIN_HEIGHT = 400
+    EMPTY_ICON_SIZE = 48
+    EMPTY_ICON_FONT_SIZE = 25
+    SCROLL_AREA_STYLE = """QScrollArea {
+        background: transparent;
+        border: none;
+    }
+    QScrollArea > QWidget > QWidget {
+        background: transparent;
+    }"""
 
-    def __init__(self, parent=None):
-        self.campaigns: list[Campaign] = []
-        super().__init__(parent)
-
-    def _setup_widget(self):
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(*self.LAYOUT_MARGINS)
-        self.main_layout.setSpacing(self.CARD_SPACING)
-        self.setLayout(self.main_layout)
-
-    def update_campaigns(self, campaigns: list[Campaign]):
-        self.campaigns = campaigns
-        self._update_display()
-
-    def _update_display(self):
-        self._clear_layout()
-        if self.campaigns:
-            self._show_campaigns_list()
-        else:
-            self._show_empty_state()
-        self._apply_styles()
-
-    def _clear_layout(self):
-        while self.main_layout.count():
-            child = self.main_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
-
-    def _show_campaigns_list(self):
-        recent_campaigns = self.campaigns[:5][::-1]
-
-        for campaign in recent_campaigns:
-            card = CampaignCard(campaign)
-            card.campaign_selected.connect(self.campaign_selected.emit)
-            self.main_layout.addWidget(card)
-
-    def _show_empty_state(self):
-        icon_pixmap = self._get_folder_icon_pixmap()
-        empty_state = EmptyStateCard(
-            primary_message=self.NO_RECENT_CAMPAIGNS_TEXT,
-            secondary_message=self.NO_RECENT_CAMPAIGNS_SUBTEXT,
-            icon_pixmap=icon_pixmap,
-        )
-        self.main_layout.addWidget(empty_state)
-
-    def _get_folder_icon_pixmap(self) -> QPixmap:
-        style = self.style()
-        icon = style.standardIcon(QStyle.StandardPixmap.SP_DirIcon)
-        return icon.pixmap(64, 64)
-
-    def _apply_styles(self):
-        """Apply screen-specific styles."""
-        self.setStyleSheet(
-            get_widget_styles()
-            + """
+    # Combined styles
+    WIDGET_STYLES = """
             /* Campaign Cards */
             #CampaignCard {
                 background-color: white;
@@ -136,4 +100,134 @@ class RecentCampaignsWidget(BaseWidget):
                 background-color: #f0f0f0;
             }
         """
+
+    def __init__(self, parent=None):
+        self.campaigns: list[Campaign] = []
+        self.search_term: str = ""
+        super().__init__(parent)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+    def _setup_widget(self):
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(*self.LAYOUT_MARGINS)
+        self.main_layout.setSpacing(self.CARD_SPACING)
+        self.setLayout(self.main_layout)
+
+        # Search bar
+        self._create_search_bar()
+        # Campaigns
+        self._create_campaigns_container()
+
+    def _create_campaigns_container(self):
+        """Create campaigns widget."""
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.scroll_area.setMinimumHeight(self.SCROLL_AREA_MIN_HEIGHT)
+
+        self.scroll_area.setStyleSheet(self.SCROLL_AREA_STYLE)
+
+        # Container widget for scroll area
+        self.scroll_content = QWidget()
+        self.scroll_layout = QVBoxLayout(self.scroll_content)
+        self.scroll_layout.setContentsMargins(self.ZERO_MARGIN, self.CARD_SPACING, self.ZERO_MARGIN, self.CARD_SPACING)
+        self.scroll_layout.setSpacing(self.CARD_SPACING)
+        self.scroll_area.setWidget(self.scroll_content)
+
+        # Add scroll area to main layout
+        self.main_layout.addWidget(self.scroll_area)
+
+    def _create_search_bar(self):
+        """Create the search bar widget."""
+        self.search_container = QWidget()
+        search_layout = QHBoxLayout(self.search_container)
+        search_layout.setContentsMargins(*self.SEARCH_BAR_MARGINS)
+
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText(self.SEARCH_PLACEHOLDER_TEXT)
+        self.search_input.textChanged.connect(self._on_search_text_changed)
+        search_layout.addWidget(self.search_input)
+
+        self.main_layout.insertWidget(0, self.search_container)
+
+    def _on_search_text_changed(self, text: str):
+        """Handle search text changes."""
+        self.search_term = text.lower()
+        self._update_display()
+
+    def update_campaigns(self, campaigns: list[Campaign]):
+        self.campaigns = campaigns
+        self._update_display()
+
+    def _get_filtered_campaigns(self):
+        filtered_campaigns = self.campaigns
+        if self.search_term:
+            filtered_campaigns = [c for c in self.campaigns if self.search_term in c.name.lower()]
+        return filtered_campaigns
+
+    def _update_display(self):
+        self._clear_layout()
+        filtered_campaigns = self._get_filtered_campaigns()
+        if filtered_campaigns:
+            self._show_campaigns_list()
+        else:
+            self._show_empty_state()
+        self._apply_styles()
+
+    def _clear_layout(self):
+        while self.scroll_layout.count():
+            child = self.scroll_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+    def _show_campaigns_list(self):
+        filtered_campaigns = self._get_filtered_campaigns()
+
+        # Show all campaigns (sorted by accessed_at, most recent first)
+        display_campaigns = sorted(filtered_campaigns, key=lambda x: x.accessed_at or datetime.min, reverse=True)
+
+        for campaign in display_campaigns:
+            card = CampaignCard(campaign)
+            card.campaign_selected.connect(self.campaign_selected.emit)
+            self.scroll_layout.addWidget(card)
+
+        # Add stretch to push content to top
+        self.scroll_layout.addStretch()
+
+    def _show_empty_state(self):
+        icon_pixmap = self._get_empty_campaigns_icon()
+
+        if self.search_term:
+            primary_message = self.NO_CAMPAIGNS_FOUND_TEXT
+            secondary_message = self.NO_CAMPAIGNS_FOUND_SUBTEXT
+        else:
+            primary_message = self.NO_RECENT_CAMPAIGNS_TEXT
+            secondary_message = self.NO_RECENT_CAMPAIGNS_SUBTEXT
+
+        empty_state = EmptyStateCard(
+            primary_message=primary_message,
+            secondary_message=secondary_message,
+            icon_pixmap=icon_pixmap,
         )
+        self.scroll_layout.addWidget(empty_state)
+        self.scroll_layout.addStretch()
+
+    def _get_empty_campaigns_icon(self) -> QPixmap:
+        """Get icon for empty campaigns state."""
+        pixmap = QPixmap(self.EMPTY_ICON_SIZE, self.EMPTY_ICON_SIZE)
+        pixmap.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setPen(Qt.GlobalColor.black)
+        font = QFont("Segoe UI Emoji", self.EMPTY_ICON_FONT_SIZE)
+        painter.setFont(font)
+        painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "🚀")
+        painter.end()
+
+        return pixmap
+
+    def _apply_styles(self):
+        """Apply screen-specific styles."""
+        self.setStyleSheet(get_widget_styles() + self.WIDGET_STYLES)

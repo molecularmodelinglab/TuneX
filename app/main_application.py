@@ -7,7 +7,11 @@ import logging
 import os
 from typing import Optional
 
-from PySide6.QtWidgets import QMainWindow, QSizePolicy, QStackedWidget
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QSizePolicy,
+    QStackedWidget,
+)
 
 from app.core import settings
 from app.models.campaign import Campaign
@@ -87,7 +91,6 @@ class MainApplication(QMainWindow):
 
         # Start screen navigation
         self.start_screen.new_campaign_requested.connect(self.show_campaign_wizard)
-        self.start_screen.browse_campaigns_requested.connect(self.show_browse_campaigns)
         self.start_screen.back_requested.connect(self.show_select_workspace)
         self.start_screen.campaign_selected.connect(self.show_campaign_panel)
 
@@ -125,11 +128,6 @@ class MainApplication(QMainWindow):
         self.stacked_widget.addWidget(self.campaign_panel)
         self.stacked_widget.setCurrentWidget(self.campaign_panel)
         self.setWindowTitle(f"TuneX - {campaign.name}")
-
-    def show_browse_campaigns(self):
-        """Navigate to browse campaigns screen."""
-        # TODO: Implement browse campaigns screen
-        self.logger.info("Browse campaigns functionality coming soon!")
 
     def on_campaign_created(self, campaign: Campaign):
         self.logger.info(f"Campaign created successfully: {campaign.name}")
@@ -170,8 +168,6 @@ class MainApplication(QMainWindow):
             self.show_start_screen()
         elif screen_name == ScreenName.CAMPAIGN_WIZARD:
             self.show_campaign_wizard()
-        elif screen_name == ScreenName.BROWSE_CAMPAIGNS:
-            self.show_browse_campaigns()
         elif screen_name == ScreenName.SELECT_WORKSPACE:
             self.show_select_workspace()
         else:

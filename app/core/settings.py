@@ -5,13 +5,18 @@ Manages persistent application settings.
 import json
 import logging
 import os
-from typing import Optional
+from datetime import datetime
+from typing import List, Optional
 
 from PySide6.QtCore import QStandardPaths
 
+from app.models.workspace import Workspace
+
+RECENT_WORKSPACE_COUNT = 5
 APP_NAME = "TuneX"
 SETTINGS_FILENAME = "settings.json"
 LAST_WORKSPACE_KEY = "last_workspace_path"
+RECENT_WORKSPACES_KEY = "recent_workspaces"
 
 
 def _get_settings_path() -> str:
@@ -49,10 +54,53 @@ def _write_settings(settings: dict):
         logger.error(f"Error writing settings: {e}")
 
 
+def _load_workspaces_from_settings(settings: dict) -> List[Workspace]:
+    """Load and convert workspace data from settings dict."""
+    workspace_data = settings.get(RECENT_WORKSPACES_KEY, [])
+    workspaces = []
+
+    for item in workspace_data:
+        if isinstance(item, dict):
+            workspace = Workspace.from_dict(item)
+        else:
+            continue
+
+        workspaces.append(workspace)
+
+    return workspaces
+
+
+def _save_workspaces_to_settings(settings: dict, workspaces: List[Workspace]):
+    """Save workspace objects to settings dict."""
+    settings[RECENT_WORKSPACES_KEY] = [workspace.to_dict() for workspace in workspaces]
+
+
+def _update_recent_workspaces(settings: dict, workspace_path: str):
+    """Updates recent workspace list with time-based sorting."""
+    workspaces = _load_workspaces_from_settings(settings)
+
+    existing_workspace = None
+    for workspace in workspaces:
+        if workspace.path == workspace_path:
+            existing_workspace = workspace
+            break
+    if existing_workspace:
+        existing_workspace.accessed_at = datetime.now()
+    else:
+        new_workspace = Workspace(path=workspace_path, accessed_at=datetime.now())
+        workspaces.append(new_workspace)
+
+    workspaces.sort(key=lambda w: w.accessed_at, reverse=True)
+    workspaces = workspaces[:RECENT_WORKSPACE_COUNT]
+
+    _save_workspaces_to_settings(settings, workspaces)
+
+
 def save_last_workspace(path: str):
-    """Saves the path of the last used workspace."""
+    """Saves the path of the last used workspace and updates recent list."""
     settings = _read_settings()
     settings[LAST_WORKSPACE_KEY] = path
+    _update_recent_workspaces(settings, path)
     _write_settings(settings)
 
 
@@ -60,3 +108,16 @@ def get_last_workspace() -> Optional[str]:
     """Retrieves the path of the last used workspace."""
     settings = _read_settings()
     return settings.get(LAST_WORKSPACE_KEY)
+
+
+def get_recent_workspaces() -> List[Workspace]:
+    """Retrieves the list of recent workspaces, sorted by access time (most recent first)."""
+    settings = _read_settings()
+    workspaces = _load_workspaces_from_settings(settings)
+    return workspaces[:RECENT_WORKSPACE_COUNT]
+
+
+def get_recent_workspace_paths() -> List[str]:
+    """Retrieves just the paths of recent workspaces for backward compatibility."""
+    workspaces = get_recent_workspaces()
+    return [workspace.path for workspace in workspaces]

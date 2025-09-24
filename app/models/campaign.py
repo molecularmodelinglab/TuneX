@@ -35,6 +35,7 @@ class Campaign:
     initial_dataset: List[Dict[str, Any]] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
+    accessed_at: datetime = field(default_factory=datetime.now)
 
     def reset(self):
         """Reset all campaign data to its initial state."""
@@ -46,6 +47,7 @@ class Campaign:
         self.initial_dataset.clear()
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
+        self.accessed_at = datetime.now()
         self.id = str(uuid4())
 
     def get_parameter_data(self) -> List[Dict[str, Any]]:
@@ -74,11 +76,16 @@ class Campaign:
 
         created_at = data.get("created_at", datetime.now())
         updated_at = data.get("updated_at", datetime.now())
+        # Access at is a new field. For consistency, let's read updated_at of it's not there.
+        # We'll need to delete it later.
+        accessed_at = data.get("accessed_at", updated_at)
 
         if isinstance(created_at, str):
             created_at = datetime.fromisoformat(created_at)
         if isinstance(updated_at, str):
             updated_at = datetime.fromisoformat(updated_at)
+        if isinstance(accessed_at, str):
+            accessed_at = datetime.fromisoformat(accessed_at)
 
         return cls(
             id=data.get("id", str(uuid4())),
@@ -89,6 +96,7 @@ class Campaign:
             initial_dataset=data.get("initial_dataset", []),
             created_at=created_at,
             updated_at=updated_at,
+            accessed_at=accessed_at,
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -113,4 +121,5 @@ class Campaign:
             "initial_dataset": self.initial_dataset,
             "created_at": self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at,
             "updated_at": self.updated_at.isoformat() if isinstance(self.updated_at, datetime) else self.updated_at,
+            "accessed_at": self.accessed_at.isoformat() if isinstance(self.accessed_at, datetime) else self.accessed_at,
         }

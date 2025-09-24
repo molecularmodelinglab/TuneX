@@ -8,11 +8,13 @@ import os
 from datetime import datetime
 
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QMessageBox, QSizePolicy, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QMessageBox, QSizePolicy, QVBoxLayout, QWidget
 
 from app.core.base import BaseScreen
+from app.core.settings import get_recent_workspaces
 from app.shared.components.buttons import PrimaryButton, SecondaryButton
 from app.shared.components.headers import MainHeader
+from app.shared.components.workspace_card import WorkspaceCard
 from app.shared.constants import WorkspaceConstants
 from app.shared.styles.theme import get_widget_styles
 
@@ -30,6 +32,7 @@ class SelectWorkspaceScreen(BaseScreen):
     HEADER_TEXT = "TuneX"
     CREATE_NEW_BUTTON_TEXT = "Create New Workspace"
     OPEN_EXISTING_BUTTON_TEXT = "Open Existing Workspace"
+    RECENT_WORKSPACES_HEADER_TEXT = "Recent Workspaces"
     SELECT_NEW_WORKSPACE_FOLDER_TEXT = "Select Folder for New Workspace"
     SELECT_EXISTING_WORKSPACE_FOLDER_TEXT = "Select Existing Workspace Folder"
     CREATE_WORKSPACE_TEXT = "Create Workspace"
@@ -43,14 +46,58 @@ class SelectWorkspaceScreen(BaseScreen):
     FAILED_TO_CREATE_WORKSPACE_TEXT = "Failed to create workspace:\n{}"
     WORKSPACE_SELECTED_TEXT = "Workspace selected: {}"
 
+    # UI Layout
     MARGINS = (30, 30, 30, 30)
     SPACING = 25
     BUTTON_SPACING = 15
+    RECENT_WORKSPACES_SECTION_SPACING = 30
+    RECENT_WORKSPACES_HEADER_SPACING = 10
+    RECENT_WORKSPACES_CONTAINER_SPACING = 5
+    RECENT_WORKSPACES_CONTAINER_MARGINS = (0, 0, 0, 0)
+
+    # UI Styles
+    RECENT_WORKSPACES_HEADER_STYLE = "font-size: 16px; font-weight: bold; color: #333;"
+
+    # Workspace Card Styles
+    WORKSPACE_CARD_STYLES = """
+        /* Workspace Cards */
+        #WorkspaceCard {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 0px;
+        }
+
+        #WorkspaceCard[hovered="true"] {
+            border-color: #007BFF;
+            background-color: #f8f9fa;
+        }
+
+        #WorkspaceName {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333333;
+            margin: 0px;
+        }
+
+        #WorkspaceDetails {
+            font-size: 13px;
+            color: #666666;
+            margin: 0px;
+        }
+
+        #WorkspaceDate {
+            font-size: 12px;
+            color: #999999;
+            margin: 0px;
+        }
+    """
 
     def __init__(self, parent=None):
         self.logger = logging.getLogger(__name__)
         super().__init__(parent)
         self.setWindowTitle(self.WINDOW_TITLE)
+        self.recent_workspaces_container = None
 
     def _setup_screen(self):
         """Setup the start screen UI."""
@@ -66,6 +113,7 @@ class SelectWorkspaceScreen(BaseScreen):
         # Create UI sections
         self._create_header()
         self._create_action_buttons()
+        self._create_recent_workspaces_section()
 
         # Add stretch to push content to top
         self.main_layout.addStretch()
@@ -94,6 +142,41 @@ class SelectWorkspaceScreen(BaseScreen):
         button_layout.addStretch()  # Push buttons to left
 
         self.main_layout.addLayout(button_layout)
+
+    def _create_recent_workspaces_section(self):
+        """Create section to display recent workspaces."""
+
+        self.recent_workspaces_container = QWidget()
+        self.recent_workspaces_layout = QVBoxLayout(self.recent_workspaces_container)
+        self.recent_workspaces_layout.setSpacing(self.RECENT_WORKSPACES_CONTAINER_SPACING)
+        self.recent_workspaces_layout.setContentsMargins(*self.RECENT_WORKSPACES_CONTAINER_MARGINS)
+
+        self.main_layout.addSpacing(self.RECENT_WORKSPACES_SECTION_SPACING)
+
+        header = QLabel(self.RECENT_WORKSPACES_HEADER_TEXT)
+        header.setStyleSheet(self.RECENT_WORKSPACES_HEADER_STYLE)
+        self.main_layout.addWidget(header)
+
+        self.main_layout.addSpacing(self.RECENT_WORKSPACES_HEADER_SPACING)
+
+        self.main_layout.addWidget(self.recent_workspaces_container)
+
+        self._populate_recent_workspaces()
+
+    def _populate_recent_workspaces(self):
+        """Populate the recent workspaces container with workspace cards."""
+        # Clear existing widgets
+        while self.recent_workspaces_layout.count():
+            child = self.recent_workspaces_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+        recent_workspaces = get_recent_workspaces()  # Returns List[Workspace]
+
+        for workspace in recent_workspaces:
+            workspace_card = WorkspaceCard(workspace)
+            workspace_card.workspace_selected.connect(self._workspace_selected)
+            self.recent_workspaces_layout.addWidget(workspace_card)
 
     def _on_create_new_workspace(self):
         """Handle creating a new workspace."""
@@ -175,4 +258,10 @@ class SelectWorkspaceScreen(BaseScreen):
 
     def _apply_styles(self):
         """Apply screen-specific styles."""
-        self.setStyleSheet(get_widget_styles())
+        self.setStyleSheet(get_widget_styles() + self.WORKSPACE_CARD_STYLES)
+
+    def showEvent(self, event):
+        """Refresh recent workspaces when the screen is shown."""
+        super().showEvent(event)
+        if hasattr(self, "_populate_recent_workspaces"):
+            self._populate_recent_workspaces()
