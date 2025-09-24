@@ -2,7 +2,6 @@
 BayBe integration service for experiment generation and optimization.
 """
 
-import csv
 import logging
 import random
 from datetime import datetime
@@ -41,15 +40,19 @@ class BayBeIntegrationService:
         logs_dir = self.campaign_folder / self.LOG_FOLDERNAME
         logs_dir.mkdir(exist_ok=True)
 
-        log_file = logs_dir / self.LOG_FILENAME
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setLevel(logging.INFO)
+        log_file = str(logs_dir / self.LOG_FILENAME)
 
-        # Formatter
-        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        file_handler.setFormatter(formatter)
+        if not any(
+            isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", None) == log_file for h in logger.handlers
+        ):
+            # File handler
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setLevel(logging.INFO)
 
-        logger.addHandler(file_handler)
+            formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+            file_handler.setFormatter(formatter)
+
+            logger.addHandler(file_handler)
         return logger
 
     def generate_experiments(self, num_experiments: int, has_previous_data: bool = False) -> List[Dict[str, Any]]:
@@ -79,24 +82,20 @@ class BayBeIntegrationService:
             else:
                 self._update_baybe_campaign_with_data()
 
-            # Generate recommendations
+            if self.baybe_campaign is None:
+                raise RuntimeError("BayBe campaign was not initialized")
+
             recommendations = self.baybe_campaign.recommend(batch_size=num_experiments)
 
-            # Convert to list of dictionaries
             experiments = recommendations.to_dict("records")
 
             self.logger.info(f"Successfully generated {len(experiments)} experiments using BayBE")
-
-            # Save experiments to CSV
-            self._save_experiments_csv(experiments)
 
             return experiments
 
         except Exception as e:
             self.logger.error(f"Error generating experiments with BayBE: {str(e)}")
-            self.logger.info("Falling back to random generation")
-            # Fallback to random generation
-            return self._generate_random_experiments(num_experiments)
+            return []
 
     def _initialize_baybe_campaign(self) -> None:
         """Initialize a new BayBE campaign."""
@@ -128,7 +127,6 @@ class BayBeIntegrationService:
         if multi_obj_note:
             self.logger.info(multi_obj_note)
 
-        # Create BayBE campaign
         self.baybe_campaign = BayBeCampaign(searchspace=search_space, objective=objective)
 
     def _update_baybe_campaign_with_data(self) -> None:
@@ -138,6 +136,9 @@ class BayBeIntegrationService:
         # Initialize campaign first
         self._initialize_baybe_campaign()
 
+        if self.baybe_campaign is None:
+            raise RuntimeError("BayBe campaign was not initialized")
+
         # Load existing experimental data
         existing_data = self._load_existing_experimental_data()
 
@@ -145,7 +146,7 @@ class BayBeIntegrationService:
             self.logger.info(f"Found {len(existing_data)} existing experiments")
 
             # Add measurements to campaign
-            self.baybe_campaign.add_measurements(existing_data)
+            self.baybe_campaign.add_measurements(existing_data, numerical_measurements_must_be_within_tolerance=False)
             self.logger.info("Successfully added existing measurements to BayBE campaign")
         else:
             self.logger.info("No existing experimental data found")
@@ -214,7 +215,6 @@ class BayBeIntegrationService:
             if valid_params == 0:
                 errors.append("No valid parameters for optimization")
 
-        # Check targets
         target_errors = ObjectiveConverter.validate_targets(self.campaign.targets)
         errors.extend(target_errors)
 
@@ -236,12 +236,12 @@ class BayBeIntegrationService:
         for i in range(num_experiments):
             experiment = {}
             for param in self.campaign.parameters:
-                experiment[param.name] = self._generate_parameter_value(param)
+                experiment[param.name] = self._generate_random_parameter_value(param)
             experiments.append(experiment)
 
         return experiments
 
-    def _generate_parameter_value(self, parameter: BaseParameter) -> Any:
+    def _generate_random_parameter_value(self, parameter: BaseParameter) -> Any:
         """
         Generate a random value for a parameter.
         This is a mock implementation - replace with BayBe logic.
@@ -254,7 +254,7 @@ class BayBeIntegrationService:
             return round(random.uniform(min_val, max_val), 3)
 
         elif param_type == "categorical":
-            categories = getattr(parameter, "categories", ["A", "B", "C"])
+            categories = getattr(parameter, "values", ["A", "B", "C"])
             return random.choice(categories)
 
         elif param_type == "integer":
@@ -264,25 +264,6 @@ class BayBeIntegrationService:
 
         else:
             return random.uniform(0, 100)
-
-    def _save_experiments_csv(self, experiments: List[Dict[str, Any]]):
-        """Save experiments to a CSV file."""
-        if not experiments:
-            return
-
-        runs_dir = self.campaign_folder / self.RUNS_FOLDERNAME
-        runs_dir.mkdir(exist_ok=True)
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        csv_file = runs_dir / f"experiments_{timestamp}.csv"
-
-        with open(csv_file, "w", newline="", encoding="utf-8") as f:
-            if experiments:
-                writer = csv.DictWriter(f, fieldnames=experiments[0].keys())
-                writer.writeheader()
-                writer.writerows(experiments)
-
-        self.logger.info(f"Experiments saved to: {csv_file}")
 
     def get_log_file_path(self) -> Path:
         """Get the path to the BayBe log file."""
@@ -356,6 +337,15 @@ class BayBeIntegrationService:
                 for target in self.campaign.targets
             ],
         }
+
+
+class BayBeService(BayBeIntegrationService):
+    """
+    Main BayBe service for production use.
+    Inherits from BayBeIntegrationService and can be extended with production-specific logic.
+    """
+
+    pass
 
 
 class MockBayBeService(BayBeIntegrationService):
