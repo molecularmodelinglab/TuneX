@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, Qt, QThread, Signal
 from PySide6.QtGui import QFont, QPainter, QPixmap
 from PySide6.QtWidgets import QStackedWidget, QVBoxLayout, QWidget
 
-from app.bayesopt.baybe_service import MockBayBeService
+from app.bayesopt.baybe_service import BayBeService
 from app.core.base import BaseWidget
 from app.models.campaign import Campaign
 from app.screens.campaign.panel.services.experiments_table import ExperimentsTableScreen
@@ -40,7 +40,7 @@ class ExperimentGenerationWorker(QObject):
         try:
             self.progress_updated.emit("Initializing BayBe service...")
 
-            baybe_service = MockBayBeService(self.campaign, self.workspace_path)
+            baybe_service = BayBeService(self.campaign, self.workspace_path)
 
             if self.should_cancel:
                 return
