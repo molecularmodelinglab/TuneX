@@ -120,7 +120,7 @@ class RunsDataManager:
                 run["completed_count"] = completed_count
 
                 try:
-                    self._write_run_csv(run)  # NEW
+                    self._write_run_csv(run)
                 except Exception as e:
                     ErrorDialog.show_error("Error updating run CSV", str(e), parent=None)
 

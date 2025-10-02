@@ -163,68 +163,6 @@ class BayBeIntegrationService:
         if self.baybe_campaign is None:
             raise RuntimeError("Failed to load BayBe campaign from file")
 
-    # def _update_baybe_campaign_with_data(self) -> None:
-    #     """Update BayBE campaign with existing experimental data."""
-    #     self.logger.info("Updating BayBE campaign with existing data")
-
-    #     # Initialize campaign first
-    #     self._initialize_baybe_campaign()
-
-    #     if self.baybe_campaign is None:
-    #         raise RuntimeError("BayBe campaign was not initialized")
-
-    #     # Load existing experimental data
-    #     existing_data = self._load_existing_experimental_data()
-
-    #     if existing_data is not None and not existing_data.empty:
-    #         self.logger.info(f"Found {len(existing_data)} existing experiments")
-
-    #         # Add measurements to campaign
-    #         self.baybe_campaign.add_measurements(existing_data, numerical_measurements_must_be_within_tolerance=False)
-    #         self.logger.info("Successfully added existing measurements to BayBE campaign")
-    #     else:
-    #         self.logger.info("No existing experimental data found")
-
-    # def _load_existing_experimental_data(self) -> Optional[pd.DataFrame]:
-    #     """
-    #     Load existing experimental data from campaign folder.
-
-    #     Returns:
-    #         DataFrame with existing experimental data, or None if not found
-    #     """
-    #     try:
-    #         # Look for CSV files in the runs folder
-    #         runs_dir = self.campaign_folder / self.RUNS_FOLDERNAME
-    #         if not runs_dir.exists():
-    #             return None
-
-    #         csv_files = list(runs_dir.glob("*.csv"))
-    #         if not csv_files:
-    #             return None
-
-    #         # For now, use the most recent CSV file
-    #         # TODO: Implement proper data aggregation from multiple files
-    #         latest_file = max(csv_files, key=lambda f: f.stat().st_mtime)
-    #         self.logger.info(f"Loading data from: {latest_file}")
-
-    #         df = pd.read_csv(latest_file)
-
-    #         # Validate that the DataFrame has required columns
-    #         target_names = ObjectiveConverter.get_target_names(self.campaign.targets)
-    #         missing_targets = [name for name in target_names if name not in df.columns]
-
-    #         if missing_targets:
-    #             self.logger.warning(f"Missing target columns in data: {missing_targets}")
-    #             # Add missing columns with NaN values
-    #             for target_name in missing_targets:
-    #                 df[target_name] = None
-
-    #         return df
-
-    #     except Exception as e:
-    #         self.logger.error(f"Error loading existing data: {str(e)}")
-    #         return None
-
     def _validate_campaign(self) -> List[str]:
         """
         Validate campaign configuration for BayBE.
