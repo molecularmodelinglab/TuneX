@@ -2,6 +2,7 @@
 Data manager for handling runs data and persistence.
 """
 
+import csv
 import json
 from datetime import datetime
 from pathlib import Path
@@ -22,9 +23,10 @@ class RunsDataManager:
         self.workspace_path = Path(workspace_path)
         self.campaign_id = campaign_id
         self.campaign_folder = self.workspace_path / WorkspaceConstants.CAMPAIGNS_DIRNAME / f"{self.campaign_id}"
-        self.runs_file = self.campaign_folder / self.RUNS_FOLDERNAME / f"runs_{campaign_id}.json"
+        self.runs_dir = self.campaign_folder / self.RUNS_FOLDERNAME
+        self.runs_file = self.runs_dir / f"runs_{campaign_id}.json"
 
-        self.runs_file.parent.mkdir(parents=True, exist_ok=True)
+        self.runs_dir.mkdir(parents=True, exist_ok=True)
 
     def load_runs(self) -> List[Dict[str, Any]]:
         """Load all runs for the campaign."""
@@ -89,7 +91,13 @@ class RunsDataManager:
             "updated_at": datetime.now(),
             "experiment_count": len(experiments),
             "completed_count": completed_count,
+            "csv_file": str(self._get_run_csv_path(run_number)),
         }
+
+        try:
+            self._write_run_csv(new_run)
+        except Exception as e:
+            ErrorDialog.show_error("Error writing run CSV", str(e), parent=None)
 
         runs_data.append(new_run)
         self.save_runs(runs_data)
@@ -110,6 +118,11 @@ class RunsDataManager:
                     1 for exp in experiments if any(exp.get(target_name) is not None for target_name in target_names)
                 )
                 run["completed_count"] = completed_count
+
+                try:
+                    self._write_run_csv(run)
+                except Exception as e:
+                    ErrorDialog.show_error("Error updating run CSV", str(e), parent=None)
 
                 break
 
@@ -148,3 +161,46 @@ class RunsDataManager:
                 return True
 
         return False
+
+    def _get_run_csv_path(self, run_number: int) -> Path:
+        """Compute the CSV path for a given run number."""
+        return self.runs_dir / f"run_{run_number}.csv"
+
+    def _write_run_csv(self, run: Dict[str, Any]) -> None:
+        """Write the run data to its CSV file."""
+        experiments: List[Dict[str, Any]] = run.get("experiments", []) or []
+        targets = run.get("targets", []) or []
+        target_names = [t["name"] for t in targets]
+
+        csv_path = Path(run.get("csv_file") or self._get_run_csv_path(run.get("run_number", 0)))
+        csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Determine columns: parameters first (preserve insertion order from the first experiment), then targets
+        param_columns: List[str] = []
+        if experiments:
+            first = experiments[0]
+            param_columns = [k for k in first.keys() if k not in target_names]
+            # Include any extra param keys appearing in later experiments
+            seen = set(param_columns)
+            for exp in experiments[1:]:
+                for k in exp.keys():
+                    if k not in seen and k not in target_names:
+                        param_columns.append(k)
+                        seen.add(k)
+
+        # Ensure targets are all present and ordered by `targets`
+        all_columns = param_columns + target_names
+
+        try:
+            with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(all_columns)
+                for exp in experiments:
+                    row = []
+                    for col in all_columns:
+                        v = exp.get(col, "")
+                        row.append("" if v is None else v)
+                    writer.writerow(row)
+        except Exception as e:
+            ErrorDialog.show_error("Error writing run CSV", str(e), parent=None)
+            raise e
