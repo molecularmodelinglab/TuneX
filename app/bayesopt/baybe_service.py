@@ -2,13 +2,13 @@
 BayBe integration service for experiment generation and optimization.
 """
 
+import json
 import logging
 import random
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import pandas as pd
 from baybe import Campaign as BayBeCampaign
 
 from app.bayesopt.objective import ObjectiveConverter
@@ -80,7 +80,7 @@ class BayBeIntegrationService:
             if not has_previous_data:
                 self._initialize_baybe_campaign()
             else:
-                self._update_baybe_campaign_with_data()
+                self._update_baybe_campaign_from_file()
 
             if self.baybe_campaign is None:
                 raise RuntimeError("BayBe campaign was not initialized")
@@ -91,11 +91,38 @@ class BayBeIntegrationService:
 
             self.logger.info(f"Successfully generated {len(experiments)} experiments using BayBE")
 
+            self._save_baybe_campaign_state()
+
+            self.logger.info("Saved BayBE campaign state")
+
             return experiments
 
         except Exception as e:
             self.logger.error(f"Error generating experiments with BayBE: {str(e)}")
             return []
+
+    def _save_baybe_campaign_state(self) -> None:
+        """Save the current state of the BayBE campaign."""
+        if self.baybe_campaign is None:
+            raise RuntimeError("BayBe campaign was not initialized")
+        else:
+            try:
+                self.logger.info("Saving BayBE campaign state")
+                with open(self.campaign_folder / f"baybe_{self.campaign.id}.json", "w") as f:
+                    json.dump(self.baybe_campaign.to_dict(), f)
+            except Exception as e:
+                self.logger.error(f"Error saving BayBE campaign state: {str(e)}")
+
+    def _load_baybe_campaign_state(self) -> None:
+        """Load the saved state of the BayBE campaign."""
+        try:
+            with open(self.campaign_folder / f"baybe_{self.campaign.id}.json", "r") as f:
+                campaign_data = json.load(f)
+                self.baybe_campaign = BayBeCampaign.from_dict(campaign_data)
+        except FileNotFoundError:
+            self.logger.warning("No saved BayBE campaign state found")
+        except Exception as e:
+            self.logger.error(f"Error loading BayBE campaign state: {str(e)}")
 
     def _initialize_baybe_campaign(self) -> None:
         """Initialize a new BayBE campaign."""
@@ -129,67 +156,74 @@ class BayBeIntegrationService:
 
         self.baybe_campaign = BayBeCampaign(searchspace=search_space, objective=objective)
 
-    def _update_baybe_campaign_with_data(self) -> None:
-        """Update BayBE campaign with existing experimental data."""
-        self.logger.info("Updating BayBE campaign with existing data")
-
-        # Initialize campaign first
-        self._initialize_baybe_campaign()
-
+    def _update_baybe_campaign_from_file(self) -> None:
+        """Load BayBE campaign from saved state file."""
+        self.logger.info("Loading BayBE campaign from saved state file")
+        self._load_baybe_campaign_state()
         if self.baybe_campaign is None:
-            raise RuntimeError("BayBe campaign was not initialized")
+            raise RuntimeError("Failed to load BayBe campaign from file")
 
-        # Load existing experimental data
-        existing_data = self._load_existing_experimental_data()
+    # def _update_baybe_campaign_with_data(self) -> None:
+    #     """Update BayBE campaign with existing experimental data."""
+    #     self.logger.info("Updating BayBE campaign with existing data")
 
-        if existing_data is not None and not existing_data.empty:
-            self.logger.info(f"Found {len(existing_data)} existing experiments")
+    #     # Initialize campaign first
+    #     self._initialize_baybe_campaign()
 
-            # Add measurements to campaign
-            self.baybe_campaign.add_measurements(existing_data, numerical_measurements_must_be_within_tolerance=False)
-            self.logger.info("Successfully added existing measurements to BayBE campaign")
-        else:
-            self.logger.info("No existing experimental data found")
+    #     if self.baybe_campaign is None:
+    #         raise RuntimeError("BayBe campaign was not initialized")
 
-    def _load_existing_experimental_data(self) -> Optional[pd.DataFrame]:
-        """
-        Load existing experimental data from campaign folder.
+    #     # Load existing experimental data
+    #     existing_data = self._load_existing_experimental_data()
 
-        Returns:
-            DataFrame with existing experimental data, or None if not found
-        """
-        try:
-            # Look for CSV files in the runs folder
-            runs_dir = self.campaign_folder / self.RUNS_FOLDERNAME
-            if not runs_dir.exists():
-                return None
+    #     if existing_data is not None and not existing_data.empty:
+    #         self.logger.info(f"Found {len(existing_data)} existing experiments")
 
-            csv_files = list(runs_dir.glob("*.csv"))
-            if not csv_files:
-                return None
+    #         # Add measurements to campaign
+    #         self.baybe_campaign.add_measurements(existing_data, numerical_measurements_must_be_within_tolerance=False)
+    #         self.logger.info("Successfully added existing measurements to BayBE campaign")
+    #     else:
+    #         self.logger.info("No existing experimental data found")
 
-            # For now, use the most recent CSV file
-            # TODO: Implement proper data aggregation from multiple files
-            latest_file = max(csv_files, key=lambda f: f.stat().st_mtime)
-            self.logger.info(f"Loading data from: {latest_file}")
+    # def _load_existing_experimental_data(self) -> Optional[pd.DataFrame]:
+    #     """
+    #     Load existing experimental data from campaign folder.
 
-            df = pd.read_csv(latest_file)
+    #     Returns:
+    #         DataFrame with existing experimental data, or None if not found
+    #     """
+    #     try:
+    #         # Look for CSV files in the runs folder
+    #         runs_dir = self.campaign_folder / self.RUNS_FOLDERNAME
+    #         if not runs_dir.exists():
+    #             return None
 
-            # Validate that the DataFrame has required columns
-            target_names = ObjectiveConverter.get_target_names(self.campaign.targets)
-            missing_targets = [name for name in target_names if name not in df.columns]
+    #         csv_files = list(runs_dir.glob("*.csv"))
+    #         if not csv_files:
+    #             return None
 
-            if missing_targets:
-                self.logger.warning(f"Missing target columns in data: {missing_targets}")
-                # Add missing columns with NaN values
-                for target_name in missing_targets:
-                    df[target_name] = None
+    #         # For now, use the most recent CSV file
+    #         # TODO: Implement proper data aggregation from multiple files
+    #         latest_file = max(csv_files, key=lambda f: f.stat().st_mtime)
+    #         self.logger.info(f"Loading data from: {latest_file}")
 
-            return df
+    #         df = pd.read_csv(latest_file)
 
-        except Exception as e:
-            self.logger.error(f"Error loading existing data: {str(e)}")
-            return None
+    #         # Validate that the DataFrame has required columns
+    #         target_names = ObjectiveConverter.get_target_names(self.campaign.targets)
+    #         missing_targets = [name for name in target_names if name not in df.columns]
+
+    #         if missing_targets:
+    #             self.logger.warning(f"Missing target columns in data: {missing_targets}")
+    #             # Add missing columns with NaN values
+    #             for target_name in missing_targets:
+    #                 df[target_name] = None
+
+    #         return df
+
+    #     except Exception as e:
+    #         self.logger.error(f"Error loading existing data: {str(e)}")
+    #         return None
 
     def _validate_campaign(self) -> List[str]:
         """
