@@ -1,9 +1,6 @@
 """
 Centralized About/credits information for TuneX.
 
-Edit PROGRAMMERS and INSTITUTION to update the About dialog.
-Optionally, set environment variables TUNEX_PROGRAMMERS (comma-separated)
-and TUNEX_INSTITUTION to override without changing code.
 """
 
 from __future__ import annotations
