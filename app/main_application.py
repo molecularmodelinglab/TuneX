@@ -156,7 +156,7 @@ class MainApplication(QMainWindow):
             try:
                 from PySide6.QtWidgets import QMessageBox
 
-                QMessageBox.information(self, "About TuneX", build_about_text(app_name=self.DEFAULT_WINDOW_TITLE))
+                QMessageBox.information(self, "About BASIL", build_about_text(app_name=self.DEFAULT_WINDOW_TITLE))
             except Exception:
                 self.logger.error(f"Could not display About dialog: {e}")
 
