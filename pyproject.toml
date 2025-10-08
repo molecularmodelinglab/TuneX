@@ -1,5 +1,5 @@
 [project]
-name = "tunex"
+name = "basil"
 version = "0.0.1"
 description = "A graphical interface for experimental and process optimization"
 authors = [
@@ -60,4 +60,4 @@ select = [
 ignore = []
 
 [tool.ruff.lint.isort]
-known-first-party = ["tunex"]
+known-first-party = ["basil"]

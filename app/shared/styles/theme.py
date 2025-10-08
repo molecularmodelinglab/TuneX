@@ -1,5 +1,5 @@
 """
-Centralized styling and theming for TuneX application.
+Centralized styling and theming for the application.
 """
 
 # Color palette

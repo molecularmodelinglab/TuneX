@@ -13,7 +13,7 @@ from PySide6.QtCore import QStandardPaths
 from app.models.workspace import Workspace
 
 RECENT_WORKSPACE_COUNT = 5
-APP_NAME = "TuneX"
+APP_NAME = "BASIL"
 SETTINGS_FILENAME = "settings.json"
 LAST_WORKSPACE_KEY = "last_workspace_path"
 RECENT_WORKSPACES_KEY = "recent_workspaces"
@@ -22,7 +22,7 @@ RECENT_WORKSPACES_KEY = "recent_workspaces"
 def _get_settings_path() -> str:
     """
     Determines the platform-specific path for the settings file.
-    Example: C:/Users/<user>/AppData/Local/TuneX/TuneX/settings.json
+    Example: C:/Users/<user>/AppData/Local/BASIL/BASIL/settings.json
     """
     config_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppConfigLocation)
     # QStandardPaths may add the app name, so we ensure our folder is there

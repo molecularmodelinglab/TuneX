@@ -1,7 +1,7 @@
 """
 Objective and target conversion utilities for BayBE integration.
 
-This module handles the conversion between TuneX targets and BayBE objectives.
+This module handles the conversion between BASIL targets and BayBE objectives.
 """
 
 from typing import Dict, List, Optional
@@ -13,15 +13,15 @@ from app.models.campaign import Target
 
 
 class ObjectiveConverter:
-    """Converts TuneX targets to BayBE objectives."""
+    """Converts BASIL targets to BayBE objectives."""
 
     @staticmethod
-    def convert_target(tunex_target: Target) -> NumericalTarget:
+    def convert_target(basil_target: Target) -> NumericalTarget:
         """
-        Convert a TuneX target to a BayBE target.
+        Convert a BASIL target to a BayBE target.
 
         Args:
-            tunex_target: TuneX target to convert
+            basil_target: BASIL target to convert
 
         Returns:
             BayBE NumericalTarget
@@ -30,48 +30,48 @@ class ObjectiveConverter:
             ValueError: If target configuration is invalid
         """
         # Determine the mode
-        if tunex_target.mode.upper() == "MAX":
+        if basil_target.mode.upper() == "MAX":
             minimize = False
-        elif tunex_target.mode.upper() == "MIN":
+        elif basil_target.mode.upper() == "MIN":
             minimize = True
-        elif tunex_target.mode.upper() == "MATCH":
+        elif basil_target.mode.upper() == "MATCH":
             minimize = None
         else:
-            raise ValueError(f"Unsupported target mode: {tunex_target.mode}")
+            raise ValueError(f"Unsupported target mode: {basil_target.mode}")
 
         # Create the target
         target_kwargs = {
-            "name": tunex_target.name,
+            "name": basil_target.name,
             "minimize": minimize,
         }
 
-        if tunex_target.mode.upper() == "MATCH":
-            if tunex_target.min_value is None or tunex_target.max_value is None:
+        if basil_target.mode.upper() == "MATCH":
+            if basil_target.min_value is None or basil_target.max_value is None:
                 raise ValueError("MATCH mode requires both min_value and max_value")
-            match_value = (tunex_target.min_value + tunex_target.max_value) / 2
+            match_value = (basil_target.min_value + basil_target.max_value) / 2
             return NumericalTarget.match_triangular(
-                name=tunex_target.name,
+                name=basil_target.name,
                 match_value=match_value,
-                cutoffs=(tunex_target.min_value, tunex_target.max_value),
+                cutoffs=(basil_target.min_value, basil_target.max_value),
             )
 
-        if tunex_target.min_value is None or tunex_target.max_value is None:
+        if basil_target.min_value is None or basil_target.max_value is None:
             return NumericalTarget(**target_kwargs, _enforce_modern_interface=True)
         else:
             return NumericalTarget.normalized_ramp(
-                name=tunex_target.name, descending=minimize, cutoffs=(tunex_target.min_value, tunex_target.max_value)
+                name=basil_target.name, descending=minimize, cutoffs=(basil_target.min_value, basil_target.max_value)
             )
 
     @staticmethod
-    def create_objective(tunex_targets: List[Target]):
+    def create_objective(basil_targets: List[Target]):
         """
-        Create a BayBE objective from TuneX targets.
+        Create a BayBE objective from BASIL targets.
 
         For single targets, creates a SingleTargetObjective.
         For multiple targets, creates a DesirabilityObjective that combines all targets.
 
         Args:
-            tunex_targets: List of TuneX targets
+            basil_targets: List of BASIL targets
 
         Returns:
             BayBE SingleTargetObjective or DesirabilityObjective
@@ -79,17 +79,17 @@ class ObjectiveConverter:
         Raises:
             ValueError: If no valid targets found
         """
-        if not tunex_targets:
+        if not basil_targets:
             raise ValueError("No targets provided for optimization")
 
-        if len(tunex_targets) == 1:
-            baybe_target = ObjectiveConverter.convert_target(tunex_targets[0])
+        if len(basil_targets) == 1:
+            baybe_target = ObjectiveConverter.convert_target(basil_targets[0])
             return SingleTargetObjective(target=baybe_target)
         else:
-            return ObjectiveConverter._create_desirability_objective(tunex_targets)
+            return ObjectiveConverter._create_desirability_objective(basil_targets)
 
     @staticmethod
-    def _create_desirability_objective(tunex_targets: List[Target]) -> DesirabilityObjective:
+    def _create_desirability_objective(basil_targets: List[Target]) -> DesirabilityObjective:
         """
         Create a DesirabilityObjective for multi-target optimization.
 
@@ -97,7 +97,7 @@ class ObjectiveConverter:
         where each target contributes based on its weight (default weight = 1.0).
 
         Args:
-            tunex_targets: List of TuneX targets
+            basil_targets: List of BASIL targets
 
         Returns:
             BayBE DesirabilityObjective
@@ -108,7 +108,7 @@ class ObjectiveConverter:
         baybe_targets = []
         weights = []
 
-        for target in tunex_targets:
+        for target in basil_targets:
             # Convert target
             baybe_target = ObjectiveConverter.convert_target(target)
             baybe_targets.append(baybe_target)
@@ -120,28 +120,28 @@ class ObjectiveConverter:
         return DesirabilityObjective(targets=baybe_targets, weights=weights)
 
     @staticmethod
-    def validate_targets(tunex_targets: List[Target]) -> List[str]:
+    def validate_targets(basil_targets: List[Target]) -> List[str]:
         """
-        Validate TuneX targets for BayBE conversion.
+        Validate BASIL targets for BayBE conversion.
 
         Args:
-            tunex_targets: List of TuneX targets to validate
+            basil_targets: List of BASIL targets to validate
 
         Returns:
             List of validation error messages (empty if all valid)
         """
         errors = []
 
-        if not tunex_targets:
+        if not basil_targets:
             errors.append("At least one target must be specified")
             return errors
 
-        for i, target in enumerate(tunex_targets):
+        for i, target in enumerate(basil_targets):
             target_errors = ObjectiveConverter._validate_single_target(target, i)
             errors.extend(target_errors)
 
         # Check for duplicate target names
-        target_names = [t.name for t in tunex_targets]
+        target_names = [t.name for t in basil_targets]
         duplicates = set([name for name in target_names if target_names.count(name) > 1])
         if duplicates:
             errors.append(f"Duplicate target names found: {', '.join(duplicates)}")
@@ -191,17 +191,17 @@ class ObjectiveConverter:
         return errors
 
     @staticmethod
-    def get_target_names(tunex_targets: List[Target]) -> List[str]:
+    def get_target_names(basil_targets: List[Target]) -> List[str]:
         """
         Get list of target names for DataFrame column creation.
 
         Args:
-            tunex_targets: List of TuneX targets
+            basil_targets: List of BASIL targets
 
         Returns:
             List of target names
         """
-        return [target.name for target in tunex_targets]
+        return [target.name for target in basil_targets]
 
     @staticmethod
     def create_multi_objective_note(targets: List[Target]) -> Optional[str]:
