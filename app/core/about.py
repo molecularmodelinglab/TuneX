@@ -8,7 +8,6 @@ from __future__ import annotations
 import os
 from typing import List
 
-
 # Default values; update as needed
 PROGRAMMERS_DEFAULT: List[str] = [
     "Kelvin P. Idanwekhai",
