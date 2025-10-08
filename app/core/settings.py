@@ -78,19 +78,15 @@ def _save_workspaces_to_settings(settings: dict, workspaces: List[Workspace]):
 def _update_recent_workspaces(settings: dict, workspace_path: str):
     """Updates recent workspace list with time-based sorting."""
     workspaces = _load_workspaces_from_settings(settings)
+    now = datetime.now()
 
-    existing_workspace = None
-    for workspace in workspaces:
-        if workspace.path == workspace_path:
-            existing_workspace = workspace
-            break
-    if existing_workspace:
-        existing_workspace.accessed_at = datetime.now()
-    else:
-        new_workspace = Workspace(path=workspace_path, accessed_at=datetime.now())
-        workspaces.append(new_workspace)
+    # Remove existing entry if present
+    workspaces = [w for w in workspaces if w.path != workspace_path]
 
-    workspaces.sort(key=lambda w: w.accessed_at, reverse=True)
+    # Insert new/updated workspace at front
+    workspaces.insert(0, Workspace(path=workspace_path, accessed_at=now))
+
+    # Trim to limit
     workspaces = workspaces[:RECENT_WORKSPACE_COUNT]
 
     _save_workspaces_to_settings(settings, workspaces)
