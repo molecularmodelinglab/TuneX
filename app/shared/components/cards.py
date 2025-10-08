@@ -1,5 +1,5 @@
 """
-Reusable card components for TuneX application.
+Reusable card components for the application.
 """
 
 from PySide6.QtCore import Qt

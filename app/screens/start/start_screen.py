@@ -1,5 +1,5 @@
 """
-Start screen for TuneX application.
+Start screen for the application.
 Main entry point showing welcome UI and navigation to other screens.
 """
 
@@ -25,7 +25,7 @@ from app.shared.styles.theme import get_widget_styles
 
 class StartScreen(BaseScreen):
     """
-    Main start screen for TuneX application.
+    Main start screen for the application.
 
     Displays welcome UI with options to create new campaigns
     or browse existing ones.
@@ -36,8 +36,8 @@ class StartScreen(BaseScreen):
     back_requested = Signal()
     campaign_selected = Signal(Campaign)
 
-    WINDOW_TITLE = "TuneX - Welcome"
-    HEADER_TEXT = "TuneX"
+    WINDOW_TITLE = "BASIL - Welcome"
+    HEADER_TEXT = "BASIL"
     NEW_CAMPAIGN_BUTTON_TEXT = "+ New Campaign"
     BACK_BUTTON_TEXT = "Change Workspace"
     RECENT_CAMPAIGNS_HEADER_TEXT = "Campaigns"

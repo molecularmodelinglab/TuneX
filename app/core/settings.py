@@ -13,7 +13,7 @@ from PySide6.QtCore import QStandardPaths
 from app.models.workspace import Workspace
 
 RECENT_WORKSPACE_COUNT = 5
-APP_NAME = "TuneX"
+APP_NAME = "BASIL"
 SETTINGS_FILENAME = "settings.json"
 LAST_WORKSPACE_KEY = "last_workspace_path"
 RECENT_WORKSPACES_KEY = "recent_workspaces"
@@ -22,7 +22,7 @@ RECENT_WORKSPACES_KEY = "recent_workspaces"
 def _get_settings_path() -> str:
     """
     Determines the platform-specific path for the settings file.
-    Example: C:/Users/<user>/AppData/Local/TuneX/TuneX/settings.json
+    Example: C:/Users/<user>/AppData/Local/BASIL/BASIL/settings.json
     """
     config_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppConfigLocation)
     # QStandardPaths may add the app name, so we ensure our folder is there
@@ -78,19 +78,15 @@ def _save_workspaces_to_settings(settings: dict, workspaces: List[Workspace]):
 def _update_recent_workspaces(settings: dict, workspace_path: str):
     """Updates recent workspace list with time-based sorting."""
     workspaces = _load_workspaces_from_settings(settings)
+    now = datetime.now()
 
-    existing_workspace = None
-    for workspace in workspaces:
-        if workspace.path == workspace_path:
-            existing_workspace = workspace
-            break
-    if existing_workspace:
-        existing_workspace.accessed_at = datetime.now()
-    else:
-        new_workspace = Workspace(path=workspace_path, accessed_at=datetime.now())
-        workspaces.append(new_workspace)
+    # Remove existing entry if present
+    workspaces = [w for w in workspaces if w.path != workspace_path]
 
-    workspaces.sort(key=lambda w: w.accessed_at, reverse=True)
+    # Insert new/updated workspace at front
+    workspaces.insert(0, Workspace(path=workspace_path, accessed_at=now))
+
+    # Trim to limit
     workspaces = workspaces[:RECENT_WORKSPACE_COUNT]
 
     _save_workspaces_to_settings(settings, workspaces)

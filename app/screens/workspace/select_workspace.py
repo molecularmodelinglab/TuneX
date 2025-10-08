@@ -1,5 +1,5 @@
 """
-Select workspace screen for TuneX application
+Select workspace screen for the application
 """
 
 import json
@@ -21,15 +21,15 @@ from app.shared.styles.theme import get_widget_styles
 
 class SelectWorkspaceScreen(BaseScreen):
     """
-    Select workspace screen for TuneX application
+    Select workspace screen for BASIL application
     """
 
     # Signals for navigation
     workspace_selected = pyqtSignal(str)
 
     # UI Text
-    WINDOW_TITLE = "TuneX - Select Workspace"
-    HEADER_TEXT = "TuneX"
+    WINDOW_TITLE = "BASIL - Select Workspace"
+    HEADER_TEXT = "BASIL"
     CREATE_NEW_BUTTON_TEXT = "Create New Workspace"
     OPEN_EXISTING_BUTTON_TEXT = "Open Existing Workspace"
     RECENT_WORKSPACES_HEADER_TEXT = "Recent Workspaces"
@@ -39,7 +39,7 @@ class SelectWorkspaceScreen(BaseScreen):
     FOLDER_NOT_EMPTY_TEXT = "The selected folder is not empty.\nCreate workspace here anyway?"
     INVALID_WORKSPACE_TEXT = "Invalid Workspace"
     NOT_A_WORKSPACE_TEXT = (
-        "The selected folder is not a valid TuneX workspace.\n"
+        "The selected folder is not a valid BASIL workspace.\n"
         "Please select a folder containing a workspace configuration file."
     )
     ERROR_TEXT = "Error"

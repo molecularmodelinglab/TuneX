@@ -13,7 +13,7 @@ class ScreenName(Enum):
 class WorkspaceConstants:
     """Constants for workspace structure and files."""
 
-    WORKSPACE_CONFIG_FILENAME = "tunex_workspace.json"
+    WORKSPACE_CONFIG_FILENAME = "basil_workspace.json"
     CAMPAIGNS_DIRNAME = "campaigns"
 
     # Workspace config keys
