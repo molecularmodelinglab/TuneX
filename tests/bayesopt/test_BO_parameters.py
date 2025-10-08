@@ -1,16 +1,13 @@
-import pytest
-
+from app.bayesopt.parameters import ParameterConverter
 from app.models.campaign import Campaign
 from app.models.parameters.types import (
-    ContinuousNumerical,
-    DiscreteNumericalRegular,
-    DiscreteNumericalIrregular,
     Categorical,
+    ContinuousNumerical,
+    DiscreteNumericalIrregular,
+    DiscreteNumericalRegular,
     Fixed,
     Substance,
 )
-from app.models.enums import ParameterType
-from app.bayesopt.parameters import ParameterConverter
 
 
 def build_full_parameter_campaign():

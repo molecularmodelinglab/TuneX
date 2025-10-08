@@ -6,13 +6,14 @@ Manages navigation between different screens.
 import logging
 import os
 from typing import Optional
+
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMainWindow,
+    QMenu,
+    QMenuBar,
     QSizePolicy,
     QStackedWidget,
-    QMenuBar,
-    QMenu,
 )
 
 from app.core import settings
@@ -91,7 +92,7 @@ class MainApplication(QMainWindow):
     def _setup_menubar(self):
         """Create the application menu bar with Help > About."""
         try:
-            menubar: QMenuBar = self.menuBar() 
+            menubar: QMenuBar = self.menuBar()
             help_menu: QMenu = menubar.addMenu("&Help")
             about_action = QAction("About BASIL", self)
             about_action.triggered.connect(self._show_about_dialog)
