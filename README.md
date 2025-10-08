@@ -1,4 +1,4 @@
-# BASIL (Basyesian Approcah to Scientific Iteration and Learning)
+# BASIL (Bayesian Approcah to Scientific Iteration and Learning)
 A graphical interface for experimental and process optimization
 
 ## Current Status: Early Development
