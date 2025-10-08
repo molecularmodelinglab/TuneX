@@ -1,19 +1,18 @@
 """
-Main application window for TuneX.
+Main application window for BASIL.
 Manages navigation between different screens.
 """
 
 import logging
 import os
 from typing import Optional
-
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMainWindow,
-    QMenu,
-    QMenuBar,
     QSizePolicy,
     QStackedWidget,
+    QMenuBar,
+    QMenu,
 )
 
 from app.core import settings
@@ -36,9 +35,9 @@ class MainApplication(QMainWindow):
     - Additional screens can be easily added
     """
 
-    DEFAULT_WINDOW_TITLE = "TuneX"
-    WELCOME_WINDOW_TITLE = "TuneX - Welcome"
-    CREATE_CAMPAIGN_WINDOW_TITLE = "TuneX - Create Campaign"
+    DEFAULT_WINDOW_TITLE = "BASIL"
+    WELCOME_WINDOW_TITLE = "BASIL - Welcome"
+    CREATE_CAMPAIGN_WINDOW_TITLE = "BASIL - Create Campaign"
     GEOMETRY = (100, 100, 1200, 800)
     MIN_SIZE = (900, 600)
 
@@ -92,7 +91,7 @@ class MainApplication(QMainWindow):
     def _setup_menubar(self):
         """Create the application menu bar with Help > About."""
         try:
-            menubar: QMenuBar = self.menuBar()
+            menubar: QMenuBar = self.menuBar() 
             help_menu: QMenu = menubar.addMenu("&Help")
             about_action = QAction("About BASIL", self)
             about_action.triggered.connect(self._show_about_dialog)
@@ -143,7 +142,7 @@ class MainApplication(QMainWindow):
         self.campaign_panel.home_requested.connect(self.show_start_screen)
         self.stacked_widget.addWidget(self.campaign_panel)
         self.stacked_widget.setCurrentWidget(self.campaign_panel)
-        self.setWindowTitle(f"TuneX - {campaign.name}")
+        self.setWindowTitle(f"BASIL - {campaign.name}")
 
     def _show_about_dialog(self):
         """Show the About dialog with programmers and institution."""

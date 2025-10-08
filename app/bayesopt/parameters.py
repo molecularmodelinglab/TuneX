@@ -1,7 +1,7 @@
 """
 Parameter conversion utilities for BayBE integration.
 
-This module handles the conversion between TuneX parameter types and BayBE parameter types.
+This module handles the conversion between BASIL parameter types and BayBE parameter types.
 """
 
 from typing import Any, Dict, List, Union
@@ -26,11 +26,11 @@ from app.models.parameters.types import (
 
 
 class ParameterConverter:
-    """Converts TuneX parameters to BayBE parameters."""
+    """Converts BASIL parameters to BayBE parameters."""
 
     @staticmethod
     def convert_parameter(
-        tunex_param: Any,
+        basil_param: Any,
     ) -> Union[
         NumericalContinuousParameter,
         NumericalDiscreteParameter,
@@ -38,10 +38,10 @@ class ParameterConverter:
         SubstanceParameter,
     ]:
         """
-        Convert a TuneX parameter to a BayBE parameter.
+        Convert a BASIL parameter to a BayBE parameter.
 
         Args:
-            tunex_param: TuneX parameter to convert
+            basil_param: BASIL parameter to convert
 
         Returns:
             Corresponding BayBE parameter
@@ -49,71 +49,71 @@ class ParameterConverter:
         Raises:
             ValueError: If parameter type is not supported
         """
-        param_type = tunex_param.TYPE
+        param_type = basil_param.TYPE
 
         if param_type == ParameterType.CONTINUOUS_NUMERICAL:
-            return ParameterConverter._convert_continuous_numerical(tunex_param)
+            return ParameterConverter._convert_continuous_numerical(basil_param)
         elif param_type in [ParameterType.DISCRETE_NUMERICAL_REGULAR, ParameterType.DISCRETE_NUMERICAL_IRREGULAR]:
-            return ParameterConverter._convert_discrete_numerical(tunex_param)
+            return ParameterConverter._convert_discrete_numerical(basil_param)
         elif param_type == ParameterType.CATEGORICAL:
-            return ParameterConverter._convert_categorical(tunex_param)
+            return ParameterConverter._convert_categorical(basil_param)
         elif param_type == ParameterType.SUBSTANCE:
-            return ParameterConverter._convert_substance(tunex_param)
+            return ParameterConverter._convert_substance(basil_param)
         elif param_type == ParameterType.FIXED:
             # Fixed parameters are not used in optimization
-            raise ValueError(f"Fixed parameters should not be included in BayBE optimization: {tunex_param.name}")
+            raise ValueError(f"Fixed parameters should not be included in BayBE optimization: {basil_param.name}")
         else:
             raise ValueError(f"Unsupported parameter type: {param_type}")
 
     @staticmethod
-    def _convert_continuous_numerical(tunex_param: ContinuousNumerical) -> NumericalContinuousParameter:
+    def _convert_continuous_numerical(basil_param: ContinuousNumerical) -> NumericalContinuousParameter:
         """Convert continuous numerical parameter."""
         return NumericalContinuousParameter(
-            name=tunex_param.name,
-            bounds=(tunex_param.min_val, tunex_param.max_val),
+            name=basil_param.name,
+            bounds=(basil_param.min_val, basil_param.max_val),
         )
 
     @staticmethod
     def _convert_discrete_numerical(
-        tunex_param: Union[DiscreteNumericalRegular, DiscreteNumericalIrregular],
+        basil_param: Union[DiscreteNumericalRegular, DiscreteNumericalIrregular],
     ) -> NumericalDiscreteParameter:
         """Convert discrete numerical parameter."""
-        if hasattr(tunex_param, "values"):
+        if hasattr(basil_param, "values"):
             # Irregular discrete parameter with explicit values
-            values = tunex_param.values
+            values = basil_param.values
         else:
             # Regular discrete parameter with min, max, step
             import numpy as np
 
-            values = np.arange(tunex_param.min_val, tunex_param.max_val + tunex_param.step, tunex_param.step).tolist()
+            values = np.arange(basil_param.min_val, basil_param.max_val + basil_param.step, basil_param.step).tolist()
 
         return NumericalDiscreteParameter(
-            name=tunex_param.name,
+            name=basil_param.name,
             values=values,
         )
 
     @staticmethod
-    def _convert_categorical(tunex_param: Categorical) -> CategoricalParameter:
+    def _convert_categorical(basil_param: Categorical) -> CategoricalParameter:
         """Convert categorical parameter."""
         return CategoricalParameter(
-            name=tunex_param.name,
-            values=tunex_param.values,
+            name=basil_param.name,
+            values=basil_param.values,
         )
 
     @staticmethod
-    def _convert_substance(tunex_param: Substance) -> SubstanceParameter:
+    def _convert_substance(basil_param: Substance) -> SubstanceParameter:
         """Convert substance parameter (SMILES)."""
         return SubstanceParameter(
-            name=tunex_param.name, data={f"mol_{i}": smile for i, smile in enumerate(tunex_param.smiles)}
+            name=basil_param.name, data={f"mol_{i}": smile for i, smile in enumerate(basil_param.smiles)}
         )
 
     @staticmethod
-    def create_search_space(tunex_parameters: List[BaseParameter]) -> SearchSpace:
+    def create_search_space(basil_parameters: List[BaseParameter]) -> SearchSpace:
         """
-        Create a BayBE SearchSpace from TuneX parameters.
+        Create a BayBE SearchSpace from BASIL parameters.
 
         Args:
-            tunex_parameters: List of TuneX parameters
+            basil_parameters: List of BASIL parameters
 
         Returns:
             BayBE SearchSpace object
@@ -123,16 +123,16 @@ class ParameterConverter:
         """
         baybe_parameters = []
 
-        for tunex_param in tunex_parameters:
+        for basil_param in basil_parameters:
             # Skip fixed parameters as they don't participate in optimization
-            if tunex_param.TYPE == ParameterType.FIXED:
+            if basil_param.TYPE == ParameterType.FIXED:
                 continue
 
             try:
-                baybe_param = ParameterConverter.convert_parameter(tunex_param)
+                baybe_param = ParameterConverter.convert_parameter(basil_param)
                 baybe_parameters.append(baybe_param)
             except ValueError as e:
-                print(f"Warning: Skipping parameter {tunex_param.name}: {e}")
+                print(f"Warning: Skipping parameter {basil_param.name}: {e}")
                 continue
 
         if not baybe_parameters:
@@ -168,37 +168,37 @@ class ParameterConverter:
         return df
 
     @staticmethod
-    def validate_parameter_constraints(tunex_param: BaseParameter) -> bool:
+    def validate_parameter_constraints(basil_param: BaseParameter) -> bool:
         """
-        Validate that a TuneX parameter has valid constraints for BayBE conversion.
+        Validate that a BASIL parameter has valid constraints for BayBE conversion.
 
         Args:
-            tunex_param: TuneX parameter to validate
+            basil_param: BASIL parameter to validate
 
         Returns:
             bool: True if valid, False otherwise
         """
-        param_type = tunex_param.TYPE
+        param_type = basil_param.TYPE
 
         if param_type == ParameterType.CONTINUOUS_NUMERICAL:
-            if hasattr(tunex_param, "min_val") and hasattr(tunex_param, "max_val"):
-                return tunex_param.min_val is not None and tunex_param.max_val is not None
+            if hasattr(basil_param, "min_val") and hasattr(basil_param, "max_val"):
+                return basil_param.min_val is not None and basil_param.max_val is not None
             else:
                 return False
 
         elif param_type in [ParameterType.DISCRETE_NUMERICAL_REGULAR, ParameterType.DISCRETE_NUMERICAL_IRREGULAR]:
-            if hasattr(tunex_param, "values"):
-                return len(tunex_param.values) > 0
+            if hasattr(basil_param, "values"):
+                return len(basil_param.values) > 0
             else:
                 return (
-                    hasattr(tunex_param, "min_val") and hasattr(tunex_param, "max_val") and hasattr(tunex_param, "step")
+                    hasattr(basil_param, "min_val") and hasattr(basil_param, "max_val") and hasattr(basil_param, "step")
                 )
 
         elif param_type == ParameterType.CATEGORICAL:
-            return hasattr(tunex_param, "values") and len(tunex_param.values) > 0
+            return hasattr(basil_param, "values") and len(basil_param.values) > 0
 
         elif param_type == ParameterType.SUBSTANCE:
-            return hasattr(tunex_param, "smiles") and len(tunex_param.smiles) > 0
+            return hasattr(basil_param, "smiles") and len(basil_param.smiles) > 0
 
         elif param_type == ParameterType.FIXED:
             return True  # Fixed parameters are always valid but won't be used in optimization

@@ -1,5 +1,5 @@
 """
-Logging configuration for TuneX application.
+Logging configuration for the application.
 """
 
 import logging
@@ -28,7 +28,7 @@ def _setup_app_log_handler(
     logger: logging.Logger, log_path: Path, level: int, max_size_mb: int, backup_count: int
 ) -> None:
     """Add main application log handler."""
-    app_log_file = log_path / "tunex.log"
+    app_log_file = log_path / "basil.log"
     app_handler = logging.handlers.RotatingFileHandler(
         app_log_file, maxBytes=max_size_mb * 1024 * 1024, backupCount=backup_count
     )

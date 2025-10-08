@@ -39,7 +39,7 @@ class CampaignWizard(BaseScreen):
     campaign_created = Signal(Campaign)  # Emits campaign data when created
 
     # UI Text Constants
-    WINDOW_TITLE = "TuneX - Create Campaign"
+    WINDOW_TITLE = "BASIL - Create Campaign"
     BACK_BUTTON_TEXT = "← Back"
     NEXT_BUTTON_TEXT = "Next →"
     CREATE_CAMPAIGN_BUTTON_TEXT = "Create Campaign"
