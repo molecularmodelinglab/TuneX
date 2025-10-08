@@ -14,9 +14,11 @@ PROGRAMMERS_DEFAULT: List[str] = [
     "Valeria Kaneva",
 ]
 
-INSTITUTION_DEFAULT = "Laboratory for Molecular Modelling, \
-Eshelman School of Pharmacy, \
-University of North Carolina at Chapel Hill, USA"
+INSTITUTION_DEFAULT = (
+    "Laboratory for Molecular Modelling, "
+    "Eshelman School of Pharmacy, "
+    "University of North Carolina at Chapel Hill, USA"
+)
 
 
 def get_programmers() -> List[str]:
