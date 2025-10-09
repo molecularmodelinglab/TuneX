@@ -6,14 +6,14 @@ from PySide6.QtWidgets import QApplication
 from app.logging_config import setup_application_logging
 from app.main_application import MainApplication
 
-APPLICATION_NAME = "TuneX"
+APPLICATION_NAME = "BASIL"
 
 
 def main():
     setup_application_logging(app_name=APPLICATION_NAME)
 
     logger = logging.getLogger(__name__)
-    logger.info("TuneX Starting")
+    logger.info("BASIL Starting")
 
     try:
         app = QApplication(sys.argv)
