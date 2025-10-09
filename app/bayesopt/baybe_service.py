@@ -10,6 +10,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from baybe import Campaign as BayBeCampaign
+from baybe.recommenders import (
+    BotorchRecommender,
+    RandomRecommender,
+    TwoPhaseMetaRecommender,
+)
+from baybe.surrogates import GaussianProcessSurrogate
 
 from app.bayesopt.objective import ObjectiveConverter
 from app.bayesopt.parameters import ParameterConverter
@@ -154,7 +160,12 @@ class BayBeIntegrationService:
         if multi_obj_note:
             self.logger.info(multi_obj_note)
 
-        self.baybe_campaign = BayBeCampaign(searchspace=search_space, objective=objective)
+        bo_recommender = TwoPhaseMetaRecommender(
+            initial_recommender=RandomRecommender(),
+            recommender=BotorchRecommender(surrogate_model=GaussianProcessSurrogate(), acquisition_function="qLogEI"),
+        )
+
+        self.baybe_campaign = BayBeCampaign(searchspace=search_space, objective=objective, recommender=bo_recommender)
 
     def _update_baybe_campaign_from_file(self) -> None:
         """Load BayBE campaign from saved state file."""
