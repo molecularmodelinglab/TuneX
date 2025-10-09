@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from app.models.enums import TargetTransformation
+from app.models.enums import BOAcquisitionFunction, TargetTransformation
 from app.models.parameters import ParameterSerializer
 from app.models.parameters.base import BaseParameter
 
@@ -34,6 +34,8 @@ class Campaign:
     targets: List[Target] = field(default_factory=list)
     parameters: List[BaseParameter] = field(default_factory=list)
     initial_dataset: List[Dict[str, Any]] = field(default_factory=list)
+    acquisition_function: str = BOAcquisitionFunction.QLOGEI.value
+    surrogate_model: str = "GaussianProcess"
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
     accessed_at: datetime = field(default_factory=datetime.now)
