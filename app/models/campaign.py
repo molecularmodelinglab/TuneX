@@ -48,6 +48,8 @@ class Campaign:
         self.targets = []
         self.parameters.clear()
         self.initial_dataset.clear()
+        self.acquisition_function = BOAcquisitionFunction.QLOGEI.value
+        self.surrogate_model = "GaussianProcess"
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
         self.accessed_at = datetime.now()
@@ -97,6 +99,8 @@ class Campaign:
             targets=targets,
             parameters=parameters,
             initial_dataset=data.get("initial_dataset", []),
+            acquisition_function=data.get("acquisition_function", BOAcquisitionFunction.QLOGEI.value),
+            surrogate_model=data.get("surrogate_model", "GaussianProcess"),
             created_at=created_at,
             updated_at=updated_at,
             accessed_at=accessed_at,
@@ -122,6 +126,8 @@ class Campaign:
             ],
             "parameters": serializer.serialize_parameters(self.parameters),
             "initial_dataset": self.initial_dataset,
+            "acquisition_function": self.acquisition_function,
+            "surrogate_model": self.surrogate_model,
             "created_at": self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at,
             "updated_at": self.updated_at.isoformat() if isinstance(self.updated_at, datetime) else self.updated_at,
             "accessed_at": self.accessed_at.isoformat() if isinstance(self.accessed_at, datetime) else self.accessed_at,
