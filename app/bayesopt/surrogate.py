@@ -7,14 +7,16 @@ surrogate models in Bayesian optimization.
 
 from typing import Dict, Optional
 
-from app.models.campaign import Campaign
-from app.models.enums import BOSurrogateModel
 from baybe.surrogates import (
     GaussianProcessSurrogate,
-    RandomForestSurrogate,
     NGBoostSurrogate,
+    RandomForestSurrogate,
 )
+
 from app.bayesopt.kernels.k1 import gp_kernel
+from app.models.campaign import Campaign
+from app.models.enums import BOSurrogateModel
+
 
 def get_surrogate_model(campaign: Campaign) -> Dict[str, Optional[str]]:
     """Get the surrogate model for a given campaign."""
