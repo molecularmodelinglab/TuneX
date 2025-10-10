@@ -15,10 +15,10 @@ from baybe.recommenders import (
     RandomRecommender,
     TwoPhaseMetaRecommender,
 )
-from baybe.surrogates import GaussianProcessSurrogate
 
 from app.bayesopt.objective import ObjectiveConverter
 from app.bayesopt.parameters import ParameterConverter
+from app.bayesopt.surrogate import get_surrogate_model
 from app.models.campaign import Campaign
 from app.models.parameters.base import BaseParameter
 from app.shared.constants import WorkspaceConstants
@@ -162,7 +162,10 @@ class BayBeIntegrationService:
 
         bo_recommender = TwoPhaseMetaRecommender(
             initial_recommender=RandomRecommender(),
-            recommender=BotorchRecommender(surrogate_model=GaussianProcessSurrogate(), acquisition_function="qLogEI"),
+            recommender=BotorchRecommender(
+                surrogate_model=get_surrogate_model(self.campaign),
+                acquisition_function=self.campaign.acquisition_function,
+            ),
         )
 
         self.baybe_campaign = BayBeCampaign(searchspace=search_space, objective=objective, recommender=bo_recommender)
