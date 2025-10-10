@@ -16,6 +16,51 @@ class TargetTransformation(Enum):
     NONE = "None"
 
 
+class BOSurrogateModel(str, Enum):
+    """
+    Surrogate models for Bayesian Optimization using BayBE.
+
+    Attributes:
+       display_name (str): The human-readable name for the surrogate model
+    """
+
+    if TYPE_CHECKING:
+        display_name: str
+
+    def __new__(cls, value: str, display_name: str):
+        """
+        Create a new instance of the enum member.
+
+        Args:
+            value: The machine-readable value for the enum member
+        """
+        member = str.__new__(cls, value)
+        member._value_ = value
+        member.display_name = display_name
+        return member
+
+    @classmethod
+    def get_display_name(cls, value: str) -> str:
+        """
+        Get the display name for a given enum value.
+
+        Args:
+            value: The machine-readable value of the enum member
+
+        Returns:
+            The corresponding human-readable display name
+        """
+        for member in cls:
+            if member.value == value:
+                return member.display_name
+        raise ValueError(f"'{value}' is not a valid {cls.__name__}")
+
+    GAUSSIAN_PROCESS_DEFAULT = ("GaussianProcess", "Gaussian Process (RBF)")
+    GAUSSIAN_PROCESS_K1 = ("GaussianProcessK1", "Gaussian Process (K1)")
+    RANDOM_FOREST = ("RandomForest", "Random Forest")
+    GRADIENT_BOOSTING = ("NaturalGradientBoosting", "Natural Gradient Boosting")
+
+
 class BOAcquisitionFunction(str, Enum):
     """
     Acquisition functions for Bayesian Optimization using BayBE.
